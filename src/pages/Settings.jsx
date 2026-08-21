@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Calendar, BookOpen, Loader2, Link2, Unlink, RefreshCw, Trash2 } from 'lucide-react';
 import GradingScaleEditor from '@/components/GradingScaleEditor';
+import TwoFactorSettings from '@/components/TwoFactorSettings';
 import {
   AlertDialog,
   AlertDialogTrigger,
@@ -138,6 +139,11 @@ export default function Settings() {
           Set the minimum percentage for each letter grade. This is used to compute letter grades on graded assignments.
         </p>
         <GradingScaleEditor initialScale={user?.data?.grading_scale} />
+      </section>
+
+      <section className="space-y-2">
+        <h2 className="font-semibold text-lg">Security</h2>
+        <TwoFactorSettings />
       </section>
 
       <section className="space-y-2">

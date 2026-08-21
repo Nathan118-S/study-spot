@@ -7,6 +7,7 @@ import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import ScrollToTop from './components/ScrollToTop';
 import ProtectedRoute from '@/components/ProtectedRoute';
+import Require2fa from '@/components/Require2fa';
 import Layout from '@/components/Layout';
 import Login from '@/pages/Login';
 import Register from '@/pages/Register';
@@ -19,6 +20,7 @@ const CalendarView = lazy(() => import('@/pages/CalendarView'));
 const Analytics = lazy(() => import('@/pages/Analytics'));
 const Settings = lazy(() => import('@/pages/Settings'));
 const Admin = lazy(() => import('@/pages/Admin'));
+const Verify2FA = lazy(() => import('@/pages/Verify2FA'));
 
 function PageLoader() {
   return (
@@ -59,13 +61,16 @@ const AuthenticatedApp = () => {
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
-        <Route element={<Layout />}>
-          <Route path="/" element={<Suspense fallback={<PageLoader />}><Dashboard /></Suspense>} />
-          <Route path="/classes" element={<Suspense fallback={<PageLoader />}><Classes /></Suspense>} />
-          <Route path="/calendar" element={<Suspense fallback={<PageLoader />}><CalendarView /></Suspense>} />
-          <Route path="/analytics" element={<Suspense fallback={<PageLoader />}><Analytics /></Suspense>} />
-          <Route path="/settings" element={<Suspense fallback={<PageLoader />}><Settings /></Suspense>} />
-          <Route path="/admin" element={<Suspense fallback={<PageLoader />}><Admin /></Suspense>} />
+        <Route path="/verify-2fa" element={<Suspense fallback={<PageLoader />}><Verify2FA /></Suspense>} />
+        <Route element={<Require2fa />}>
+          <Route element={<Layout />}>
+            <Route path="/" element={<Suspense fallback={<PageLoader />}><Dashboard /></Suspense>} />
+            <Route path="/classes" element={<Suspense fallback={<PageLoader />}><Classes /></Suspense>} />
+            <Route path="/calendar" element={<Suspense fallback={<PageLoader />}><CalendarView /></Suspense>} />
+            <Route path="/analytics" element={<Suspense fallback={<PageLoader />}><Analytics /></Suspense>} />
+            <Route path="/settings" element={<Suspense fallback={<PageLoader />}><Settings /></Suspense>} />
+            <Route path="/admin" element={<Suspense fallback={<PageLoader />}><Admin /></Suspense>} />
+          </Route>
         </Route>
       </Route>
       <Route path="*" element={<PageNotFound />} />

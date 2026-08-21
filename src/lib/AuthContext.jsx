@@ -115,6 +115,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = (shouldRedirect = true) => {
+    sessionStorage.removeItem('cf-2fa-verified');
     setUser(null);
     setIsAuthenticated(false);
     
