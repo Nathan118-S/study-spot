@@ -33,9 +33,11 @@ export function computeClassStreak(assignments, now = new Date()) {
   };
 }
 
-export function buildStreaks(classes, assignments, now = new Date()) {
-  const classroomClasses = classes.filter((c) => c.source === 'google_classroom');
-  return classroomClasses.map((c) => {
+export function buildStreaks(classes, assignments, { onlyClassroom = true } = {}, now = new Date()) {
+  const target = onlyClassroom
+    ? classes.filter((c) => c.source === 'google_classroom')
+    : classes;
+  return target.map((c) => {
     const items = assignments.filter((a) => a.class_id === c.id);
     return { class: c, ...computeClassStreak(items, now) };
   });
