@@ -6,6 +6,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import SheetSelect from '@/components/SheetSelect';
 import { base44 } from '@/api/base44Client';
+import TemplateManager from '@/components/TemplateManager';
+import { Settings2 } from 'lucide-react';
 
 const PRIORITIES = ['low', 'medium', 'high'];
 const TYPES = ['homework', 'project', 'quiz', 'test', 'reading', 'other'];
@@ -29,10 +31,13 @@ export default function AssignmentForm({ open, onOpenChange, assignment, classes
   });
   const [saving, setSaving] = useState(false);
   const [templates, setTemplates] = useState([]);
+  const [mgrOpen, setMgrOpen] = useState(false);
 
-  useEffect(() => {
+  const loadTemplates = () => {
     base44.entities.AssignmentTemplate.list('-updated_date', 100).then(setTemplates).catch(() => {});
-  }, []);
+  };
+
+  useEffect(() => { loadTemplates(); }, []);
 
   const applyTemplate = (id) => {
     const t = templates.find((x) => x.id === id);
@@ -99,19 +104,25 @@ export default function AssignmentForm({ open, onOpenChange, assignment, classes
   };
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>{assignment ? 'Edit Assignment' : 'New Assignment'}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
-          {!assignment && templates.length > 0 && (
+          {!assignment && (
             <div className="space-y-1.5">
-              <Label>Use a template</Label>
+              <div className="flex items-center justify-between">
+                <Label>Use a template</Label>
+                <Button variant="ghost" size="sm" type="button" onClick={() => setMgrOpen(true)} className="h-7 px-2 text-xs">
+                  <Settings2 className="h-3.5 w-3.5 mr-1" /> Manage
+                </Button>
+              </div>
               <SheetSelect
                 value=""
                 onValueChange={(v) => v && applyTemplate(v)}
-                placeholder="Apply a template..."
+                placeholder={templates.length ? 'Apply a template...' : 'No templates yet — create one'}
                 options={templates.map((t) => ({ value: t.id, label: t.name }))}
               />
             </div>
@@ -192,5 +203,12 @@ export default function AssignmentForm({ open, onOpenChange, assignment, classes
         </DialogFooter>
       </DialogContent>
     </Dialog>
+    <TemplateManager
+      open={mgrOpen}
+      onOpenChange={setMgrOpen}
+      templates={templates}
+      onChanged={loadTemplates}
+    />
+    </>
   );
 }
