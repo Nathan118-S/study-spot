@@ -58,6 +58,12 @@
     "completed": {
       "type": "boolean",
       "default": false
+    },
+    "progress": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 100,
+      "default": 0
     }
   },
   "required": [

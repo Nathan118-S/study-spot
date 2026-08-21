@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import AssignmentForm from '@/components/AssignmentForm';
+import AssignmentDetail from '@/components/AssignmentDetail';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -27,6 +28,7 @@ export default function Dashboard() {
   const [syncMsg, setSyncMsg] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState(null);
+  const [detail, setDetail] = useState(null);
   const [filters, setFilters] = useState({ class: 'all', due: 'all', priority: 'all', type: 'all' });
   const [sort, setSort] = useState('soonest');
 
@@ -90,6 +92,18 @@ export default function Dashboard() {
   const remove = async (a) => {
     await base44.entities.Assignment.delete(a.id);
     setAssignments((prev) => prev.filter((x) => x.id !== a.id));
+    setDetail(null);
+  };
+
+  const applyUpdate = (updated) => {
+    setAssignments((prev) => prev.map((x) => (x.id === updated.id ? updated : x)));
+    setDetail((d) => (d && d.id === updated.id ? updated : d));
+  };
+
+  const openEditFromDetail = (a) => {
+    setDetail(null);
+    setEditing(a);
+    setShowForm(true);
   };
 
   const filtered = useMemo(() => {
@@ -231,7 +245,11 @@ export default function Dashboard() {
                 <div className="flex items-center px-3">
                   <Checkbox checked={!!a.completed} onCheckedChange={() => toggleComplete(a)} />
                 </div>
-                <div className="flex-1 py-3 pr-3 min-w-0">
+                <button
+                  type="button"
+                  onClick={() => setDetail(a)}
+                  className="flex-1 py-3 pr-3 min-w-0 text-left"
+                >
                   <div className="flex items-center gap-2 flex-wrap">
                     <span
                       className={cn('font-medium', a.completed && 'line-through text-muted-foreground')}
@@ -258,8 +276,13 @@ export default function Dashboard() {
                     <span className={cn(overdue && 'text-red-500 font-medium')}>
                       {a.due_date ? format(parseISO(a.due_date), 'MMM d, h:mm a') : 'No due date'}
                     </span>
+                    {typeof a.progress === 'number' && a.progress > 0 && (
+                      <span className="ml-auto text-xs font-medium text-muted-foreground">
+                        {a.progress >= 100 ? '✓' : `${a.progress}%`}
+                      </span>
+                    )}
                   </div>
-                </div>
+                </button>
                 <div className="flex items-center pr-2 gap-1">
                   <Button variant="ghost" size="icon" onClick={() => { setEditing(a); setShowForm(true); }} title="Edit">
                     <Pencil className="h-4 w-4" />
@@ -280,6 +303,16 @@ export default function Dashboard() {
         assignment={editing}
         classes={classes}
         onSaved={load}
+      />
+
+      <AssignmentDetail
+        open={!!detail}
+        onOpenChange={(o) => !o && setDetail(null)}
+        assignment={detail}
+        classes={classes}
+        onUpdated={applyUpdate}
+        onEdit={openEditFromDetail}
+        onDelete={remove}
       />
     </div>
   );
