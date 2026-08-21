@@ -7,7 +7,7 @@ import { Slider } from '@/components/ui/slider';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Pencil, Trash2, AlertTriangle, CalendarClock, CheckCircle2 } from 'lucide-react';
+import { Pencil, Trash2, AlertTriangle, CalendarClock, CheckCircle2, Plus, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, parseISO, isPast } from 'date-fns';
 import { letterGrade } from '@/lib/grading';
@@ -38,12 +38,16 @@ export default function AssignmentDetail({
   const [progress, setProgress] = useState(0);
   const [notes, setNotes] = useState('');
   const [score, setScore] = useState('');
+  const [subtasks, setSubtasks] = useState([]);
+  const [newSub, setNewSub] = useState('');
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     setProgress(assignment?.progress ?? 0);
     setNotes(assignment?.notes ?? '');
     setScore(assignment?.score ?? '');
+    setSubtasks(assignment?.subtasks ?? []);
+    setNewSub('');
   }, [assignment]);
 
   if (!assignment) return null;
@@ -84,14 +88,61 @@ export default function AssignmentDetail({
     }
   };
 
+  const computeProgress = (list) =>
+    list.length ? Math.round((list.filter((s) => s.done).length / list.length) * 100) : 0;
+
+  const persistSubtasks = async (list) => {
+    const nextProgress = computeProgress(list);
+    setProgress(nextProgress);
+    setSaving(true);
+    try {
+      await base44.entities.Assignment.update(assignment.id, { subtasks: list, progress: nextProgress });
+      onUpdated?.({ ...assignment, subtasks: list, progress: nextProgress });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const addSubtask = () => {
+    const text = newSub.trim();
+    if (!text) return;
+    const list = [...subtasks, { text, done: false }];
+    setSubtasks(list);
+    setNewSub('');
+    persistSubtasks(list);
+  };
+
+  const toggleSubtask = (i) => {
+    const list = subtasks.map((s, idx) => (idx === i ? { ...s, done: !s.done } : s));
+    setSubtasks(list);
+    persistSubtasks(list);
+  };
+
+  const removeSubtask = (i) => {
+    const list = subtasks.filter((_, idx) => idx !== i);
+    setSubtasks(list);
+    persistSubtasks(list);
+  };
+
   const toggleComplete = async () => {
     const completed = !assignment.completed;
-    const next = { completed, progress: completed ? 100 : (assignment.progress >= 100 ? 0 : assignment.progress) };
+    let nextProgress;
+    let nextSubtasks = subtasks;
+    if (subtasks.length > 0) {
+      nextSubtasks = subtasks.map((s) => ({ ...s, done: completed }));
+      nextProgress = computeProgress(nextSubtasks);
+      setSubtasks(nextSubtasks);
+    } else {
+      nextProgress = completed ? 100 : (assignment.progress >= 100 ? 0 : assignment.progress);
+    }
+    const next = subtasks.length > 0
+      ? { completed, progress: nextProgress, subtasks: nextSubtasks }
+      : { completed, progress: nextProgress };
     setSaving(true);
     try {
       await base44.entities.Assignment.update(assignment.id, next);
       onUpdated?.({ ...assignment, ...next });
-      setProgress(next.progress);
+      setProgress(nextProgress);
     } finally {
       setSaving(false);
     }
@@ -154,20 +205,64 @@ export default function AssignmentDetail({
 
         <div className="rounded-lg border p-4 space-y-3">
           <div className="flex items-center justify-between">
+            <span className="text-sm font-medium">Subtasks</span>
+            {subtasks.length > 0 && (
+              <span className="text-xs text-muted-foreground">
+                {subtasks.filter((s) => s.done).length}/{subtasks.length} done
+              </span>
+            )}
+          </div>
+          <div className="flex gap-2">
+            <Input
+              value={newSub}
+              onChange={(e) => setNewSub(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addSubtask(); } }}
+              placeholder="Add a subtask…"
+              disabled={saving}
+            />
+            <Button size="icon" onClick={addSubtask} disabled={saving || !newSub.trim()} title="Add subtask">
+              <Plus className="h-4 w-4" />
+            </Button>
+          </div>
+          {subtasks.length > 0 && (
+            <ul className="space-y-1.5">
+              {subtasks.map((s, i) => (
+                <li key={i} className="flex items-center gap-2 rounded-md border bg-muted/40 px-2 py-1.5">
+                  <Checkbox checked={!!s.done} onCheckedChange={() => toggleSubtask(i)} disabled={saving} />
+                  <span className={cn('flex-1 text-sm', s.done && 'line-through text-muted-foreground')}>
+                    {s.text}
+                  </span>
+                  <Button variant="ghost" size="icon" onClick={() => removeSubtask(i)} disabled={saving} title="Remove">
+                    <X className="h-4 w-4" />
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
+        <div className="rounded-lg border p-4 space-y-3">
+          <div className="flex items-center justify-between">
             <span className="text-sm font-medium">Progress</span>
             <span className={cn('text-sm font-semibold', progress >= 100 && 'text-emerald-500')}>
               {progress}%
             </span>
           </div>
-          <Slider
-            value={[progress]}
-            min={0}
-            max={100}
-            step={5}
-            disabled={saving}
-            onValueChange={([v]) => setProgress(v)}
-            onValueCommit={([v]) => persistProgress(v)}
-          />
+          {subtasks.length > 0 ? (
+            <p className="text-xs text-muted-foreground">
+              Progress is calculated from completed subtasks.
+            </p>
+          ) : (
+            <Slider
+              value={[progress]}
+              min={0}
+              max={100}
+              step={5}
+              disabled={saving}
+              onValueChange={([v]) => setProgress(v)}
+              onValueCommit={([v]) => persistProgress(v)}
+            />
+          )}
           <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
             <div
               className="h-full bg-primary transition-all"

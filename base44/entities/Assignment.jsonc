@@ -65,6 +65,25 @@
       "maximum": 100,
       "default": 0
     },
+    "subtasks": {
+      "type": "array",
+      "default": [],
+      "items": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string"
+          },
+          "done": {
+            "type": "boolean",
+            "default": false
+          }
+        },
+        "required": [
+          "text"
+        ]
+      }
+    },
     "points": {
       "type": "number",
       "minimum": 0,
