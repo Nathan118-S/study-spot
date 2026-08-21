@@ -17,13 +17,15 @@ import {
   AlertDialogAction,
 } from '@/components/ui/alert-dialog';
 import SheetSelect from '@/components/SheetSelect';
-import { Loader2, KeyRound, Trash2, Flame, ShieldCheck, RefreshCw, ShieldOff, BadgeCheck } from 'lucide-react';
+import MergeDialog from '@/components/admin/MergeDialog';
+import { Loader2, KeyRound, Trash2, Flame, ShieldCheck, RefreshCw, ShieldOff, BadgeCheck, GitMerge } from 'lucide-react';
 
 export default function Admin() {
   const { user, isLoadingAuth } = useAuth();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(null);
+  const [mergeSource, setMergeSource] = useState(null);
   const { toast } = useToast();
 
   const load = async () => {
@@ -127,6 +129,22 @@ export default function Admin() {
     }
   };
 
+  const mergeAccount = async (sourceId, targetId) => {
+    setBusy(sourceId);
+    try {
+      const res = await base44.functions.invoke('adminMergeAccounts', { sourceId, targetId });
+      setUsers((prev) => prev.filter((x) => x.id !== sourceId));
+      toast({
+        title: 'Accounts merged',
+        description: `Moved ${res.data.movedAssignments} assignment(s) and ${res.data.movedClasses} class(es).`,
+      });
+    } catch (e) {
+      toast({ title: 'Merge failed', description: e.message, variant: 'destructive' });
+    } finally {
+      setBusy(null);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-3">
@@ -184,6 +202,9 @@ export default function Admin() {
                     <BadgeCheck className="h-4 w-4 mr-1" /> Verify user
                   </Button>
                 )}
+                <Button size="sm" variant="outline" onClick={() => setMergeSource(u)} disabled={busy === u.id || u.id === user.id} className="h-11 md:h-9">
+                  <GitMerge className="h-4 w-4 mr-1" /> Merge
+                </Button>
                 {u.twofa_enabled && (
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
@@ -235,6 +256,18 @@ export default function Admin() {
           ))}
         </div>
       )}
+
+      <MergeDialog
+        open={!!mergeSource}
+        onOpenChange={(o) => !o && setMergeSource(null)}
+        source={mergeSource}
+        users={users}
+        onMerge={(targetId) => {
+          const s = mergeSource;
+          setMergeSource(null);
+          if (s) mergeAccount(s.id, targetId);
+        }}
+      />
     </div>
   );
 }
