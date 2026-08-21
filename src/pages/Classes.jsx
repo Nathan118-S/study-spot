@@ -30,8 +30,13 @@ export default function Classes() {
   }, [load]);
 
   const remove = async (c) => {
-    await base44.entities.Class.delete(c.id);
-    setClasses((prev) => prev.filter((x) => x.id !== c.id));
+    const prev = classes;
+    setClasses((p) => p.filter((x) => x.id !== c.id));
+    try {
+      await base44.entities.Class.delete(c.id);
+    } catch {
+      setClasses(prev);
+    }
   };
 
   const countFor = (id) => assignments.filter((a) => a.class_id === id).length;

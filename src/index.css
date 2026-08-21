@@ -89,10 +89,19 @@
   body {
     @apply bg-background text-foreground font-body;
     overscroll-behavior: none;
+    -webkit-touch-callout: none;
+  }
+
+  button {
+    -webkit-touch-callout: none;
   }
 
   button,
-  nav a {
+  nav a,
+  header,
+  aside,
+  .bg-card,
+  svg {
     -webkit-user-select: none;
     user-select: none;
   }

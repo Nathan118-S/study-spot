@@ -33,6 +33,13 @@ export default function Layout() {
     localStorage.setItem('cf-theme', dark ? 'dark' : 'light');
   }, [dark]);
 
+  useEffect(() => {
+    const mql = window.matchMedia('(prefers-color-scheme: dark)');
+    const handler = (e) => setDark(e.matches);
+    mql.addEventListener('change', handler);
+    return () => mql.removeEventListener('change', handler);
+  }, []);
+
   return (
     <div className="min-h-screen bg-background text-foreground flex">
       <aside

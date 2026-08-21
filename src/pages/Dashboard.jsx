@@ -353,12 +353,12 @@ export default function Dashboard() {
                 )}
               >
                 {selectMode && (
-                  <div className="flex items-center pl-3">
+                  <div className="flex items-center justify-center w-11 h-11 shrink-0">
                     <Checkbox checked={!!selected[a.id]} onCheckedChange={() => toggleSelect(a.id)} />
                   </div>
                 )}
                 <div className={cn('w-1.5 shrink-0', PRIORITY_BAR[a.priority])} />
-                <div className="flex items-center px-3">
+                <div className="flex items-center justify-center w-11 h-11 shrink-0">
                   <Checkbox checked={!!a.completed} onCheckedChange={() => toggleComplete(a)} />
                 </div>
                 <button
@@ -400,10 +400,10 @@ export default function Dashboard() {
                   </div>
                 </button>
                 <div className="flex items-center pr-2 gap-1">
-                  <Button variant="ghost" size="icon" onClick={() => { setEditing(a); setShowForm(true); }} title="Edit">
+                  <Button variant="ghost" size="icon" className="h-11 w-11" onClick={() => { setEditing(a); setShowForm(true); }} title="Edit">
                     <Pencil className="h-4 w-4" />
                   </Button>
-                  <Button variant="ghost" size="icon" onClick={() => remove(a)} title="Delete">
+                  <Button variant="ghost" size="icon" className="h-11 w-11" onClick={() => remove(a)} title="Delete">
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>
