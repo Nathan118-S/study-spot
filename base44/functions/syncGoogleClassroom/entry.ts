@@ -84,6 +84,7 @@ export default async function(req) {
           source: 'google_classroom',
           external_id: cw.id,
           completed: false,
+          points: typeof cw.maxPoints === 'number' ? cw.maxPoints : 0,
         });
         created++;
       }

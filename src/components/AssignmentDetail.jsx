@@ -99,6 +99,9 @@ export default function AssignmentDetail({
             {PRIORITY_LABEL[assignment.priority]} priority
           </Badge>
           <Badge variant="outline">{TYPE_LABEL[assignment.type]}</Badge>
+          {typeof assignment.points === 'number' && assignment.points > 0 && (
+            <Badge variant="outline">{assignment.points} pts</Badge>
+          )}
           {overdue && (
             <Badge variant="destructive" className="text-xs">
               <AlertTriangle className="h-3 w-3 mr-1" /> Overdue
