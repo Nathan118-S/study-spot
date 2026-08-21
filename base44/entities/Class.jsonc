@@ -24,6 +24,11 @@
     },
     "external_id": {
       "type": "string"
+    },
+    "best_streak": {
+      "type": "number",
+      "minimum": 0,
+      "default": 0
     }
   },
   "required": [
