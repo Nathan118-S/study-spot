@@ -20,7 +20,7 @@ export default function Analytics() {
     ]);
     setClasses(c);
     setAssignments(a);
-    setConnections(conn?.data ?? { classroom: false });
+    setConnections(conn?.data ?? { classroom: false, blackboard: false });
   }, []);
 
   useEffect(() => {
@@ -31,10 +31,11 @@ export default function Analytics() {
     })();
   }, [load]);
 
-  const verified = connections?.classroom === true;
+  const classroomOn = connections?.classroom === true;
+  const blackboardOn = connections?.blackboard === true;
   const streaks = useMemo(
-    () => buildStreaks(classes, assignments, { onlyClassroom: verified }),
-    [classes, assignments, verified]
+    () => buildStreaks(classes, assignments, { classroom: classroomOn, blackboard: blackboardOn }),
+    [classes, assignments, classroomOn, blackboardOn]
   );
   const summary = useMemo(() => streakSummary(streaks), [streaks]);
 
@@ -54,11 +55,12 @@ export default function Analytics() {
         </h1>
         <p className="text-muted-foreground text-sm">
           Complete every assignment in a class to keep its streak alive. One overdue assignment
-          breaks it. Streaks are tracked for your Google Classroom classes.
+          breaks it. Streaks from synced Google Classroom and Blackboard classes are verified;
+          manual classes are unverified.
         </p>
       </div>
 
-      <StatusBox verified={verified} />
+      <StatusBox classroom={classroomOn} blackboard={blackboardOn} />
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <StatCard icon={<Flame className="h-4 w-4 text-orange-500" />} label="Active streaks" value={summary.active} />
@@ -71,13 +73,11 @@ export default function Analytics() {
         <div className="rounded-lg border bg-card p-8 flex flex-col items-center text-center gap-3">
           <GraduationCap className="h-10 w-10 text-muted-foreground" />
           <p className="text-muted-foreground">
-            {verified ? 'No Google Classroom classes yet.' : 'No classes yet. Add a class to start a streak.'}
+            No classes yet. Add a class to start a streak.
           </p>
-          {!verified && (
-            <Button asChild>
-              <Link to="/classes">Add a class</Link>
-            </Button>
-          )}
+          <Button asChild>
+            <Link to="/classes">Add a class</Link>
+          </Button>
         </div>
       ) : (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -102,15 +102,16 @@ function StatCard({ icon, label, value }) {
   );
 }
 
-function StatusBox({ verified }) {
-  if (verified) {
+function StatusBox({ classroom, blackboard }) {
+  if (classroom || blackboard) {
+    const sources = [classroom && 'Google Classroom', blackboard && 'Blackboard'].filter(Boolean).join(' and ');
     return (
       <div className="flex items-center gap-3 rounded-lg border border-emerald-500/40 bg-emerald-500/10 p-4">
         <ShieldCheck className="h-5 w-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
         <div>
           <p className="font-medium text-emerald-700 dark:text-emerald-300">Verified</p>
           <p className="text-sm text-muted-foreground">
-            Google Classroom is connected. Streaks are tracked from your synced coursework.
+            {sources} {classroom && blackboard ? 'are' : 'is'} connected. Streaks from synced classes are verified.
           </p>
         </div>
       </div>
@@ -122,8 +123,8 @@ function StatusBox({ verified }) {
       <div className="flex-1">
         <p className="font-medium text-amber-700 dark:text-amber-300">Unverified</p>
         <p className="text-sm text-muted-foreground">
-          Google Classroom is not connected. You can continue with streaks based on your manual
-          classes, but your streak can not be verified.
+          Neither Google Classroom nor Blackboard is connected. You can continue with streaks based
+          on your manual classes, but your streaks can not be verified.
         </p>
       </div>
       <Button asChild variant="outline" size="sm" className="shrink-0">
