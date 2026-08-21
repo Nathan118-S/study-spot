@@ -128,28 +128,28 @@
 
 @layer components {
   .bg-background {
-    background-color: rgba(255, 255, 255, 0.5) !important;
+    background-color: rgba(255, 255, 255, 0.62) !important;
     backdrop-filter: blur(14px) saturate(150%);
     -webkit-backdrop-filter: blur(14px) saturate(150%);
-    border-color: rgba(255, 255, 255, 0.6) !important;
-    box-shadow: 0 8px 30px -12px rgba(2, 132, 199, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.7) !important;
+    border-color: rgba(255, 255, 255, 0.75) !important;
+    box-shadow: 0 8px 30px -12px rgba(2, 132, 199, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.85) !important;
   }
   .bg-card,
   .bg-popover {
-    background-color: rgba(255, 255, 255, 0.45) !important;
+    background-color: rgba(255, 255, 255, 0.66) !important;
     backdrop-filter: blur(16px) saturate(160%);
     -webkit-backdrop-filter: blur(16px) saturate(160%);
-    border-color: rgba(255, 255, 255, 0.55) !important;
-    box-shadow: 0 10px 30px -12px rgba(2, 132, 199, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.75) !important;
+    border-color: rgba(255, 255, 255, 0.8) !important;
+    box-shadow: 0 10px 30px -12px rgba(2, 132, 199, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.9) !important;
   }
   .bg-sidebar {
-    background-color: rgba(255, 255, 255, 0.4) !important;
+    background-color: rgba(255, 255, 255, 0.58) !important;
     backdrop-filter: blur(18px) saturate(160%);
     -webkit-backdrop-filter: blur(18px) saturate(160%);
-    border-color: rgba(255, 255, 255, 0.5) !important;
+    border-color: rgba(255, 255, 255, 0.7) !important;
   }
   .bg-sidebar-accent {
-    background-color: rgba(125, 211, 252, 0.4) !important;
+    background-color: rgba(186, 230, 253, 0.55) !important;
   }
 
   .dark .bg-background {
