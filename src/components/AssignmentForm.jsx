@@ -28,6 +28,24 @@ export default function AssignmentForm({ open, onOpenChange, assignment, classes
     notes: '',
   });
   const [saving, setSaving] = useState(false);
+  const [templates, setTemplates] = useState([]);
+
+  useEffect(() => {
+    base44.entities.AssignmentTemplate.list('-updated_date', 100).then(setTemplates).catch(() => {});
+  }, []);
+
+  const applyTemplate = (id) => {
+    const t = templates.find((x) => x.id === id);
+    if (!t) return;
+    setForm((f) => ({
+      ...f,
+      title: t.title || f.title,
+      type: t.type || f.type,
+      priority: t.priority || f.priority,
+      points: t.points ?? f.points,
+      notes: t.notes ?? f.notes,
+    }));
+  };
 
   useEffect(() => {
     if (assignment) {
@@ -87,6 +105,17 @@ export default function AssignmentForm({ open, onOpenChange, assignment, classes
           <DialogTitle>{assignment ? 'Edit Assignment' : 'New Assignment'}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
+          {!assignment && templates.length > 0 && (
+            <div className="space-y-1.5">
+              <Label>Use a template</Label>
+              <SheetSelect
+                value=""
+                onValueChange={(v) => v && applyTemplate(v)}
+                placeholder="Apply a template..."
+                options={templates.map((t) => ({ value: t.id, label: t.name }))}
+              />
+            </div>
+          )}
           <div className="space-y-1.5">
             <Label>Assignment Title</Label>
             <Input
