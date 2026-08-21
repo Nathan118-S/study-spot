@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { GraduationCap, Calendar, BookOpen, Flame, ShieldCheck, BarChart3, CheckCircle2, ArrowRight } from 'lucide-react';
+import { GraduationCap, Calendar, BookOpen, Flame, ShieldCheck, BarChart3, CheckCircle2, ArrowRight, Timer, Bell, Layers, School } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 
@@ -14,17 +14,27 @@ const features = [
   {
     icon: BookOpen,
     title: 'Google Classroom',
-    description: 'Pull coursework and due dates straight from Google Classroom.',
+    description: 'Pull coursework, due dates, and attachments straight from Classroom — and mark work done on both sides.',
   },
   {
-    icon: BarChart3,
-    title: 'Dashboard',
-    description: 'Every assignment in one filterable, sortable view — by class, priority, type, or due date.',
+    icon: School,
+    title: 'Blackboard Learn',
+    description: 'Connect your school\'s Blackboard instance to import courses and gradebook due-dated items.',
+  },
+  {
+    icon: Bell,
+    title: 'Smart Reminders',
+    description: 'Set custom reminder times before each due date and a do-not-disturb window for quiet hours.',
+  },
+  {
+    icon: Timer,
+    title: 'Study Timer',
+    description: 'A built-in Pomodoro timer tracks focus and break sessions against your assignments.',
   },
   {
     icon: Flame,
     title: 'Streak Tracking',
-    description: 'Stay motivated with completion streaks verified against your Classroom activity.',
+    description: 'Stay motivated with completion streaks per class, with alerts when you break a record.',
   },
   {
     icon: CheckCircle2,
@@ -32,9 +42,14 @@ const features = [
     description: 'Track scores, subtasks, and per-assignment progress with a custom grading scale.',
   },
   {
+    icon: Layers,
+    title: 'Templates & Analytics',
+    description: 'Reuse assignment templates and visualize your workload and grades over time.',
+  },
+  {
     icon: ShieldCheck,
-    title: 'Secure by Default',
-    description: 'Per-user data isolation and optional two-factor authentication keep your work private.',
+    title: 'Secure & Private',
+    description: 'Per-user data isolation plus optional two-factor auth (TOTP, email, or passkeys).',
   },
 ];
 
@@ -87,8 +102,8 @@ export default function Landing() {
               <span className="text-primary">one organized spot.</span>
             </h1>
             <p className="mt-6 max-w-2xl mx-auto text-lg text-muted-foreground">
-              Study Spot pulls every assignment from Google Calendar and Google Classroom into a single
-              dashboard — with calendar views, streaks, grading, and progress tracking.
+              Study Spot pulls every assignment from Google Calendar, Google Classroom, and Blackboard into a single
+              dashboard — with smart reminders, a study timer, streaks, grading, and analytics.
             </p>
             <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
               <Button asChild size="lg" className="w-full sm:w-auto">
