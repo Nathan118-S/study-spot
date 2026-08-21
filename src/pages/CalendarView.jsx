@@ -15,6 +15,8 @@ export default function CalendarView() {
   const [classes, setClasses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [cursor, setCursor] = useState(new Date());
+  const [dragId, setDragId] = useState(null);
+  const [overKey, setOverKey] = useState(null);
 
   const load = useCallback(async () => {
     const [a, c] = await Promise.all([
@@ -46,6 +48,17 @@ export default function CalendarView() {
 
   const classColor = (id) => classes.find((c) => c.id === id)?.color || '#94a3b8';
 
+  const reschedule = async (id, day) => {
+    const a = assignments.find((x) => x.id === id);
+    if (!a || !a.due_date) return;
+    const old = parseISO(a.due_date);
+    const next = new Date(day);
+    next.setHours(old.getHours(), old.getMinutes(), old.getSeconds(), 0);
+    const due_date = next.toISOString();
+    setAssignments((prev) => prev.map((x) => (x.id === id ? { ...x, due_date } : x)));
+    await base44.entities.Assignment.update(id, { due_date });
+  };
+
   const days = useMemo(() => {
     const start = startOfWeek(startOfMonth(cursor), { weekStartsOn: 0 });
     const end = endOfWeek(endOfMonth(cursor), { weekStartsOn: 0 });
@@ -61,7 +74,7 @@ export default function CalendarView() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="font-heading text-2xl md:text-3xl font-bold">Calendar</h1>
-          <p className="text-muted-foreground text-sm">Assignments plotted on their due dates.</p>
+          <p className="text-muted-foreground text-sm">Assignments plotted on their due dates — drag any item to another day to reschedule it.</p>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="icon" onClick={() => setCursor(new Date())} title="Today">
@@ -90,10 +103,19 @@ export default function CalendarView() {
           return (
             <div
               key={key}
+              onDragOver={(e) => { e.preventDefault(); setOverKey(key); }}
+              onDragLeave={() => setOverKey((k) => (k === key ? null : k))}
+              onDrop={(e) => {
+                e.preventDefault();
+                setOverKey(null);
+                const id = e.dataTransfer.getData('text/plain');
+                if (id) reschedule(id, day);
+              }}
               className={cn(
-                'bg-card min-h-[96px] p-1.5 flex flex-col gap-1',
+                'bg-card min-h-[96px] p-1.5 flex flex-col gap-1 transition-colors',
                 !inMonth && 'opacity-40',
-                isToday(day) && 'ring-2 ring-primary ring-inset'
+                isToday(day) && 'ring-2 ring-primary ring-inset',
+                overKey === key && 'bg-primary/10 ring-2 ring-primary ring-inset'
               )}
             >
               <span className={cn('text-xs', isToday(day) ? 'font-bold text-primary' : 'text-muted-foreground')}>
@@ -103,7 +125,13 @@ export default function CalendarView() {
                 {items.slice(0, 3).map((a) => (
                   <div
                     key={a.id}
-                    className="flex items-center gap-1 text-xs px-1 py-0.5 rounded truncate"
+                    draggable
+                    onDragStart={(e) => { e.dataTransfer.setData('text/plain', a.id); setDragId(a.id); }}
+                    onDragEnd={() => setDragId(null)}
+                    className={cn(
+                      'flex items-center gap-1 text-xs px-1 py-0.5 rounded truncate cursor-grab active:cursor-grabbing',
+                      dragId === a.id && 'opacity-50'
+                    )}
                     style={{ background: classColor(a.class_id) + '22' }}
                     title={a.title}
                   >
