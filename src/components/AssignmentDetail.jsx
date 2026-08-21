@@ -26,16 +26,29 @@ export default function AssignmentDetail({
   open, onOpenChange, assignment, classes, onUpdated, onEdit, onDelete,
 }) {
   const [progress, setProgress] = useState(0);
+  const [notes, setNotes] = useState('');
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     setProgress(assignment?.progress ?? 0);
+    setNotes(assignment?.notes ?? '');
   }, [assignment]);
 
   if (!assignment) return null;
 
   const classColor = classes.find((c) => c.id === assignment.class_id)?.color || '#94a3b8';
   const overdue = assignment.due_date && isPast(parseISO(assignment.due_date)) && !assignment.completed;
+
+  const persistNotes = async (value) => {
+    if (value === (assignment.notes ?? '')) return;
+    setSaving(true);
+    try {
+      await base44.entities.Assignment.update(assignment.id, { notes: value });
+      onUpdated?.({ ...assignment, notes: value });
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const persistProgress = async (value) => {
     setSaving(true);
@@ -100,12 +113,17 @@ export default function AssignmentDetail({
             : 'No due date'}
         </div>
 
-        {assignment.notes && (
-          <div className="rounded-lg border bg-muted/40 p-3">
-            <p className="text-xs font-semibold text-muted-foreground mb-1">Notes</p>
-            <p className="text-sm whitespace-pre-wrap">{assignment.notes}</p>
-          </div>
-        )}
+        <div className="rounded-lg border bg-muted/40 p-3">
+          <p className="text-xs font-semibold text-muted-foreground mb-1">Notes</p>
+          <textarea
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            onBlur={(e) => persistNotes(e.target.value)}
+            placeholder="Add notes about this assignment…"
+            rows={4}
+            className="w-full resize-y rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+          />
+        </div>
 
         <div className="rounded-lg border p-4 space-y-3">
           <div className="flex items-center justify-between">
