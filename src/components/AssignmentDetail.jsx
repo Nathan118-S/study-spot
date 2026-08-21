@@ -12,6 +12,7 @@ import { cn } from '@/lib/utils';
 import { format, parseISO, isPast } from 'date-fns';
 import { letterGrade } from '@/lib/grading';
 import { Input } from '@/components/ui/input';
+import ClassroomAttachments from '@/components/ClassroomAttachments';
 
 const PRIORITY_LABEL = { high: 'High', medium: 'Medium', low: 'Low' };
 const PRIORITY_BADGE = {
@@ -190,6 +191,8 @@ export default function AssignmentDetail({
             ? format(parseISO(assignment.due_date), 'EEEE, MMM d · h:mm a')
             : 'No due date'}
         </div>
+
+        <ClassroomAttachments assignment={assignment} />
 
         <div className="rounded-lg border bg-muted/40 p-3">
           <p className="text-xs font-semibold text-muted-foreground mb-1">Notes</p>
