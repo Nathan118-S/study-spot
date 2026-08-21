@@ -7,7 +7,8 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/components/ui/use-toast';
 import MergeDialog from '@/components/admin/MergeDialog';
 import UserManageDialog from '@/components/admin/UserManageDialog';
-import { Loader2, ShieldCheck, RefreshCw } from 'lucide-react';
+import { Loader2, ShieldCheck, RefreshCw, ChevronRight } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 export default function Admin() {
   const { user, isLoadingAuth } = useAuth();
@@ -171,7 +172,10 @@ export default function Admin() {
                 <p className="font-medium truncate">{u.full_name || u.email}</p>
                 <p className="text-sm text-muted-foreground truncate">{u.email}</p>
               </div>
-              <Badge variant={u.role === 'admin' ? 'default' : 'secondary'} className="capitalize shrink-0">{u.role}</Badge>
+              <div className="flex items-center gap-2 shrink-0">
+                <Badge variant={u.role === 'admin' ? 'default' : 'secondary'} className="capitalize">{u.role}</Badge>
+                <ChevronRight className="h-4 w-4 text-muted-foreground" />
+              </div>
             </button>
           ))}
         </div>
@@ -205,8 +209,4 @@ export default function Admin() {
       />
     </div>
   );
-}
-
-function cn(...args) {
-  return args.filter(Boolean).join(' ');
 }
