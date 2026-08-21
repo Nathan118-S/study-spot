@@ -97,6 +97,13 @@
     "reminder_sent": {
       "type": "boolean",
       "default": false
+    },
+    "reminder_sent_hours": {
+      "type": "array",
+      "default": [],
+      "items": {
+        "type": "number"
+      }
     }
   },
   "required": [
