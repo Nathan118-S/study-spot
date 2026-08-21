@@ -93,6 +93,10 @@
     "score": {
       "type": "number",
       "minimum": 0
+    },
+    "reminder_sent": {
+      "type": "boolean",
+      "default": false
     }
   },
   "required": [

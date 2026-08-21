@@ -1,0 +1,45 @@
+{
+  "description": "Emails each user a reminder for assignments due within the next 24 hours, once per assignment.",
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "assignment_reminders",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "send_reminders": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "sendAssignmentReminders",
+            "args": {}
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Send due-soon reminders",
+            "description": "Email owners about assignments due within 24h"
+          }
+        }
+      }
+    ]
+  },
+  "name": "Assignment Reminders",
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "events": [],
+      "schedule_mode": "recurring",
+      "cron_expression": "0 * * * *",
+      "one_time_date": null,
+      "timezone": "America/New_York",
+      "interval_value": null,
+      "interval_unit": null,
+      "interval_anchor": null,
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  }
+}
