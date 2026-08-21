@@ -17,7 +17,7 @@ import {
   AlertDialogAction,
 } from '@/components/ui/alert-dialog';
 import SheetSelect from '@/components/SheetSelect';
-import { Loader2, KeyRound, Trash2, Flame, ShieldCheck, RefreshCw, ShieldOff } from 'lucide-react';
+import { Loader2, KeyRound, Trash2, Flame, ShieldCheck, RefreshCw, ShieldOff, BadgeCheck } from 'lucide-react';
 
 export default function Admin() {
   const { user, isLoadingAuth } = useAuth();
@@ -101,6 +101,19 @@ export default function Admin() {
     }
   };
 
+  const verifyUser = async (u) => {
+    setBusy(u.id);
+    try {
+      await base44.functions.invoke('adminVerifyUser', { userId: u.id });
+      setUsers((prev) => prev.map((x) => (x.id === u.id ? { ...x, is_verified: true } : x)));
+      toast({ title: 'User verified', description: `${u.email} can now sign in.` });
+    } catch (e) {
+      toast({ title: 'Failed', description: e.message, variant: 'destructive' });
+    } finally {
+      setBusy(null);
+    }
+  };
+
   const deleteUser = async (u) => {
     setBusy(u.id);
     try {
@@ -166,6 +179,11 @@ export default function Admin() {
                 <Button size="sm" variant="outline" onClick={() => restoreStreak(u)} disabled={busy === u.id} className="h-11 md:h-9">
                   <Flame className="h-4 w-4 mr-1" /> Restore streak
                 </Button>
+                {!u.is_verified && (
+                  <Button size="sm" variant="outline" onClick={() => verifyUser(u)} disabled={busy === u.id} className="h-11 md:h-9">
+                    <BadgeCheck className="h-4 w-4 mr-1" /> Verify user
+                  </Button>
+                )}
                 {u.twofa_enabled && (
                   <AlertDialog>
                     <AlertDialogTrigger asChild>

@@ -6,18 +6,13 @@ export default async function(req) {
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
     if (user.role !== 'admin') return Response.json({ error: 'Forbidden' }, { status: 403 });
-    const users = await base44.asServiceRole.entities.User.list();
-    return Response.json({
-      users: users.map((u) => ({
-        id: u.id,
-        email: u.email,
-        full_name: u.full_name,
-        role: u.role,
-        twofa_enabled: !!u.twofa_enabled,
-        is_verified: !!u.is_verified,
-        created_date: u.created_date,
-      })),
-    });
+
+    const body = await req.json().catch(() => ({}));
+    const userId = body?.userId;
+    if (!userId) return Response.json({ error: 'userId is required' }, { status: 400 });
+
+    await base44.asServiceRole.entities.User.update(userId, { is_verified: true });
+    return Response.json({ ok: true, userId });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }
