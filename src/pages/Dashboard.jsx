@@ -13,6 +13,7 @@ import { format, parseISO, isToday, isPast, isThisWeek } from 'date-fns';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { isGraded, DEFAULT_GRADING_SCALE } from '@/lib/grading';
 import GradedList from '@/components/GradedList';
+import PullToRefresh from '@/components/PullToRefresh';
 
 const PRIORITY_BAR = { high: 'bg-red-500', medium: 'bg-amber-500', low: 'bg-emerald-500' };
 const PRIORITY_RANK = { high: 3, medium: 2, low: 1 };
@@ -308,6 +309,7 @@ export default function Dashboard() {
         </div>
       )}
 
+      <PullToRefresh onRefresh={() => runSync(false)}>
       {loading ? (
         <div className="flex justify-center py-16"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
       ) : filtered.length === 0 ? (
@@ -387,6 +389,7 @@ export default function Dashboard() {
           })}
         </div>
       )}
+      </PullToRefresh>
       </div>
       )}
 

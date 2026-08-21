@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Outlet, NavLink, useLocation } from 'react-router-dom';
+import { Outlet, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/lib/AuthContext';
-import { Calendar, LayoutDashboard, BookOpen, Settings as SettingsIcon, Moon, Sun, LogOut, GraduationCap, BarChart3, Flame } from 'lucide-react';
+import { Calendar, LayoutDashboard, BookOpen, Settings as SettingsIcon, Moon, Sun, LogOut, GraduationCap, BarChart3, Flame, ArrowLeft } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 
@@ -22,6 +22,9 @@ export default function Layout() {
   });
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+  const showBack = location.pathname !== '/';
+  const bottomNav = navItems.filter((i) => i.to !== '/settings');
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', dark);
@@ -83,17 +86,28 @@ export default function Layout() {
       )}
 
       <div className="flex-1 md:ml-64 flex flex-col min-w-0">
-        <header className="h-16 md:hidden flex items-center px-4 border-b border-border bg-background sticky top-0 z-20">
-          <Button variant="ghost" size="icon" onClick={() => setMobileOpen(true)} aria-label="Open menu">
-            <span className="space-y-1 block">
-              <span className="block w-5 h-0.5 bg-current" />
-              <span className="block w-5 h-0.5 bg-current" />
-              <span className="block w-5 h-0.5 bg-current" />
-            </span>
-          </Button>
-          <span className="font-heading font-bold text-lg ml-2">Study Spot</span>
+        <header
+          className="md:hidden sticky top-0 z-20 bg-background border-b border-border"
+          style={{ paddingTop: 'env(safe-area-inset-top)' }}
+        >
+          <div className="h-16 flex items-center px-2 gap-1">
+            {showBack ? (
+              <Button variant="ghost" size="icon" onClick={() => navigate(-1)} aria-label="Go back">
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+            ) : (
+              <Button variant="ghost" size="icon" onClick={() => setMobileOpen(true)} aria-label="Open menu">
+                <span className="space-y-1 block">
+                  <span className="block w-5 h-0.5 bg-current" />
+                  <span className="block w-5 h-0.5 bg-current" />
+                  <span className="block w-5 h-0.5 bg-current" />
+                </span>
+              </Button>
+            )}
+            <span className="font-heading font-bold text-lg ml-1">Study Spot</span>
+          </div>
         </header>
-        <main className="flex-1 p-4 md:p-8 max-w-7xl w-full mx-auto">
+        <main className="flex-1 p-4 pb-24 md:p-8 md:pb-8 max-w-7xl w-full mx-auto overscroll-none">
           <AnimatePresence mode="wait">
             <motion.div
               key={location.pathname}
@@ -106,6 +120,30 @@ export default function Layout() {
             </motion.div>
           </AnimatePresence>
         </main>
+
+        <nav
+          className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-sidebar border-t border-sidebar-border"
+          style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+        >
+          <div className="flex">
+            {bottomNav.map((item) => (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                end={item.end}
+                className={({ isActive }) =>
+                  cn(
+                    'flex-1 flex flex-col items-center gap-1 py-2 text-xs',
+                    isActive ? 'text-primary' : 'text-muted-foreground'
+                  )
+                }
+              >
+                <item.icon className="h-5 w-5" />
+                {item.label}
+              </NavLink>
+            ))}
+          </div>
+        </nav>
       </div>
     </div>
   );

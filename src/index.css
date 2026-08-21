@@ -88,5 +88,12 @@
 
   body {
     @apply bg-background text-foreground font-body;
+    overscroll-behavior: none;
+  }
+
+  button,
+  nav a {
+    -webkit-user-select: none;
+    user-select: none;
   }
 }

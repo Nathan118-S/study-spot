@@ -3,8 +3,19 @@ import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, BookOpen, Loader2, Link2, Unlink, RefreshCw } from 'lucide-react';
+import { Calendar, BookOpen, Loader2, Link2, Unlink, RefreshCw, Trash2 } from 'lucide-react';
 import GradingScaleEditor from '@/components/GradingScaleEditor';
+import {
+  AlertDialog,
+  AlertDialogTrigger,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+  AlertDialogAction,
+} from '@/components/ui/alert-dialog';
 
 const CALENDAR_ID = '6a87a0a86ad979ee05f39b0c';
 const CLASSROOM_ID = '6a87a2e5f3be615b69035dcd';
@@ -14,6 +25,7 @@ export default function Settings() {
   const [status, setStatus] = useState({ calendar: false, classroom: false });
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   const check = useCallback(async () => {
     setLoading(true);
@@ -54,6 +66,17 @@ export default function Settings() {
       await check();
     } finally {
       setBusy(null);
+    }
+  };
+
+  const deleteAccount = async () => {
+    setDeleting(true);
+    try {
+      await base44.entities.Assignment.deleteMany({});
+      await base44.entities.Class.deleteMany({});
+      await base44.auth.logout();
+    } catch {
+      setDeleting(false);
     }
   };
 
@@ -122,6 +145,45 @@ export default function Settings() {
         <div className="rounded-lg border bg-card p-4">
           <p className="text-sm font-medium">{user?.full_name || 'User'}</p>
           <p className="text-sm text-muted-foreground">{user?.email}</p>
+        </div>
+      </section>
+
+      <section className="space-y-2">
+        <h2 className="font-semibold text-lg text-destructive">Danger Zone</h2>
+        <div className="rounded-lg border border-destructive/40 bg-card p-4 flex items-center justify-between gap-4">
+          <div className="min-w-0">
+            <p className="text-sm font-medium">Delete account</p>
+            <p className="text-xs text-muted-foreground">
+              Removes your assignments and classes, then signs you out. This can't be undone.
+            </p>
+          </div>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="destructive" size="sm" disabled={deleting}>
+                {deleting ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Trash2 className="h-4 w-4 mr-1" />}
+                Delete
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete account?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This permanently deletes all your assignments and classes and signs you out. This action cannot be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  onClick={deleteAccount}
+                  disabled={deleting}
+                >
+                  {deleting ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : null}
+                  Delete
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       </section>
     </div>
