@@ -24,6 +24,7 @@ export default function AssignmentForm({ open, onOpenChange, assignment, classes
     due_date: '',
     priority: 'medium',
     type: 'homework',
+    points: '',
     notes: '',
   });
   const [saving, setSaving] = useState(false);
@@ -36,6 +37,7 @@ export default function AssignmentForm({ open, onOpenChange, assignment, classes
         due_date: toLocalInput(assignment.due_date),
         priority: assignment.priority || 'medium',
         type: assignment.type || 'homework',
+        points: assignment.points ?? '',
         notes: assignment.notes || '',
       });
     } else {
@@ -45,6 +47,7 @@ export default function AssignmentForm({ open, onOpenChange, assignment, classes
         due_date: '',
         priority: 'medium',
         type: 'homework',
+        points: '',
         notes: '',
       });
     }
@@ -62,6 +65,7 @@ export default function AssignmentForm({ open, onOpenChange, assignment, classes
         due_date: form.due_date ? new Date(form.due_date).toISOString() : null,
         priority: form.priority,
         type: form.type,
+        points: form.points === '' ? 0 : Number(form.points),
         notes: form.notes,
       };
       if (assignment) {
@@ -147,6 +151,17 @@ export default function AssignmentForm({ open, onOpenChange, assignment, classes
                 </SelectContent>
               </Select>
             </div>
+          </div>
+          <div className="space-y-1.5">
+            <Label>Points (max)</Label>
+            <Input
+              type="number"
+              min={0}
+              step={0.5}
+              value={form.points}
+              onChange={(e) => setForm({ ...form, points: e.target.value })}
+              placeholder="0"
+            />
           </div>
           <div className="space-y-1.5">
             <Label>Notes</Label>
