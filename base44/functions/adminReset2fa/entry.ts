@@ -12,6 +12,7 @@ export default async function(req) {
     await base44.asServiceRole.entities.User.update(userId, {
       totp_secret: null,
       twofa_enabled: false,
+      twofa_method: null,
     });
     return Response.json({ ok: true });
   } catch (error) {

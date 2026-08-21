@@ -17,6 +17,16 @@
       "type": "boolean",
       "description": "Whether two-factor authentication is enabled for this user",
       "default": false
+    },
+    "twofa_method": {
+      "type": "string",
+      "description": "Active two-factor method: totp, email, or passkey",
+      "enum": [
+        "totp",
+        "email",
+        "passkey"
+      ],
+      "default": null
     }
   },
   "required": [
