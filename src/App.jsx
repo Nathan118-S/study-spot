@@ -15,6 +15,7 @@ import ResetPassword from '@/pages/ResetPassword';
 import Dashboard from '@/pages/Dashboard';
 import Classes from '@/pages/Classes';
 import CalendarView from '@/pages/CalendarView';
+import Analytics from '@/pages/Analytics';
 import Settings from '@/pages/Settings';
 
 const AuthenticatedApp = () => {
@@ -52,6 +53,7 @@ const AuthenticatedApp = () => {
           <Route path="/" element={<Dashboard />} />
           <Route path="/classes" element={<Classes />} />
           <Route path="/calendar" element={<CalendarView />} />
+          <Route path="/analytics" element={<Analytics />} />
           <Route path="/settings" element={<Settings />} />
         </Route>
       </Route>
