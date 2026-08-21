@@ -11,8 +11,16 @@ export default async function(req) {
     const userId = body?.userId;
     if (!userId) return Response.json({ error: 'userId is required' }, { status: 400 });
 
-    await base44.asServiceRole.entities.User.update(userId, { is_verified: true });
-    return Response.json({ ok: true, userId });
+    // The platform enforces email verification at login and does not expose a
+    // way for an admin to mark another user's email as verified (the is_verified
+    // field is system-managed and read-only via entity updates). The most
+    // useful action an admin can take is to trigger a fresh verification email
+    // so the user can verify themselves and sign in.
+    const target = await base44.asServiceRole.entities.User.get(userId);
+    if (!target) return Response.json({ error: 'User not found' }, { status: 404 });
+
+    await base44.auth.resendOtp(target.email);
+    return Response.json({ ok: true, email: target.email });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }

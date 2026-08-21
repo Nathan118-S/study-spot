@@ -9,7 +9,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import SheetSelect from '@/components/SheetSelect';
-import { KeyRound, Trash2, Flame, ShieldOff, BadgeCheck, GitMerge } from 'lucide-react';
+import { KeyRound, Trash2, Flame, ShieldOff, Mail, GitMerge } from 'lucide-react';
 
 export default function UserManageDialog({
   open, onOpenChange, user: u, currentUser, busy,
@@ -58,7 +58,7 @@ export default function UserManageDialog({
             </Button>
             {!u.is_verified && (
               <Button size="sm" variant="outline" onClick={() => onVerifyUser(u)} disabled={busy === u.id} className="h-11 md:h-9">
-                <BadgeCheck className="h-4 w-4 mr-1" /> Verify user
+                <Mail className="h-4 w-4 mr-1" /> Resend verification
               </Button>
             )}
             <Button size="sm" variant="outline" onClick={() => onMerge(u)} disabled={busy === u.id || isSelf} className="h-11 md:h-9">

@@ -98,8 +98,7 @@ export default function Admin() {
     setBusy(u.id);
     try {
       await base44.functions.invoke('adminVerifyUser', { userId: u.id });
-      setUsers((prev) => prev.map((x) => (x.id === u.id ? { ...x, is_verified: true } : x)));
-      toast({ title: 'User verified', description: `${u.email} can now sign in.` });
+      toast({ title: 'Verification email sent', description: u.email });
     } catch (e) {
       toast({ title: 'Failed', description: e.message, variant: 'destructive' });
     } finally {
