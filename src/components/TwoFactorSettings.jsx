@@ -18,7 +18,7 @@ import { ShieldCheck, Loader2, Copy, Check, KeyRound } from 'lucide-react';
 export default function TwoFactorSettings() {
   const { user, checkUserAuth } = useAuth();
   const { toast } = useToast();
-  const enabled = !!user?.data?.twofa_enabled;
+  const enabled = !!user?.twofa_enabled;
 
   const [setupOpen, setSetupOpen] = useState(false);
   const [disableOpen, setDisableOpen] = useState(false);

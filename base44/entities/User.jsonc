@@ -7,6 +7,16 @@
         "admin",
         "user"
       ]
+    },
+    "totp_secret": {
+      "type": "string",
+      "description": "TOTP shared secret for two-factor authentication (base32)",
+      "default": null
+    },
+    "twofa_enabled": {
+      "type": "boolean",
+      "description": "Whether two-factor authentication is enabled for this user",
+      "default": false
     }
   },
   "required": [

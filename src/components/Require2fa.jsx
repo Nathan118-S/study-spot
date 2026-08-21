@@ -5,7 +5,7 @@ import { useAuth } from '@/lib/AuthContext';
 export default function Require2fa() {
   const { user } = useAuth();
   const verified = sessionStorage.getItem('cf-2fa-verified') === '1';
-  if (user?.data?.twofa_enabled && !verified) {
+  if (user?.twofa_enabled && !verified) {
     return <Navigate to="/verify-2fa" replace />;
   }
   return <Outlet />;

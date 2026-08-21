@@ -17,7 +17,7 @@ import {
   AlertDialogAction,
 } from '@/components/ui/alert-dialog';
 import SheetSelect from '@/components/SheetSelect';
-import { Loader2, KeyRound, Trash2, Flame, ShieldCheck, RefreshCw } from 'lucide-react';
+import { Loader2, KeyRound, Trash2, Flame, ShieldCheck, RefreshCw, ShieldOff } from 'lucide-react';
 
 export default function Admin() {
   const { user, isLoadingAuth } = useAuth();
@@ -81,6 +81,19 @@ export default function Admin() {
         title: 'Streak restored',
         description: `${res.data.restored} overdue assignment(s) marked complete.`,
       });
+    } catch (e) {
+      toast({ title: 'Failed', description: e.message, variant: 'destructive' });
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const reset2fa = async (u) => {
+    setBusy(u.id);
+    try {
+      await base44.functions.invoke('adminReset2fa', { userId: u.id });
+      setUsers((prev) => prev.map((x) => (x.id === u.id ? { ...x, twofa_enabled: false } : x)));
+      toast({ title: '2FA reset', description: `${u.email} can sign in without a code.` });
     } catch (e) {
       toast({ title: 'Failed', description: e.message, variant: 'destructive' });
     } finally {
@@ -153,6 +166,27 @@ export default function Admin() {
                 <Button size="sm" variant="outline" onClick={() => restoreStreak(u)} disabled={busy === u.id} className="h-11 md:h-9">
                   <Flame className="h-4 w-4 mr-1" /> Restore streak
                 </Button>
+                {u.twofa_enabled && (
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button size="sm" variant="outline" disabled={busy === u.id} className="h-11 md:h-9">
+                        <ShieldOff className="h-4 w-4 mr-1" /> Reset 2FA
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Reset 2FA for {u.email}?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This clears their authenticator setup so they can sign in without a code. They can re-enable 2FA from Settings.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel disabled={busy === u.id}>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => reset2fa(u)} disabled={busy === u.id}>Reset</AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                )}
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
                     <Button size="sm" variant="destructive" disabled={busy === u.id || u.id === user.id} className="h-11 md:h-9">

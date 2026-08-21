@@ -13,6 +13,7 @@ export default async function(req) {
         email: u.email,
         full_name: u.full_name,
         role: u.role,
+        twofa_enabled: !!u.twofa_enabled,
         created_date: u.created_date,
       })),
     });

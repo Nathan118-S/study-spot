@@ -9,7 +9,7 @@ export default async function(req) {
     const body = await req.json();
     const { code } = body || {};
     if (!code) return Response.json({ error: 'Code required' }, { status: 400 });
-    const secret = user && user.data && user.data.totp_secret;
+    const secret = user && user.totp_secret;
     if (!secret) return Response.json({ error: '2FA not configured' }, { status: 400 });
     const ok = await verifyTotp(secret, code);
     if (!ok) return Response.json({ error: 'Invalid code' }, { status: 400 });
