@@ -137,7 +137,7 @@ export default function StudyTimer({ assignments = [], classes = [] }) {
       </div>
 
       <div className="flex flex-col sm:flex-row gap-4 items-center">
-        <div className="relative flex items-center justify-center w-40 h-40 shrink-0">
+        <div className="relative flex items-center justify-center w-28 h-28 shrink-0">
           <svg className="absolute inset-0 -rotate-90" viewBox="0 0 100 100">
             <circle cx="50" cy="50" r="44" fill="none" stroke="hsl(var(--muted))" strokeWidth="6" />
             <circle
@@ -150,8 +150,8 @@ export default function StudyTimer({ assignments = [], classes = [] }) {
             />
           </svg>
           <div className="text-center">
-            <PhaseIcon className={cn('h-5 w-5 mx-auto mb-1', PHASES[phase].accent)} />
-            <p className="text-3xl font-bold tabular-nums">{fmt(secondsLeft)}</p>
+            <PhaseIcon className={cn('h-4 w-4 mx-auto mb-0.5', PHASES[phase].accent)} />
+            <p className="text-2xl font-bold tabular-nums">{fmt(secondsLeft)}</p>
           </div>
         </div>
 
