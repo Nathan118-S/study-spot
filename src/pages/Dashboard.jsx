@@ -4,7 +4,7 @@ import { useAuth } from '@/lib/AuthContext';
 import AssignmentForm from '@/components/AssignmentForm';
 import AssignmentDetail from '@/components/AssignmentDetail';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import SheetSelect from '@/components/SheetSelect';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Plus, RefreshCw, Trash2, Pencil, AlertTriangle, Loader2, Inbox, CheckSquare } from 'lucide-react';
@@ -98,14 +98,25 @@ export default function Dashboard() {
   }, [user, runSync]);
 
   const toggleComplete = async (a) => {
-    await base44.entities.Assignment.update(a.id, { completed: !a.completed });
-    setAssignments((prev) => prev.map((x) => (x.id === a.id ? { ...x, completed: !x.completed } : x)));
+    const prev = assignments;
+    const next = !a.completed;
+    setAssignments((p) => p.map((x) => (x.id === a.id ? { ...x, completed: next } : x)));
+    try {
+      await base44.entities.Assignment.update(a.id, { completed: next });
+    } catch {
+      setAssignments(prev);
+    }
   };
 
   const remove = async (a) => {
-    await base44.entities.Assignment.delete(a.id);
-    setAssignments((prev) => prev.filter((x) => x.id !== a.id));
+    const prev = assignments;
+    setAssignments((p) => p.filter((x) => x.id !== a.id));
     setDetail(null);
+    try {
+      await base44.entities.Assignment.delete(a.id);
+    } catch {
+      setAssignments(prev);
+    }
   };
 
   const applyUpdate = (updated) => {
@@ -124,9 +135,14 @@ export default function Dashboard() {
   const bulkApply = async (patch) => {
     const ids = Object.keys(selected);
     if (!ids.length) return;
-    await base44.entities.Assignment.bulkUpdate(ids.map((id) => ({ id, ...patch })));
-    setAssignments((prev) => prev.map((a) => (selected[a.id] ? { ...a, ...patch } : a)));
+    const prev = assignments;
+    setAssignments((p) => p.map((a) => (selected[a.id] ? { ...a, ...patch } : a)));
     setSelected({});
+    try {
+      await base44.entities.Assignment.bulkUpdate(ids.map((id) => ({ id, ...patch })));
+    } catch {
+      setAssignments(prev);
+    }
   };
 
   const openEditFromDetail = (a) => {
@@ -190,11 +206,12 @@ export default function Dashboard() {
           <p className="text-muted-foreground text-sm">All your assignments, synced and manual, in one place.</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={() => runSync(false)} disabled={syncing}>
+          <Button variant="outline" className="h-11 md:h-9" onClick={() => runSync(false)} disabled={syncing}>
             {syncing ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
             Sync Now
           </Button>
           <Button
+            className="h-11 md:h-9"
             onClick={() => {
               setEditing(null);
               setShowForm(true);
@@ -227,42 +244,44 @@ export default function Dashboard() {
       ) : (
       <div className="space-y-4 mt-4">
       <div className="flex flex-wrap gap-2 items-center">
-        <Select value={filters.class} onValueChange={(v) => setFilters({ ...filters, class: v })}>
-          <SelectTrigger className="w-[150px]"><SelectValue placeholder="Class" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All classes</SelectItem>
-            {classes.map((c) => (
-              <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select value={filters.due} onValueChange={(v) => setFilters({ ...filters, due: v })}>
-          <SelectTrigger className="w-[150px]"><SelectValue placeholder="Due" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All dates</SelectItem>
-            <SelectItem value="overdue">Overdue</SelectItem>
-            <SelectItem value="today">Due today</SelectItem>
-            <SelectItem value="week">This week</SelectItem>
-          </SelectContent>
-        </Select>
-        <Select value={filters.priority} onValueChange={(v) => setFilters({ ...filters, priority: v })}>
-          <SelectTrigger className="w-[140px]"><SelectValue placeholder="Priority" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All priorities</SelectItem>
-            <SelectItem value="high">High</SelectItem>
-            <SelectItem value="medium">Medium</SelectItem>
-            <SelectItem value="low">Low</SelectItem>
-          </SelectContent>
-        </Select>
-        <Select value={filters.type} onValueChange={(v) => setFilters({ ...filters, type: v })}>
-          <SelectTrigger className="w-[150px]"><SelectValue placeholder="Type" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All types</SelectItem>
-            {Object.keys(TYPE_LABEL).map((t) => (
-              <SelectItem key={t} value={t}>{TYPE_LABEL[t]}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <SheetSelect
+          value={filters.class}
+          onValueChange={(v) => setFilters({ ...filters, class: v })}
+          placeholder="Class"
+          triggerClassName="w-[150px]"
+          options={[{ value: 'all', label: 'All classes' }, ...classes.map((c) => ({ value: c.id, label: c.name }))]}
+        />
+        <SheetSelect
+          value={filters.due}
+          onValueChange={(v) => setFilters({ ...filters, due: v })}
+          placeholder="Due"
+          triggerClassName="w-[150px]"
+          options={[
+            { value: 'all', label: 'All dates' },
+            { value: 'overdue', label: 'Overdue' },
+            { value: 'today', label: 'Due today' },
+            { value: 'week', label: 'This week' },
+          ]}
+        />
+        <SheetSelect
+          value={filters.priority}
+          onValueChange={(v) => setFilters({ ...filters, priority: v })}
+          placeholder="Priority"
+          triggerClassName="w-[140px]"
+          options={[
+            { value: 'all', label: 'All priorities' },
+            { value: 'high', label: 'High' },
+            { value: 'medium', label: 'Medium' },
+            { value: 'low', label: 'Low' },
+          ]}
+        />
+        <SheetSelect
+          value={filters.type}
+          onValueChange={(v) => setFilters({ ...filters, type: v })}
+          placeholder="Type"
+          triggerClassName="w-[150px]"
+          options={[{ value: 'all', label: 'All types' }, ...Object.keys(TYPE_LABEL).map((t) => ({ value: t, label: TYPE_LABEL[t] }))]}
+        />
         <div className="ml-auto flex items-center gap-2">
           <Button
             variant={selectMode ? 'default' : 'outline'}
@@ -272,28 +291,32 @@ export default function Dashboard() {
             <CheckSquare className="h-4 w-4 mr-1" /> Select
           </Button>
           <span className="text-xs text-muted-foreground">Sort</span>
-          <Select value={sort} onValueChange={setSort}>
-            <SelectTrigger className="w-[160px]"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="soonest">Soonest due</SelectItem>
-              <SelectItem value="priority">Highest priority</SelectItem>
-              <SelectItem value="class">Class name</SelectItem>
-            </SelectContent>
-          </Select>
+          <SheetSelect
+            value={sort}
+            onValueChange={setSort}
+            triggerClassName="w-[160px]"
+            options={[
+              { value: 'soonest', label: 'Soonest due' },
+              { value: 'priority', label: 'Highest priority' },
+              { value: 'class', label: 'Class name' },
+            ]}
+          />
         </div>
       </div>
 
       {selectMode && selectedCount > 0 && (
         <div className="sticky top-2 z-10 flex flex-wrap items-center gap-2 rounded-lg border bg-card p-3 shadow-sm">
           <span className="text-sm font-medium">{selectedCount} selected</span>
-          <Select onValueChange={(v) => bulkApply({ priority: v })}>
-            <SelectTrigger className="w-[150px]"><SelectValue placeholder="Set priority" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="high">High</SelectItem>
-              <SelectItem value="medium">Medium</SelectItem>
-              <SelectItem value="low">Low</SelectItem>
-            </SelectContent>
-          </Select>
+          <SheetSelect
+            onValueChange={(v) => bulkApply({ priority: v })}
+            placeholder="Set priority"
+            triggerClassName="w-[150px]"
+            options={[
+              { value: 'high', label: 'High' },
+              { value: 'medium', label: 'Medium' },
+              { value: 'low', label: 'Low' },
+            ]}
+          />
           <Button size="sm" onClick={() => bulkApply({ completed: true })}>Mark complete</Button>
           <Button size="sm" variant="outline" onClick={() => bulkApply({ completed: false })}>Mark incomplete</Button>
           <Button size="sm" variant="ghost" onClick={() => setSelected({})}>Clear</Button>

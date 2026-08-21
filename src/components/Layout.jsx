@@ -18,7 +18,9 @@ export default function Layout() {
   const { user, logout } = useAuth();
   const [dark, setDark] = useState(() => {
     if (typeof window === 'undefined') return false;
-    return localStorage.getItem('cf-theme') === 'dark';
+    const stored = localStorage.getItem('cf-theme');
+    if (stored) return stored === 'dark';
+    return window.matchMedia('(prefers-color-scheme: dark)').matches;
   });
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();

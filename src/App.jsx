@@ -12,11 +12,20 @@ import Login from '@/pages/Login';
 import Register from '@/pages/Register';
 import ForgotPassword from '@/pages/ForgotPassword';
 import ResetPassword from '@/pages/ResetPassword';
-import Dashboard from '@/pages/Dashboard';
-import Classes from '@/pages/Classes';
-import CalendarView from '@/pages/CalendarView';
-import Analytics from '@/pages/Analytics';
-import Settings from '@/pages/Settings';
+import { lazy, Suspense } from 'react';
+const Dashboard = lazy(() => import('@/pages/Dashboard'));
+const Classes = lazy(() => import('@/pages/Classes'));
+const CalendarView = lazy(() => import('@/pages/CalendarView'));
+const Analytics = lazy(() => import('@/pages/Analytics'));
+const Settings = lazy(() => import('@/pages/Settings'));
+
+function PageLoader() {
+  return (
+    <div className="flex items-center justify-center py-24">
+      <div className="w-8 h-8 border-4 border-slate-200 border-t-slate-800 rounded-full animate-spin"></div>
+    </div>
+  );
+}
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -50,11 +59,11 @@ const AuthenticatedApp = () => {
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
         <Route element={<Layout />}>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/classes" element={<Classes />} />
-          <Route path="/calendar" element={<CalendarView />} />
-          <Route path="/analytics" element={<Analytics />} />
-          <Route path="/settings" element={<Settings />} />
+          <Route path="/" element={<Suspense fallback={<PageLoader />}><Dashboard /></Suspense>} />
+          <Route path="/classes" element={<Suspense fallback={<PageLoader />}><Classes /></Suspense>} />
+          <Route path="/calendar" element={<Suspense fallback={<PageLoader />}><CalendarView /></Suspense>} />
+          <Route path="/analytics" element={<Suspense fallback={<PageLoader />}><Analytics /></Suspense>} />
+          <Route path="/settings" element={<Suspense fallback={<PageLoader />}><Settings /></Suspense>} />
         </Route>
       </Route>
       <Route path="*" element={<PageNotFound />} />

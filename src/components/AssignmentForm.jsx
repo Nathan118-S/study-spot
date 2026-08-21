@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import SheetSelect from '@/components/SheetSelect';
 import { base44 } from '@/api/base44Client';
 
 const PRIORITIES = ['low', 'medium', 'high'];
@@ -98,18 +98,12 @@ export default function AssignmentForm({ open, onOpenChange, assignment, classes
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <Label>Class / Course</Label>
-              <Select value={form.class_id} onValueChange={(v) => setForm({ ...form, class_id: v })}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select class" />
-                </SelectTrigger>
-                <SelectContent>
-                  {classes.map((c) => (
-                    <SelectItem key={c.id} value={c.id}>
-                      {c.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <SheetSelect
+                value={form.class_id}
+                onValueChange={(v) => setForm({ ...form, class_id: v })}
+                placeholder="Select class"
+                options={classes.map((c) => ({ value: c.id, label: c.name }))}
+              />
             </div>
             <div className="space-y-1.5">
               <Label>Due Date</Label>
@@ -123,33 +117,19 @@ export default function AssignmentForm({ open, onOpenChange, assignment, classes
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <Label>Priority</Label>
-              <Select value={form.priority} onValueChange={(v) => setForm({ ...form, priority: v })}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {PRIORITIES.map((p) => (
-                    <SelectItem key={p} value={p} className="capitalize">
-                      {p}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <SheetSelect
+                value={form.priority}
+                onValueChange={(v) => setForm({ ...form, priority: v })}
+                options={PRIORITIES.map((p) => ({ value: p, label: p[0].toUpperCase() + p.slice(1) }))}
+              />
             </div>
             <div className="space-y-1.5">
               <Label>Type</Label>
-              <Select value={form.type} onValueChange={(v) => setForm({ ...form, type: v })}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {TYPES.map((t) => (
-                    <SelectItem key={t} value={t} className="capitalize">
-                      {t}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <SheetSelect
+                value={form.type}
+                onValueChange={(v) => setForm({ ...form, type: v })}
+                options={TYPES.map((t) => ({ value: t, label: t[0].toUpperCase() + t.slice(1) }))}
+              />
             </div>
           </div>
           <div className="space-y-1.5">
@@ -174,10 +154,10 @@ export default function AssignmentForm({ open, onOpenChange, assignment, classes
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button variant="outline" className="h-11 md:h-9" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button onClick={save} disabled={saving || !form.title.trim()}>
+          <Button className="h-11 md:h-9" onClick={save} disabled={saving || !form.title.trim()}>
             {saving ? 'Saving...' : 'Save'}
           </Button>
         </DialogFooter>
