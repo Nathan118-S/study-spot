@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import SheetSelect from '@/components/SheetSelect';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
-import { Plus, RefreshCw, Trash2, Pencil, AlertTriangle, Loader2, Inbox, CheckSquare } from 'lucide-react';
+import { Plus, RefreshCw, Trash2, Pencil, AlertTriangle, Loader2, Inbox, CheckSquare, Timer } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, parseISO, isToday, isPast, isThisWeek } from 'date-fns';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -40,6 +40,7 @@ export default function Dashboard() {
   const [gradingScale, setGradingScale] = useState(DEFAULT_GRADING_SCALE);
   const [selectMode, setSelectMode] = useState(false);
   const [selected, setSelected] = useState({});
+  const [showTimer, setShowTimer] = useState(false);
 
   const load = useCallback(async () => {
     const [a, c] = await Promise.all([
@@ -210,6 +211,15 @@ export default function Dashboard() {
           <p className="text-muted-foreground text-sm">All your assignments, synced and manual, in one place.</p>
         </div>
         <div className="flex gap-2">
+          <Button
+            variant={showTimer ? 'default' : 'outline'}
+            size="icon"
+            className="h-11 w-11 md:h-9 md:w-9"
+            onClick={() => setShowTimer((s) => !s)}
+            title="Study timer"
+          >
+            <Timer className="h-4 w-4" />
+          </Button>
           <Button variant="outline" className="h-11 md:h-9" onClick={() => runSync(false)} disabled={syncing}>
             {syncing ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
             Sync Now
@@ -235,7 +245,7 @@ export default function Dashboard() {
         <StatCard label="Completed" value={stats.completed} accent="text-emerald-500" />
       </div>
 
-      <StudyTimer assignments={assignments} classes={classes} />
+      {showTimer && <StudyTimer assignments={assignments} classes={classes} />}
 
       <Tabs value={view} onValueChange={(v) => { setView(v); setSelected({}); }} className="w-full">
         <TabsList>
