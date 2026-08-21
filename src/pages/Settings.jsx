@@ -144,6 +144,17 @@ export default function Settings() {
           busy={busy === 'classroom'}
           onConnect={() => connect(CLASSROOM_ID, 'classroom')}
           onDisconnect={() => disconnect(CLASSROOM_ID, 'classroom')}
+          extra={status.classroom && !loading ? (
+            <div className="border-t pt-3 flex items-center justify-between gap-4">
+              <div className="min-w-0">
+                <p className="text-sm font-medium">Mark Classroom assignments done</p>
+                <p className="text-xs text-muted-foreground">
+                  When you complete a Google Classroom assignment here, turn it in on Classroom so your teacher sees it as done.
+                </p>
+              </div>
+              <Switch checked={syncCompletion} onCheckedChange={toggleSyncCompletion} disabled={savingSync} />
+            </div>
+          ) : null}
         />
       </section>
 
@@ -171,15 +182,6 @@ export default function Settings() {
           <Button variant="outline" onClick={check} disabled={loading}>
             <RefreshCw className="h-4 w-4 mr-2" /> Refresh status
           </Button>
-        </div>
-        <div className="rounded-lg border bg-card p-4 flex items-center justify-between gap-4">
-          <div className="min-w-0">
-            <p className="text-sm font-medium">Mark Classroom assignments done</p>
-            <p className="text-xs text-muted-foreground">
-              When you complete a Google Classroom assignment here, turn it in on Classroom so your teacher sees it as done.
-            </p>
-          </div>
-          <Switch checked={syncCompletion} onCheckedChange={toggleSyncCompletion} disabled={savingSync} />
         </div>
       </section>
 
@@ -290,9 +292,9 @@ export default function Settings() {
   );
 }
 
-function ConnectionRow({ icon, title, desc, loading, connected, busy, onConnect, onDisconnect }) {
+function ConnectionRow({ icon, title, desc, loading, connected, busy, onConnect, onDisconnect, extra }) {
   return (
-    <div className="rounded-lg border bg-card p-4 flex items-center justify-between gap-4">
+    <div className="rounded-lg border bg-card p-4 flex flex-col gap-4">
       <div className="flex items-start gap-3 min-w-0">
         <div className="mt-0.5">{icon}</div>
         <div className="min-w-0">
@@ -322,6 +324,7 @@ function ConnectionRow({ icon, title, desc, loading, connected, busy, onConnect,
           </Button>
         )}
       </div>
+      {extra}
     </div>
   );
 }
