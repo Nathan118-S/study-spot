@@ -28,7 +28,7 @@
     --chart-3: 197 37% 24%;
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
-    --radius: 0.5rem;
+    --radius: 1rem;
     --font-heading: ui-sans-serif, system-ui, sans-serif;
     --font-body: ui-sans-serif, system-ui, sans-serif;
     --font-display: ui-sans-serif, system-ui, sans-serif;
@@ -88,14 +88,14 @@
 
   body {
     @apply text-foreground font-body;
-    background: linear-gradient(160deg, #ecfeff 0%, #e0f2fe 40%, #bae6fd 100%);
+    background: linear-gradient(160deg, #7dd3fc 0%, #38bdf8 45%, #0284c7 100%);
     background-attachment: fixed;
     min-height: 100vh;
     position: relative;
   }
 
   .dark body {
-    background: linear-gradient(160deg, #082f49 0%, #0c4a6e 50%, #075985 100%);
+    background: linear-gradient(160deg, #0c4a6e 0%, #075985 50%, #0369a1 100%);
   }
 
   body::before {
