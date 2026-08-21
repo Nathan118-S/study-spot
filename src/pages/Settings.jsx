@@ -4,6 +4,7 @@ import { useAuth } from '@/lib/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Calendar, BookOpen, Loader2, Link2, Unlink, RefreshCw } from 'lucide-react';
+import GradingScaleEditor from '@/components/GradingScaleEditor';
 
 const CALENDAR_ID = '6a87a0a86ad979ee05f39b0c';
 const CLASSROOM_ID = '6a87a2e5f3be615b69035dcd';
@@ -106,6 +107,14 @@ export default function Settings() {
             <RefreshCw className="h-4 w-4 mr-2" /> Refresh status
           </Button>
         </div>
+      </section>
+
+      <section className="space-y-2">
+        <h2 className="font-semibold text-lg">Grading Scale</h2>
+        <p className="text-sm text-muted-foreground">
+          Set the minimum percentage for each letter grade. This is used to compute letter grades on graded assignments.
+        </p>
+        <GradingScaleEditor initialScale={user?.data?.grading_scale} />
       </section>
 
       <section className="space-y-2">

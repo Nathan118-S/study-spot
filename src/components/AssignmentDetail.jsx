@@ -10,6 +10,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Pencil, Trash2, AlertTriangle, CalendarClock, CheckCircle2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, parseISO, isPast } from 'date-fns';
+import { letterGrade } from '@/lib/grading';
+import { Input } from '@/components/ui/input';
 
 const PRIORITY_LABEL = { high: 'High', medium: 'Medium', low: 'Low' };
 const PRIORITY_BADGE = {
@@ -21,17 +23,27 @@ const TYPE_LABEL = {
   homework: 'Homework', project: 'Project', quiz: 'Quiz', test: 'Test', reading: 'Reading', other: 'Other',
 };
 const SOURCE_LABEL = { manual: 'Manual', google_calendar: 'Calendar', google_classroom: 'Classroom' };
+const GRADE_COLOR = {
+  A: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300',
+  B: 'bg-lime-100 text-lime-700 dark:bg-lime-900/40 dark:text-lime-300',
+  C: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300',
+  D: 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300',
+  F: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300',
+};
+const gradeColor = (l) => GRADE_COLOR[(l || '')[0]] || '';
 
 export default function AssignmentDetail({
-  open, onOpenChange, assignment, classes, onUpdated, onEdit, onDelete,
+  open, onOpenChange, assignment, classes, gradingScale, onUpdated, onEdit, onDelete,
 }) {
   const [progress, setProgress] = useState(0);
   const [notes, setNotes] = useState('');
+  const [score, setScore] = useState('');
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     setProgress(assignment?.progress ?? 0);
     setNotes(assignment?.notes ?? '');
+    setScore(assignment?.score ?? '');
   }, [assignment]);
 
   if (!assignment) return null;
@@ -45,6 +57,18 @@ export default function AssignmentDetail({
     try {
       await base44.entities.Assignment.update(assignment.id, { notes: value });
       onUpdated?.({ ...assignment, notes: value });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const persistScore = async (raw) => {
+    const value = raw === '' ? undefined : Number(raw);
+    if (raw !== '' && Number.isNaN(value)) return;
+    setSaving(true);
+    try {
+      await base44.entities.Assignment.update(assignment.id, { score: value });
+      onUpdated?.({ ...assignment, score: value });
     } finally {
       setSaving(false);
     }
@@ -151,6 +175,39 @@ export default function AssignmentDetail({
             />
           </div>
         </div>
+
+        {assignment.points > 0 && (
+          <div className="rounded-lg border p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium">Grade</span>
+              {letterGrade(assignment.score, assignment.points, gradingScale) && (
+                <Badge
+                  variant="outline"
+                  className={cn('text-base font-bold', gradeColor(letterGrade(assignment.score, assignment.points, gradingScale)))}
+                >
+                  {letterGrade(assignment.score, assignment.points, gradingScale)}
+                </Badge>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              <Input
+                type="number"
+                min={0}
+                max={assignment.points}
+                step={0.5}
+                value={score}
+                onChange={(e) => setScore(e.target.value)}
+                onBlur={(e) => persistScore(e.target.value)}
+                disabled={saving}
+                className="w-24"
+              />
+              <span className="text-sm text-muted-foreground">
+                / {assignment.points} pts
+                {typeof assignment.score === 'number' && ` · ${Math.round((assignment.score / assignment.points) * 100)}%`}
+              </span>
+            </div>
+          </div>
+        )}
 
         <div className="flex items-center justify-between pt-1">
           <label className="flex items-center gap-2 text-sm cursor-pointer">

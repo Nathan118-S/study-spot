@@ -10,6 +10,9 @@ import { Badge } from '@/components/ui/badge';
 import { Plus, RefreshCw, Trash2, Pencil, AlertTriangle, Loader2, Inbox } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, parseISO, isToday, isPast, isThisWeek } from 'date-fns';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { DEFAULT_GRADING_SCALE } from '@/lib/grading';
+import GradedList from '@/components/GradedList';
 
 const PRIORITY_BAR = { high: 'bg-red-500', medium: 'bg-amber-500', low: 'bg-emerald-500' };
 const PRIORITY_RANK = { high: 3, medium: 2, low: 1 };
@@ -31,6 +34,8 @@ export default function Dashboard() {
   const [detail, setDetail] = useState(null);
   const [filters, setFilters] = useState({ class: 'all', due: 'all', priority: 'all', type: 'all' });
   const [sort, setSort] = useState('soonest');
+  const [view, setView] = useState('all');
+  const [gradingScale, setGradingScale] = useState(DEFAULT_GRADING_SCALE);
 
   const load = useCallback(async () => {
     const [a, c] = await Promise.all([
@@ -39,6 +44,11 @@ export default function Dashboard() {
     ]);
     setAssignments(a);
     setClasses(c);
+    try {
+      const me = await base44.auth.me();
+      const gs = me?.data?.grading_scale;
+      if (gs && gs.length) setGradingScale(gs);
+    } catch {}
   }, []);
 
   useEffect(() => {
@@ -172,6 +182,12 @@ export default function Dashboard() {
         <StatCard label="Completed" value={stats.completed} accent="text-emerald-500" />
       </div>
 
+      <Tabs value={view} onValueChange={setView} className="w-full">
+        <TabsList>
+          <TabsTrigger value="all">All</TabsTrigger>
+          <TabsTrigger value="graded">Graded</TabsTrigger>
+        </TabsList>
+        <TabsContent value="all" className="space-y-4 mt-4">
       <div className="flex flex-wrap gap-2 items-center">
         <Select value={filters.class} onValueChange={(v) => setFilters({ ...filters, class: v })}>
           <SelectTrigger className="w-[150px]"><SelectValue placeholder="Class" /></SelectTrigger>
@@ -296,6 +312,12 @@ export default function Dashboard() {
           })}
         </div>
       )}
+        </TabsContent>
+
+        <TabsContent value="graded" className="mt-4">
+          <GradedList assignments={assignments} gradingScale={gradingScale} onSelect={setDetail} />
+        </TabsContent>
+      </Tabs>
 
       <AssignmentForm
         open={showForm}
@@ -310,6 +332,7 @@ export default function Dashboard() {
         onOpenChange={(o) => !o && setDetail(null)}
         assignment={detail}
         classes={classes}
+        gradingScale={gradingScale}
         onUpdated={applyUpdate}
         onEdit={openEditFromDetail}
         onDelete={remove}
