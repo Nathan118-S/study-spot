@@ -27,9 +27,8 @@ export default function Layout() {
   const navigate = useNavigate();
   const showBack = location.pathname !== '/';
   const bottomNav = navItems.filter((i) => i.to !== '/settings');
-  const items = user?.role === 'admin'
-    ? [...navItems, { to: '/admin', label: 'Admin', icon: ShieldCheck, end: false }]
-    : navItems;
+  const items = navItems;
+  const isAdmin = user?.role === 'admin';
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', dark);
@@ -77,6 +76,23 @@ export default function Layout() {
           ))}
         </nav>
         <div className="p-4 border-t border-sidebar-border space-y-3">
+          {isAdmin && (
+            <NavLink
+              to="/admin"
+              onClick={() => setMobileOpen(false)}
+              className={({ isActive }) =>
+                cn(
+                  'flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors',
+                  isActive
+                    ? 'bg-destructive/10 text-destructive'
+                    : 'text-destructive hover:bg-destructive/10'
+                )
+              }
+            >
+              <ShieldCheck className="h-5 w-5" />
+              Admin
+            </NavLink>
+          )}
           <Button variant="ghost" className="w-full justify-start" onClick={() => setDark((d) => !d)}>
             {dark ? <Sun className="h-5 w-5 mr-2" /> : <Moon className="h-5 w-5 mr-2" />}
             {dark ? 'Light mode' : 'Dark mode'}
