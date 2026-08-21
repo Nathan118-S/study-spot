@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
-import { Plus, RefreshCw, Trash2, Pencil, AlertTriangle, Loader2, Inbox } from 'lucide-react';
+import { Plus, RefreshCw, Trash2, Pencil, AlertTriangle, Loader2, Inbox, CheckSquare } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, parseISO, isToday, isPast, isThisWeek } from 'date-fns';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -36,6 +36,8 @@ export default function Dashboard() {
   const [sort, setSort] = useState('soonest');
   const [view, setView] = useState('unfinished');
   const [gradingScale, setGradingScale] = useState(DEFAULT_GRADING_SCALE);
+  const [selectMode, setSelectMode] = useState(false);
+  const [selected, setSelected] = useState({});
 
   const load = useCallback(async () => {
     const [a, c] = await Promise.all([
@@ -110,6 +112,22 @@ export default function Dashboard() {
     setDetail((d) => (d && d.id === updated.id ? updated : d));
   };
 
+  const toggleSelect = (id) =>
+    setSelected((prev) => {
+      const next = { ...prev };
+      if (next[id]) delete next[id];
+      else next[id] = true;
+      return next;
+    });
+
+  const bulkApply = async (patch) => {
+    const ids = Object.keys(selected);
+    if (!ids.length) return;
+    await base44.entities.Assignment.bulkUpdate(ids.map((id) => ({ id, ...patch })));
+    setAssignments((prev) => prev.map((a) => (selected[a.id] ? { ...a, ...patch } : a)));
+    setSelected({});
+  };
+
   const openEditFromDetail = (a) => {
     setDetail(null);
     setEditing(a);
@@ -152,6 +170,17 @@ export default function Dashboard() {
 
   const classColor = (id) => classes.find((c) => c.id === id)?.color || '#94a3b8';
 
+  const selectedCount = Object.keys(selected).length;
+  const allSelected = selectMode && filtered.length > 0 && filtered.every((a) => selected[a.id]);
+  const toggleSelectAll = () => {
+    if (allSelected) setSelected({});
+    else {
+      const next = {};
+      filtered.forEach((a) => { next[a.id] = true; });
+      setSelected(next);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
@@ -184,7 +213,7 @@ export default function Dashboard() {
         <StatCard label="Completed" value={stats.completed} accent="text-emerald-500" />
       </div>
 
-      <Tabs value={view} onValueChange={setView} className="w-full">
+      <Tabs value={view} onValueChange={(v) => { setView(v); setSelected({}); }} className="w-full">
         <TabsList>
           <TabsTrigger value="unfinished">Unfinished</TabsTrigger>
           <TabsTrigger value="completed">Completed</TabsTrigger>
@@ -234,6 +263,13 @@ export default function Dashboard() {
           </SelectContent>
         </Select>
         <div className="ml-auto flex items-center gap-2">
+          <Button
+            variant={selectMode ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => { setSelectMode((m) => !m); setSelected({}); }}
+          >
+            <CheckSquare className="h-4 w-4 mr-1" /> Select
+          </Button>
           <span className="text-xs text-muted-foreground">Sort</span>
           <Select value={sort} onValueChange={setSort}>
             <SelectTrigger className="w-[160px]"><SelectValue /></SelectTrigger>
@@ -245,6 +281,32 @@ export default function Dashboard() {
           </Select>
         </div>
       </div>
+
+      {selectMode && selectedCount > 0 && (
+        <div className="sticky top-2 z-10 flex flex-wrap items-center gap-2 rounded-lg border bg-card p-3 shadow-sm">
+          <span className="text-sm font-medium">{selectedCount} selected</span>
+          <Select onValueChange={(v) => bulkApply({ priority: v })}>
+            <SelectTrigger className="w-[150px]"><SelectValue placeholder="Set priority" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="high">High</SelectItem>
+              <SelectItem value="medium">Medium</SelectItem>
+              <SelectItem value="low">Low</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button size="sm" onClick={() => bulkApply({ completed: true })}>Mark complete</Button>
+          <Button size="sm" variant="outline" onClick={() => bulkApply({ completed: false })}>Mark incomplete</Button>
+          <Button size="sm" variant="ghost" onClick={() => setSelected({})}>Clear</Button>
+        </div>
+      )}
+
+      {selectMode && filtered.length > 0 && !loading && (
+        <div className="flex items-center gap-3 px-3 py-2 rounded-lg border bg-muted/40">
+          <Checkbox checked={allSelected} onCheckedChange={toggleSelectAll} />
+          <span className="text-sm text-muted-foreground">
+            {allSelected ? 'All selected' : 'Select all on this tab'}
+          </span>
+        </div>
+      )}
 
       {loading ? (
         <div className="flex justify-center py-16"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
@@ -265,6 +327,11 @@ export default function Dashboard() {
                   overdue && 'border-red-500/60 bg-red-500/5'
                 )}
               >
+                {selectMode && (
+                  <div className="flex items-center pl-3">
+                    <Checkbox checked={!!selected[a.id]} onCheckedChange={() => toggleSelect(a.id)} />
+                  </div>
+                )}
                 <div className={cn('w-1.5 shrink-0', PRIORITY_BAR[a.priority])} />
                 <div className="flex items-center px-3">
                   <Checkbox checked={!!a.completed} onCheckedChange={() => toggleComplete(a)} />
