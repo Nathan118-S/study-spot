@@ -9,6 +9,7 @@ import TwoFactorSettings from '@/components/TwoFactorSettings';
 import BlackboardConnection from '@/components/BlackboardConnection';
 import ReminderSettings from '@/components/ReminderSettings';
 import DataExport from '@/components/DataExport';
+import { Switch } from '@/components/ui/switch';
 import {
   AlertDialog,
   AlertDialogTrigger,
@@ -31,6 +32,20 @@ export default function Settings() {
   const [busy, setBusy] = useState(null);
   const [deleting, setDeleting] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
+  const [syncCompletion, setSyncCompletion] = useState(user?.data?.sync_completion_to_classroom !== false);
+  const [savingSync, setSavingSync] = useState(false);
+
+  const toggleSyncCompletion = async (checked) => {
+    setSyncCompletion(checked);
+    setSavingSync(true);
+    try {
+      await base44.auth.updateMe({ sync_completion_to_classroom: checked });
+    } catch {
+      setSyncCompletion(!checked);
+    } finally {
+      setSavingSync(false);
+    }
+  };
 
   const check = useCallback(async () => {
     setLoading(true);
@@ -156,6 +171,15 @@ export default function Settings() {
           <Button variant="outline" onClick={check} disabled={loading}>
             <RefreshCw className="h-4 w-4 mr-2" /> Refresh status
           </Button>
+        </div>
+        <div className="rounded-lg border bg-card p-4 flex items-center justify-between gap-4">
+          <div className="min-w-0">
+            <p className="text-sm font-medium">Mark Classroom assignments done</p>
+            <p className="text-xs text-muted-foreground">
+              When you complete a Google Classroom assignment here, turn it in on Classroom so your teacher sees it as done.
+            </p>
+          </div>
+          <Switch checked={syncCompletion} onCheckedChange={toggleSyncCompletion} disabled={savingSync} />
         </div>
       </section>
 

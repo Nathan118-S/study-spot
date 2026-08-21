@@ -108,6 +108,9 @@ export default function Dashboard() {
     setAssignments((p) => p.map((x) => (x.id === a.id ? { ...x, completed: next } : x)));
     try {
       await base44.entities.Assignment.update(a.id, { completed: next });
+      if (next && a.source === 'google_classroom' && a.external_id && user?.data?.sync_completion_to_classroom !== false) {
+        base44.functions.invoke('syncCompletionToClassroom', { assignment_id: a.id }).catch(() => {});
+      }
     } catch {
       setAssignments(prev);
     }
