@@ -21,7 +21,7 @@ const PRIORITY_LABEL = { high: 'High', medium: 'Medium', low: 'Low' };
 const TYPE_LABEL = {
   homework: 'Homework', project: 'Project', quiz: 'Quiz', test: 'Test', reading: 'Reading', other: 'Other',
 };
-const SOURCE_LABEL = { manual: 'Manual', google_calendar: 'Calendar', google_classroom: 'Classroom' };
+const SOURCE_LABEL = { manual: 'Manual', google_calendar: 'Calendar', google_classroom: 'Classroom', blackboard: 'Blackboard' };
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -67,15 +67,18 @@ export default function Dashboard() {
       setSyncing(true);
       if (!silent) setSyncMsg('Syncing...');
       try {
-        const [calRes, clsRes] = await Promise.allSettled([
+        const [calRes, clsRes, bbRes] = await Promise.allSettled([
           base44.functions.invoke('syncGoogleCalendar', {}),
           base44.functions.invoke('syncGoogleClassroom', {}),
+          base44.functions.invoke('syncBlackboard', {}),
         ]);
         const parts = [];
         if (calRes.status === 'fulfilled') parts.push(`Calendar: ${calRes.value.data?.imported ?? 0} new`);
         else parts.push('Calendar: not connected');
         if (clsRes.status === 'fulfilled') parts.push(`Classroom: ${clsRes.value.data?.imported ?? 0} new`);
         else parts.push('Classroom: not connected');
+        if (bbRes.status === 'fulfilled') parts.push(`Blackboard: ${bbRes.value.data?.imported ?? 0} new`);
+        else parts.push('Blackboard: not connected');
         if (!silent) setSyncMsg(parts.join(' · '));
         await load();
         await base44.auth.updateMe({ last_sync: new Date().toISOString() });

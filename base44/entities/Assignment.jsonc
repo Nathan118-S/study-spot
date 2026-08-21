@@ -48,7 +48,8 @@
       "enum": [
         "manual",
         "google_calendar",
-        "google_classroom"
+        "google_classroom",
+        "blackboard"
       ],
       "default": "manual"
     },

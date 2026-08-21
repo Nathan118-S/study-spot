@@ -21,6 +21,7 @@ export default async function(req) {
     return Response.json({
       calendar: await check(CALENDAR_ID),
       classroom: await check(CLASSROOM_ID),
+      blackboard: !!(user.data?.blackboard_access_token),
     });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });

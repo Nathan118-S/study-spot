@@ -21,6 +21,7 @@ const Analytics = lazy(() => import('@/pages/Analytics'));
 const Settings = lazy(() => import('@/pages/Settings'));
 const Admin = lazy(() => import('@/pages/Admin'));
 const Verify2FA = lazy(() => import('@/pages/Verify2FA'));
+const BlackboardCallback = lazy(() => import('@/pages/BlackboardCallback'));
 import Landing from '@/pages/Landing';
 
 function PageLoader() {
@@ -63,6 +64,7 @@ const AuthenticatedApp = () => {
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route element={<ProtectedRoute unauthenticatedElement={<Landing />} />}>
         <Route path="/verify-2fa" element={<Suspense fallback={<PageLoader />}><Verify2FA /></Suspense>} />
+        <Route path="/blackboard/callback" element={<Suspense fallback={<PageLoader />}><BlackboardCallback /></Suspense>} />
         <Route element={<Require2fa />}>
           <Route element={<Layout />}>
             <Route path="/" element={<Suspense fallback={<PageLoader />}><Dashboard /></Suspense>} />

@@ -17,7 +17,8 @@
       "type": "string",
       "enum": [
         "manual",
-        "google_classroom"
+        "google_classroom",
+        "blackboard"
       ],
       "default": "manual"
     },

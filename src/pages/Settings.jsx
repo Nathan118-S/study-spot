@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Calendar, BookOpen, Loader2, Link2, Unlink, RefreshCw, Trash2 } from 'lucide-react';
 import GradingScaleEditor from '@/components/GradingScaleEditor';
 import TwoFactorSettings from '@/components/TwoFactorSettings';
+import BlackboardConnection from '@/components/BlackboardConnection';
 import {
   AlertDialog,
   AlertDialogTrigger,
@@ -23,7 +24,7 @@ const CLASSROOM_ID = '6a87a2e5f3be615b69035dcd';
 
 export default function Settings() {
   const { user } = useAuth();
-  const [status, setStatus] = useState({ calendar: false, classroom: false });
+  const [status, setStatus] = useState({ calendar: false, classroom: false, blackboard: false });
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(null);
   const [deleting, setDeleting] = useState(false);
@@ -34,7 +35,7 @@ export default function Settings() {
       const res = await base44.functions.invoke('checkGoogleConnections', {});
       setStatus(res.data || { calendar: false, classroom: false });
     } catch {
-      setStatus({ calendar: false, classroom: false });
+      setStatus({ calendar: false, classroom: false, blackboard: false });
     } finally {
       setLoading(false);
     }
@@ -115,6 +116,18 @@ export default function Settings() {
           busy={busy === 'classroom'}
           onConnect={() => connect(CLASSROOM_ID, 'classroom')}
           onDisconnect={() => disconnect(CLASSROOM_ID, 'classroom')}
+        />
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="font-semibold text-lg">Blackboard</h2>
+        <p className="text-sm text-muted-foreground">
+          Connect your school's Blackboard Learn instance to import courses and due-dated gradebook items.
+        </p>
+        <BlackboardConnection
+          connected={status.blackboard}
+          instanceUrl={user?.data?.blackboard_instance_url}
+          onChanged={check}
         />
       </section>
 
