@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Outlet, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/lib/AuthContext';
-import { Calendar, LayoutDashboard, BookOpen, Settings as SettingsIcon, Moon, Sun, LogOut, GraduationCap, BarChart3, Flame, ArrowLeft } from 'lucide-react';
+import { Calendar, LayoutDashboard, BookOpen, Settings as SettingsIcon, Moon, Sun, LogOut, GraduationCap, BarChart3, Flame, ArrowLeft, ShieldCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 
@@ -27,6 +27,9 @@ export default function Layout() {
   const navigate = useNavigate();
   const showBack = location.pathname !== '/';
   const bottomNav = navItems.filter((i) => i.to !== '/settings');
+  const items = user?.role === 'admin'
+    ? [...navItems, { to: '/admin', label: 'Admin', icon: ShieldCheck, end: false }]
+    : navItems;
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', dark);
@@ -53,7 +56,7 @@ export default function Layout() {
           <span className="font-heading font-bold text-lg">Study Spot</span>
         </div>
         <nav className="flex-1 p-4 space-y-1">
-          {navItems.map((item) => (
+          {items.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
