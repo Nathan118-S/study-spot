@@ -1,5 +1,5 @@
 {
-  "name": "ClassFlow Task Manager",
+  "name": "Study Spot",
   "site": {
     "installCommand": "npm install",
     "buildCommand": "npm run build",

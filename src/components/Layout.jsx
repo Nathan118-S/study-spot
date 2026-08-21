@@ -38,7 +38,7 @@ export default function Layout() {
       >
         <div className="h-16 flex items-center gap-2 px-6 border-b border-sidebar-border">
           <GraduationCap className="h-7 w-7 text-primary" />
-          <span className="font-heading font-bold text-lg">Nathan Net Cloud Study</span>
+          <span className="font-heading font-bold text-lg">Study Spot</span>
         </div>
         <nav className="flex-1 p-4 space-y-1">
           {navItems.map((item) => (
@@ -91,7 +91,7 @@ export default function Layout() {
               <span className="block w-5 h-0.5 bg-current" />
             </span>
           </Button>
-          <span className="font-heading font-bold text-lg ml-2">ClassFlow</span>
+          <span className="font-heading font-bold text-lg ml-2">Study Spot</span>
         </header>
         <main className="flex-1 p-4 md:p-8 max-w-7xl w-full mx-auto">
           <AnimatePresence mode="wait">
