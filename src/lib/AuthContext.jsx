@@ -94,6 +94,21 @@ export const AuthProvider = ({ children }) => {
       // Now check if the user is authenticated
       setIsLoadingAuth(true);
       const currentUser = await base44.auth.me();
+      const invalidatedAt = currentUser?.data?.sessions_invalidated_at;
+      let sessionStart = localStorage.getItem('cf-session-start');
+      if (!sessionStart) {
+        sessionStart = new Date().toISOString();
+        localStorage.setItem('cf-session-start', sessionStart);
+      }
+      if (invalidatedAt && new Date(invalidatedAt) > new Date(sessionStart)) {
+        localStorage.removeItem('cf-session-start');
+        setIsLoadingAuth(false);
+        setIsAuthenticated(false);
+        setAuthChecked(true);
+        setAuthError({ type: 'auth_required', message: 'Authentication required' });
+        base44.auth.logout();
+        return;
+      }
       setUser(currentUser);
       setIsAuthenticated(true);
       setIsLoadingAuth(false);
@@ -116,6 +131,7 @@ export const AuthProvider = ({ children }) => {
 
   const logout = (shouldRedirect = true) => {
     sessionStorage.removeItem('cf-2fa-verified');
+    localStorage.removeItem('cf-session-start');
     setUser(null);
     setIsAuthenticated(false);
     

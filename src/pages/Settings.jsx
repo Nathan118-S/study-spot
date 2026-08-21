@@ -3,7 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, BookOpen, Loader2, Link2, Unlink, RefreshCw, Trash2 } from 'lucide-react';
+import { Calendar, BookOpen, Loader2, Link2, Unlink, RefreshCw, Trash2, LogOut } from 'lucide-react';
 import GradingScaleEditor from '@/components/GradingScaleEditor';
 import TwoFactorSettings from '@/components/TwoFactorSettings';
 import BlackboardConnection from '@/components/BlackboardConnection';
@@ -23,11 +23,12 @@ const CALENDAR_ID = '6a87a0a86ad979ee05f39b0c';
 const CLASSROOM_ID = '6a87a2e5f3be615b69035dcd';
 
 export default function Settings() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const [status, setStatus] = useState({ calendar: false, classroom: false, blackboard: false });
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(null);
   const [deleting, setDeleting] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
 
   const check = useCallback(async () => {
     setLoading(true);
@@ -79,6 +80,16 @@ export default function Settings() {
       await base44.auth.logout();
     } catch {
       setDeleting(false);
+    }
+  };
+
+  const logoutAllDevices = async () => {
+    setLoggingOut(true);
+    try {
+      await base44.auth.updateMe({ sessions_invalidated_at: new Date().toISOString() });
+      logout();
+    } catch {
+      setLoggingOut(false);
     }
   };
 
@@ -169,6 +180,37 @@ export default function Settings() {
 
       <section className="space-y-2">
         <h2 className="font-semibold text-lg text-destructive">Danger Zone</h2>
+        <div className="rounded-lg border border-destructive/40 bg-card p-4 flex items-center justify-between gap-4">
+          <div className="min-w-0">
+            <p className="text-sm font-medium">Log out of all devices</p>
+            <p className="text-xs text-muted-foreground">
+              Signs out this device and any other devices currently logged into your account.
+            </p>
+          </div>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="outline" size="sm" disabled={loggingOut}>
+                {loggingOut ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <LogOut className="h-4 w-4 mr-1" />}
+                Log out all
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Log out of all devices?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  You'll be signed out here, and any other device signed into your account will be signed out the next time it opens the app.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel disabled={loggingOut}>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={logoutAllDevices} disabled={loggingOut}>
+                  {loggingOut ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : null}
+                  Log out all
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
         <div className="rounded-lg border border-destructive/40 bg-card p-4 flex items-center justify-between gap-4">
           <div className="min-w-0">
             <p className="text-sm font-medium">Delete account</p>
