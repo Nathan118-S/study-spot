@@ -14,7 +14,7 @@ const features = [
   {
     icon: BookOpen,
     title: 'Google Classroom',
-    description: 'Pull coursework and due dates straight from Google Classroom, with deduped entries.',
+    description: 'Pull coursework and due dates straight from Google Classroom.',
   },
   {
     icon: BarChart3,
