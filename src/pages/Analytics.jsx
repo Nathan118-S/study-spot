@@ -123,7 +123,7 @@ function StatusBox({ verified }) {
         <p className="font-medium text-amber-700 dark:text-amber-300">Unverified</p>
         <p className="text-sm text-muted-foreground">
           Google Classroom is not connected. You can continue with streaks based on your manual
-          classes, but coursework won't sync automatically.
+          classes, but your streak can not be verified.
         </p>
       </div>
       <Button asChild variant="outline" size="sm" className="shrink-0">
