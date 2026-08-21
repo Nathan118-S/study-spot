@@ -18,7 +18,7 @@ const features = [
   },
   {
     icon: BarChart3,
-    title: 'Unified Dashboard',
+    title: 'Dashboard',
     description: 'Every assignment in one filterable, sortable view — by class, priority, type, or due date.',
   },
   {
