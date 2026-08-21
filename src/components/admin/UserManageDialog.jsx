@@ -64,27 +64,25 @@ export default function UserManageDialog({
             <Button size="sm" variant="outline" onClick={() => onMerge(u)} disabled={busy === u.id || isSelf} className="h-11 md:h-9">
               <GitMerge className="h-4 w-4 mr-1" /> Merge
             </Button>
-            {u.twofa_enabled && (
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button size="sm" variant="outline" disabled={busy === u.id} className="h-11 md:h-9">
-                    <ShieldOff className="h-4 w-4 mr-1" /> Reset 2FA
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Reset 2FA for {u.email}?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      This clears their authenticator setup so they can sign in without a code. They can re-enable 2FA from Settings.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel disabled={busy === u.id}>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={() => onReset2fa(u)} disabled={busy === u.id}>Reset</AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            )}
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button size="sm" variant="outline" disabled={busy === u.id} className="h-11 md:h-9">
+                  <ShieldOff className="h-4 w-4 mr-1" /> Reset 2FA
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Reset 2FA for {u.email}?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This clears their second-factor setup so they can sign in without a code. They can re-enable 2FA from Settings.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel disabled={busy === u.id}>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={() => onReset2fa(u)} disabled={busy === u.id}>Reset</AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button size="sm" variant="destructive" disabled={busy === u.id || isSelf} className="h-11 md:h-9">
