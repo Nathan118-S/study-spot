@@ -14,6 +14,7 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { isGraded, DEFAULT_GRADING_SCALE } from '@/lib/grading';
 import GradedList from '@/components/GradedList';
 import PullToRefresh from '@/components/PullToRefresh';
+import StudyTimer from '@/components/StudyTimer';
 
 const PRIORITY_BAR = { high: 'bg-red-500', medium: 'bg-amber-500', low: 'bg-emerald-500' };
 const PRIORITY_RANK = { high: 3, medium: 2, low: 1 };
@@ -233,6 +234,8 @@ export default function Dashboard() {
         <StatCard label="Due Today" value={stats.today} accent="text-amber-500" />
         <StatCard label="Completed" value={stats.completed} accent="text-emerald-500" />
       </div>
+
+      <StudyTimer assignments={assignments} classes={classes} />
 
       <Tabs value={view} onValueChange={(v) => { setView(v); setSelected({}); }} className="w-full">
         <TabsList>
