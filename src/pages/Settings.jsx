@@ -8,6 +8,7 @@ import GradingScaleEditor from '@/components/GradingScaleEditor';
 import TwoFactorSettings from '@/components/TwoFactorSettings';
 import BlackboardConnection from '@/components/BlackboardConnection';
 import ReminderSettings from '@/components/ReminderSettings';
+import DataExport from '@/components/DataExport';
 import {
   AlertDialog,
   AlertDialogTrigger,
@@ -156,6 +157,11 @@ export default function Settings() {
             <RefreshCw className="h-4 w-4 mr-2" /> Refresh status
           </Button>
         </div>
+      </section>
+
+      <section className="space-y-2">
+        <h2 className="font-semibold text-lg">Data</h2>
+        <DataExport />
       </section>
 
       <section className="space-y-2">
