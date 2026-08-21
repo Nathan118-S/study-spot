@@ -27,7 +27,7 @@ export default function Layout() {
   }, [dark]);
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex">
+    <div className="min-h-screen text-foreground flex">
       <aside
         className={cn(
           'fixed inset-y-0 left-0 z-40 w-64 bg-sidebar border-r border-sidebar-border flex flex-col transition-transform md:translate-x-0',
