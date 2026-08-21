@@ -1,31 +1,51 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 
+const FETCH_HORIZON_HOURS = 72; // wide enough to cover the max lead-time option (48h)
+
 export default async function(req: Request): Promise<Response> {
   try {
     const base44 = createClientFromRequest(req);
 
     const now = new Date();
-    const horizon = new Date(now.getTime() + 24 * 60 * 60 * 1000); // 24h ahead
+    const fetchHorizon = new Date(now.getTime() + FETCH_HORIZON_HOURS * 60 * 60 * 1000);
 
-    // Assignments due within the next 24h, not completed, not yet reminded.
+    // Upcoming, incomplete, not-yet-reminded assignments.
     const assignments = await base44.asServiceRole.entities.Assignment.filter({
       completed: false,
       reminder_sent: { $ne: true },
-      due_date: { $gte: now.toISOString(), $lte: horizon.toISOString() }
+      due_date: { $gt: now.toISOString(), $lte: fetchHorizon.toISOString() }
     });
 
-    let reminded = 0;
-    for (const a of assignments) {
-      if (!a.due_date || !a.created_by_id) continue;
-      let owner;
+    const ownerCache = new Map();
+    const getOwner = async (id) => {
+      if (ownerCache.has(id)) return ownerCache.get(id);
       try {
-        owner = await base44.asServiceRole.entities.User.get(a.created_by_id);
+        const o = await base44.asServiceRole.entities.User.get(id);
+        ownerCache.set(id, o);
+        return o;
       } catch {
-        continue;
+        ownerCache.set(id, null);
+        return null;
       }
-      if (!owner || !owner.email) continue;
+    };
+
+    let reminded = 0;
+    let skipped = 0;
+    for (const a of assignments) {
+      if (!a.due_date || !a.created_by_id) { skipped++; continue; }
+      const owner = await getOwner(a.created_by_id);
+      if (!owner || !owner.email) { skipped++; continue; }
+
+      const settings = owner.data || {};
+      if (settings.reminders_enabled === false) { skipped++; continue; }
+      const leadHours = typeof settings.reminder_lead_hours === 'number'
+        ? settings.reminder_lead_hours
+        : 24;
 
       const due = new Date(a.due_date);
+      const hoursUntilDue = (due.getTime() - now.getTime()) / (60 * 60 * 1000);
+      if (hoursUntilDue > leadHours) { skipped++; continue; } // not yet in the reminder window
+
       const classPart = a.class_name ? ` for ${a.class_name}` : '';
       const subject = `Reminder: "${a.title}" is due soon`;
       const body = [
@@ -46,12 +66,12 @@ export default async function(req: Request): Promise<Response> {
         });
         await base44.asServiceRole.entities.Assignment.update(a.id, { reminder_sent: true });
         reminded++;
-      } catch (err) {
-        // skip this one; continue with the rest
+      } catch {
+        skipped++;
       }
     }
 
-    return Response.json({ reminded, checked: assignments.length });
+    return Response.json({ reminded, skipped, checked: assignments.length });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }

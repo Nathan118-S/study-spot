@@ -7,6 +7,7 @@ import { Calendar, BookOpen, Loader2, Link2, Unlink, RefreshCw, Trash2, LogOut }
 import GradingScaleEditor from '@/components/GradingScaleEditor';
 import TwoFactorSettings from '@/components/TwoFactorSettings';
 import BlackboardConnection from '@/components/BlackboardConnection';
+import ReminderSettings from '@/components/ReminderSettings';
 import {
   AlertDialog,
   AlertDialogTrigger,
@@ -155,6 +156,14 @@ export default function Settings() {
             <RefreshCw className="h-4 w-4 mr-2" /> Refresh status
           </Button>
         </div>
+      </section>
+
+      <section className="space-y-2">
+        <h2 className="font-semibold text-lg">Reminders</h2>
+        <p className="text-sm text-muted-foreground">
+          Control when you get email notifications about upcoming assignments.
+        </p>
+        <ReminderSettings />
       </section>
 
       <section className="space-y-2">
