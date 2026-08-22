@@ -119,6 +119,23 @@ export default function Admin() {
     }
   };
 
+  const sendTestNotification = async (u, type) => {
+    setBusy(u.id);
+    try {
+      await base44.functions.invoke('adminSendTestNotification', { userId: u.id, type });
+      toast({
+        title: type === 'push' ? 'Test push sent' : 'Test email sent',
+        description: type === 'push'
+          ? `Push notification sent to ${u.email}.`
+          : `Email sent to ${u.email}.`,
+      });
+    } catch (e) {
+      toast({ title: 'Failed', description: e.message, variant: 'destructive' });
+    } finally {
+      setBusy(null);
+    }
+  };
+
   const mergeAccount = async (sourceId, targetId) => {
     setBusy(sourceId);
     try {
@@ -193,6 +210,8 @@ export default function Admin() {
         onReset2fa={reset2fa}
         onDeleteUser={deleteUser}
         onMerge={(u) => { setSelectedId(null); setMergeSource(u); }}
+        onSendTestPush={(u) => sendTestNotification(u, 'push')}
+        onSendTestEmail={(u) => sendTestNotification(u, 'email')}
       />
 
       <MergeDialog

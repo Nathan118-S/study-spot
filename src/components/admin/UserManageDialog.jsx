@@ -9,11 +9,12 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import SheetSelect from '@/components/SheetSelect';
-import { KeyRound, Trash2, Flame, ShieldOff, Mail, GitMerge } from 'lucide-react';
+import { KeyRound, Trash2, Flame, ShieldOff, Mail, GitMerge, Bell, Send } from 'lucide-react';
 
 export default function UserManageDialog({
   open, onOpenChange, user: u, currentUser, busy,
   onSetRole, onResetPassword, onRestoreStreak, onVerifyUser, onReset2fa, onDeleteUser, onMerge,
+  onSendTestPush, onSendTestEmail,
 }) {
   if (!u) return null;
   const isSelf = u.id === currentUser?.id;
@@ -61,6 +62,12 @@ export default function UserManageDialog({
                 <Mail className="h-4 w-4 mr-1" /> Resend verification
               </Button>
             )}
+            <Button size="sm" variant="outline" onClick={() => onSendTestPush(u)} disabled={busy === u.id} className="h-11 md:h-9">
+              <Bell className="h-4 w-4 mr-1" /> Test push
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => onSendTestEmail(u)} disabled={busy === u.id} className="h-11 md:h-9">
+              <Send className="h-4 w-4 mr-1" /> Test email
+            </Button>
             <Button size="sm" variant="outline" onClick={() => onMerge(u)} disabled={busy === u.id || isSelf} className="h-11 md:h-9">
               <GitMerge className="h-4 w-4 mr-1" /> Merge
             </Button>
