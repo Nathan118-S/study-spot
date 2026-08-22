@@ -11,6 +11,21 @@ import { Badge } from '@/components/ui/badge';
 import SheetSelect from '@/components/SheetSelect';
 import { KeyRound, Trash2, Flame, ShieldOff, Mail, GitMerge, Bell, Send } from 'lucide-react';
 
+function ActionRow({ icon, title, desc, children }) {
+  return (
+    <div className="rounded-lg border bg-card p-4 flex items-center justify-between gap-4">
+      <div className="flex items-start gap-3 min-w-0">
+        <div className="mt-0.5 text-primary">{icon}</div>
+        <div className="min-w-0">
+          <p className="text-sm font-medium">{title}</p>
+          <p className="text-xs text-muted-foreground">{desc}</p>
+        </div>
+      </div>
+      <div className="shrink-0">{children}</div>
+    </div>
+  );
+}
+
 export default function UserManageDialog({
   open, onOpenChange, user: u, currentUser, busy,
   onSetRole, onResetPassword, onRestoreStreak, onVerifyUser, onReset2fa, onDeleteUser, onMerge,
@@ -18,6 +33,7 @@ export default function UserManageDialog({
 }) {
   if (!u) return null;
   const isSelf = u.id === currentUser?.id;
+  const disabled = busy === u.id;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -33,9 +49,9 @@ export default function UserManageDialog({
           Joined {u.created_date ? new Date(u.created_date).toLocaleDateString() : '—'}
         </p>
 
-        <div className="space-y-4 pt-2">
-          <div className="flex items-center justify-between gap-3">
-            <div>
+        <div className="space-y-2 pt-2 max-h-[60vh] overflow-y-auto">
+          <div className="rounded-lg border bg-card p-4 flex items-center justify-between gap-4">
+            <div className="min-w-0">
               <p className="text-sm font-medium">Role</p>
               <p className="text-xs text-muted-foreground">Promote or demote this user.</p>
             </div>
@@ -50,31 +66,84 @@ export default function UserManageDialog({
             />
           </div>
 
-          <div className="flex flex-wrap gap-2">
-            <Button size="sm" variant="outline" onClick={() => onResetPassword(u)} disabled={busy === u.id} className="h-11 md:h-9">
-              <KeyRound className="h-4 w-4 mr-1" /> Reset password
+          <ActionRow
+            icon={<KeyRound className="h-5 w-5" />}
+            title="Reset password"
+            desc="Send a password-reset link to this user's email."
+          >
+            <Button variant="outline" size="sm" onClick={() => onResetPassword(u)} disabled={disabled}>
+              <KeyRound className="h-4 w-4 mr-1" /> Send
             </Button>
-            <Button size="sm" variant="outline" onClick={() => onRestoreStreak(u)} disabled={busy === u.id} className="h-11 md:h-9">
-              <Flame className="h-4 w-4 mr-1" /> Restore streak
+          </ActionRow>
+
+          <ActionRow
+            icon={<Flame className="h-5 w-5" />}
+            title="Restore streak"
+            desc="Mark overdue assignments complete to rebuild their streak."
+          >
+            <Button variant="outline" size="sm" onClick={() => onRestoreStreak(u)} disabled={disabled}>
+              <Flame className="h-4 w-4 mr-1" /> Restore
             </Button>
-            {!u.is_verified && (
-              <Button size="sm" variant="outline" onClick={() => onVerifyUser(u)} disabled={busy === u.id} className="h-11 md:h-9">
-                <Mail className="h-4 w-4 mr-1" /> Resend verification
+          </ActionRow>
+
+          {!u.is_verified && (
+            <ActionRow
+              icon={<Mail className="h-5 w-5" />}
+              title="Resend verification"
+              desc="This user hasn't verified their email. Send the link again."
+            >
+              <Button variant="outline" size="sm" onClick={() => onVerifyUser(u)} disabled={disabled}>
+                <Mail className="h-4 w-4 mr-1" /> Resend
               </Button>
-            )}
-            <Button size="sm" variant="outline" onClick={() => onSendTestPush(u)} disabled={busy === u.id} className="h-11 md:h-9">
-              <Bell className="h-4 w-4 mr-1" /> Test push
+            </ActionRow>
+          )}
+
+          <ActionRow
+            icon={<Bell className="h-5 w-5" />}
+            title="Test push notification"
+            desc="Send a test push to this user's device (requires the mobile app)."
+          >
+            <Button variant="outline" size="sm" onClick={() => onSendTestPush(u)} disabled={disabled}>
+              <Bell className="h-4 w-4 mr-1" /> Send
             </Button>
-            <Button size="sm" variant="outline" onClick={() => onSendTestEmail(u)} disabled={busy === u.id} className="h-11 md:h-9">
-              <Send className="h-4 w-4 mr-1" /> Test email
+          </ActionRow>
+
+          <ActionRow
+            icon={<Send className="h-5 w-5" />}
+            title="Test email"
+            desc="Send a test email to confirm delivery is working."
+          >
+            <Button variant="outline" size="sm" onClick={() => onSendTestEmail(u)} disabled={disabled}>
+              <Send className="h-4 w-4 mr-1" /> Send
             </Button>
-            <Button size="sm" variant="outline" onClick={() => onMerge(u)} disabled={busy === u.id || isSelf} className="h-11 md:h-9">
+          </ActionRow>
+
+          <ActionRow
+            icon={<GitMerge className="h-5 w-5" />}
+            title="Merge accounts"
+            desc="Move this user's assignments and classes into another account."
+          >
+            <Button variant="outline" size="sm" onClick={() => onMerge(u)} disabled={disabled || isSelf}>
               <GitMerge className="h-4 w-4 mr-1" /> Merge
             </Button>
+          </ActionRow>
+
+          <p className="font-semibold text-lg text-destructive pt-2">Danger Zone</p>
+
+          <div className="rounded-lg border border-destructive/40 bg-card p-4 flex items-center justify-between gap-4">
+            <div className="flex items-start gap-3 min-w-0">
+              <div className="mt-0.5 text-destructive"><ShieldOff className="h-5 w-5" /></div>
+              <div className="min-w-0">
+                <p className="text-sm font-medium">Reset 2FA</p>
+                <p className="text-xs text-muted-foreground">
+                  Clears their second-factor setup so they can sign in without a code.
+                </p>
+              </div>
+            </div>
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button size="sm" variant="outline" disabled={busy === u.id} className="h-11 md:h-9">
-                  <ShieldOff className="h-4 w-4 mr-1" /> Reset 2FA
+                <Button variant="outline" size="sm" disabled={disabled}>
+                  <ShieldOff className="h-4 w-4 mr-1" /> Reset
                 </Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
@@ -85,14 +154,26 @@ export default function UserManageDialog({
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                  <AlertDialogCancel disabled={busy === u.id}>Cancel</AlertDialogCancel>
-                  <AlertDialogAction onClick={() => onReset2fa(u)} disabled={busy === u.id}>Reset</AlertDialogAction>
+                  <AlertDialogCancel disabled={disabled}>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={() => onReset2fa(u)} disabled={disabled}>Reset</AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
+          </div>
+
+          <div className="rounded-lg border border-destructive/40 bg-card p-4 flex items-center justify-between gap-4">
+            <div className="flex items-start gap-3 min-w-0">
+              <div className="mt-0.5 text-destructive"><Trash2 className="h-5 w-5" /></div>
+              <div className="min-w-0">
+                <p className="text-sm font-medium">Delete user</p>
+                <p className="text-xs text-muted-foreground">
+                  Permanently removes this account. This cannot be undone.
+                </p>
+              </div>
+            </div>
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button size="sm" variant="destructive" disabled={busy === u.id || isSelf} className="h-11 md:h-9">
+                <Button variant="destructive" size="sm" disabled={disabled || isSelf}>
                   <Trash2 className="h-4 w-4 mr-1" /> Delete
                 </Button>
               </AlertDialogTrigger>
@@ -104,11 +185,11 @@ export default function UserManageDialog({
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                  <AlertDialogCancel disabled={busy === u.id}>Cancel</AlertDialogCancel>
+                  <AlertDialogCancel disabled={disabled}>Cancel</AlertDialogCancel>
                   <AlertDialogAction
                     className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                     onClick={() => onDeleteUser(u)}
-                    disabled={busy === u.id}
+                    disabled={disabled}
                   >
                     Delete
                   </AlertDialogAction>
