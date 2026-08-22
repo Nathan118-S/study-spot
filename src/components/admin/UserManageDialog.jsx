@@ -9,7 +9,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import SheetSelect from '@/components/SheetSelect';
-import { KeyRound, Trash2, Flame, ShieldOff, Mail, GitMerge, Bell, Send } from 'lucide-react';
+import { KeyRound, Trash2, Flame, ShieldOff, Mail, GitMerge, Bell, Send, UserCog } from 'lucide-react';
 
 function ActionRow({ icon, title, desc, children }) {
   return (
@@ -50,22 +50,6 @@ export default function UserManageDialog({
         </p>
 
         <div className="space-y-2 pt-2 max-h-[60vh] overflow-y-auto">
-          <div className="rounded-lg border bg-card p-4 flex items-center justify-between gap-4">
-            <div className="min-w-0">
-              <p className="text-sm font-medium">Role</p>
-              <p className="text-xs text-muted-foreground">Promote or demote this user.</p>
-            </div>
-            <SheetSelect
-              value={u.role}
-              onValueChange={(r) => onSetRole(u, r)}
-              triggerClassName="w-[130px]"
-              options={[
-                { value: 'user', label: 'User' },
-                { value: 'admin', label: 'Admin' },
-              ]}
-            />
-          </div>
-
           <ActionRow
             icon={<KeyRound className="h-5 w-5" />}
             title="Reset password"
@@ -128,18 +112,11 @@ export default function UserManageDialog({
             </Button>
           </ActionRow>
 
-          <p className="font-semibold text-lg text-destructive pt-2">Danger Zone</p>
-
-          <div className="rounded-lg border border-destructive/40 bg-card p-4 flex items-center justify-between gap-4">
-            <div className="flex items-start gap-3 min-w-0">
-              <div className="mt-0.5 text-destructive"><ShieldOff className="h-5 w-5" /></div>
-              <div className="min-w-0">
-                <p className="text-sm font-medium">Reset 2FA</p>
-                <p className="text-xs text-muted-foreground">
-                  Clears their second-factor setup so they can sign in without a code.
-                </p>
-              </div>
-            </div>
+          <ActionRow
+            icon={<ShieldOff className="h-5 w-5" />}
+            title="Reset 2FA"
+            desc="Clear their second-factor setup so they can sign in without a code."
+          >
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button variant="outline" size="sm" disabled={disabled}>
@@ -159,6 +136,27 @@ export default function UserManageDialog({
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
+          </ActionRow>
+
+          <p className="font-semibold text-lg text-destructive pt-2">Danger Zone</p>
+
+          <div className="rounded-lg border border-destructive/40 bg-card p-4 flex items-center justify-between gap-4">
+            <div className="flex items-start gap-3 min-w-0">
+              <div className="mt-0.5 text-destructive"><UserCog className="h-5 w-5" /></div>
+              <div className="min-w-0">
+                <p className="text-sm font-medium">Role</p>
+                <p className="text-xs text-muted-foreground">Promote or demote this user.</p>
+              </div>
+            </div>
+            <SheetSelect
+              value={u.role}
+              onValueChange={(r) => onSetRole(u, r)}
+              triggerClassName="w-[130px]"
+              options={[
+                { value: 'user', label: 'User' },
+                { value: 'admin', label: 'Admin' },
+              ]}
+            />
           </div>
 
           <div className="rounded-lg border border-destructive/40 bg-card p-4 flex items-center justify-between gap-4">
