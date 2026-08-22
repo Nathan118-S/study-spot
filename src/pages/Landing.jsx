@@ -168,7 +168,12 @@ export default function Landing() {
             <GraduationCap className="h-5 w-5 text-primary" />
             <span className="font-heading font-semibold">Study Spot</span>
           </div>
-          <p className="text-sm text-muted-foreground">© {new Date().getFullYear()} Study Spot</p>
+          <div className="flex items-center gap-4">
+            <Link to="/privacy" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+              Privacy Policy
+            </Link>
+            <p className="text-sm text-muted-foreground">© {new Date().getFullYear()} Study Spot</p>
+          </div>
         </div>
       </footer>
     </div>
