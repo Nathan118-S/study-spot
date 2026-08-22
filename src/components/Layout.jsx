@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Outlet, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/lib/AuthContext';
@@ -25,8 +25,19 @@ export default function Layout() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
-  const showBack = location.pathname !== '/';
+  const mainRef = useRef(null);
+  const primaryRoots = ['/', '/classes', '/calendar', '/analytics', '/settings', '/admin'];
+  const showBack = !primaryRoots.includes(location.pathname);
   const bottomNav = navItems.filter((i) => i.to !== '/settings');
+
+  const scrollToMainTop = () => {
+    const el = mainRef.current;
+    if (el && el.scrollHeight > el.clientHeight) {
+      el.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
   const items = navItems;
   const isAdmin = user?.role === 'admin';
 
@@ -135,7 +146,7 @@ export default function Layout() {
             <span className="font-heading font-bold text-lg ml-1">Study Spot</span>
           </div>
         </header>
-        <main className="flex-1 p-4 pb-24 md:p-8 md:pb-8 max-w-7xl w-full mx-auto overscroll-none">
+        <main ref={mainRef} className="flex-1 p-4 pb-24 md:p-8 md:pb-8 max-w-7xl w-full mx-auto overscroll-none">
           <AnimatePresence mode="wait">
             <motion.div
               key={location.pathname}
@@ -159,6 +170,9 @@ export default function Layout() {
                 key={item.to}
                 to={item.to}
                 end={item.end}
+                onClick={() => {
+                  if (location.pathname === item.to) scrollToMainTop();
+                }}
                 className={({ isActive }) =>
                   cn(
                     'flex-1 flex flex-col items-center gap-1 py-2 text-xs',
