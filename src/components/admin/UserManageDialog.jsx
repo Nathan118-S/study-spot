@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
 } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
 import {
   AlertDialog, AlertDialogTrigger, AlertDialogContent, AlertDialogHeader,
   AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction,
@@ -9,7 +10,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import SheetSelect from '@/components/SheetSelect';
-import { KeyRound, Trash2, Flame, ShieldOff, Mail, GitMerge, Bell, Send, UserCog } from 'lucide-react';
+import { KeyRound, Trash2, Flame, ShieldOff, Mail, GitMerge, Bell, Send, UserCog, Loader2, Check } from 'lucide-react';
 
 function ActionRow({ icon, title, desc, children }) {
   return (
@@ -30,10 +31,16 @@ export default function UserManageDialog({
   open, onOpenChange, user: u, currentUser, busy,
   onSetRole, onResetPassword, onRestoreStreak, onVerifyUser, onReset2fa, onDeleteUser, onMerge,
   onSendTestPush, onSendTestEmail,
+  onSaveName,
 }) {
+  const [name, setName] = useState('');
+  useEffect(() => {
+    setName(u?.name || u?.full_name || '');
+  }, [u?.id]);
   if (!u) return null;
   const isSelf = u.id === currentUser?.id;
   const disabled = busy === u.id;
+  const savedName = (u.name || u.full_name || '').trim();
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -50,6 +57,30 @@ export default function UserManageDialog({
         </p>
 
         <div className="space-y-2 pt-2 max-h-[60vh] overflow-y-auto">
+          <div className="rounded-lg border bg-card p-4 space-y-3">
+            <div>
+              <p className="text-sm font-medium">Display name</p>
+              <p className="text-xs text-muted-foreground">Shown in emails and across the app.</p>
+            </div>
+            <div className="flex gap-2">
+              <Input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Add a name"
+                className="flex-1"
+                maxLength={80}
+              />
+              <Button
+                size="sm"
+                onClick={() => onSaveName(u, name)}
+                disabled={disabled || name.trim() === savedName}
+              >
+                {disabled ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Check className="h-4 w-4 mr-1" />}
+                Save
+              </Button>
+            </div>
+          </div>
+
           <ActionRow
             icon={<KeyRound className="h-5 w-5" />}
             title="Reset password"

@@ -152,6 +152,19 @@ export default function Admin() {
     }
   };
 
+  const saveName = async (u, name) => {
+    setBusy(u.id);
+    try {
+      await base44.functions.invoke('adminUpdateUser', { userId: u.id, name });
+      setUsers((prev) => prev.map((x) => (x.id === u.id ? { ...x, name: name.trim() } : x)));
+      toast({ title: 'Name updated', description: u.email });
+    } catch (e) {
+      toast({ title: 'Failed', description: e.message, variant: 'destructive' });
+    } finally {
+      setBusy(null);
+    }
+  };
+
   const selected = users.find((u) => u.id === selectedId) || null;
 
   return (
@@ -185,7 +198,7 @@ export default function Admin() {
               className="w-full text-left rounded-lg border bg-card p-4 hover:bg-accent transition-colors flex items-center justify-between gap-3"
             >
               <div className="min-w-0">
-                <p className="font-medium truncate">{u.full_name || u.email}</p>
+                <p className="font-medium truncate">{u.name || u.full_name || u.email}</p>
                 <p className="text-sm text-muted-foreground truncate">{u.email}</p>
               </div>
               <div className="flex items-center gap-2 shrink-0">
@@ -212,6 +225,7 @@ export default function Admin() {
         onMerge={(u) => { setSelectedId(null); setMergeSource(u); }}
         onSendTestPush={(u) => sendTestNotification(u, 'push')}
         onSendTestEmail={(u) => sendTestNotification(u, 'email')}
+        onSaveName={saveName}
       />
 
       <MergeDialog
