@@ -13,6 +13,11 @@ export default async function(req) {
       totp_secret: null,
       twofa_enabled: false,
       twofa_method: null,
+      twofa_methods: [],
+      passkey_cred_id: null,
+      passkey_pub_key: null,
+      passkey_alg: null,
+      passkey_counter: 0,
     });
     return Response.json({ ok: true });
   } catch (error) {

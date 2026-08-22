@@ -54,9 +54,8 @@ export default function TotpSetup({ open, onOpenChange, onDone }) {
     setBusy(true);
     try {
       await base44.functions.invoke('enable2fa', { code, secret });
-      await base44.auth.updateMe({ totp_secret: secret, twofa_enabled: true, twofa_method: 'totp' });
       sessionStorage.setItem('cf-2fa-verified', '1');
-      toast({ title: 'Two-factor authentication enabled' });
+      toast({ title: 'Authenticator app enabled' });
       await onDone();
     } catch (e) {
       setError(e.response?.data?.error || e.message || 'Invalid code');

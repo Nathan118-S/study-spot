@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
+import { getMethods, withMethod } from '../../shared/twofa.ts';
 
 export default async function(req) {
   try {
@@ -22,8 +23,10 @@ export default async function(req) {
 
     const update = { email_2fa_code: '', email_2fa_expires: 0 };
     if (enable) {
+      const methods = withMethod(getMethods(user), 'email');
       update.twofa_method = 'email';
       update.twofa_enabled = true;
+      update.twofa_methods = methods;
     }
     await base44.auth.updateMe(update);
     return Response.json({ ok: true });

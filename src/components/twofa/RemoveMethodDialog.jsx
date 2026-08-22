@@ -13,19 +13,40 @@ import {
 } from '@/components/ui/dialog';
 import { Loader2 } from 'lucide-react';
 import { b64uEncode, b64uDecode } from '@/lib/webauthn';
+import { METHOD_LABEL } from '@/lib/twofa';
 
-export default function DisableDialog({ open, onOpenChange, method, onDone }) {
+export default function RemoveMethodDialog({ open, onOpenChange, method, onDone }) {
   const { toast } = useToast();
   const [code, setCode] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [sent, setSent] = useState(false);
 
   useEffect(() => {
     if (open) {
       setCode('');
       setError('');
+      setSent(false);
     }
-  }, [open]);
+  }, [open, method]);
+
+  const sendEmail = async () => {
+    setBusy(true);
+    setError('');
+    try {
+      await base44.functions.invoke('email2faSend', {});
+      setSent(true);
+    } catch (e) {
+      setError(e.response?.data?.error || e.message || 'Failed to send code');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  useEffect(() => {
+    if (open && method === 'email') sendEmail();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, method]);
 
   const passkeyVerify = async () => {
     const startRes = await base44.functions.invoke('passkeyLoginStart', {});
@@ -58,17 +79,8 @@ export default function DisableDialog({ open, onOpenChange, method, onDone }) {
       } else if (method === 'passkey') {
         await passkeyVerify();
       }
-      await base44.auth.updateMe({
-        twofa_enabled: false,
-        twofa_method: null,
-        totp_secret: null,
-        passkey_cred_id: null,
-        passkey_pub_key: null,
-        passkey_alg: null,
-        passkey_counter: 0,
-      });
-      sessionStorage.removeItem('cf-2fa-verified');
-      toast({ title: 'Two-factor authentication disabled' });
+      await base44.functions.invoke('remove2faMethod', { method });
+      toast({ title: `${METHOD_LABEL[method] || 'Method'} removed` });
       await onDone();
     } catch (e) {
       setError(e.response?.data?.error || e.message || 'Verification failed');
@@ -77,13 +89,15 @@ export default function DisableDialog({ open, onOpenChange, method, onDone }) {
     }
   };
 
+  if (!method) return null;
+
   if (method === 'passkey') {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Disable two-factor authentication</DialogTitle>
-            <DialogDescription>Verify with your passkey to confirm.</DialogDescription>
+            <DialogTitle>Remove {METHOD_LABEL[method]}?</DialogTitle>
+            <DialogDescription>Verify with your passkey to confirm removal.</DialogDescription>
           </DialogHeader>
           <div className="py-2">
             {error && <p className="text-sm text-destructive">{error}</p>}
@@ -92,7 +106,7 @@ export default function DisableDialog({ open, onOpenChange, method, onDone }) {
             <Button variant="outline" onClick={() => onOpenChange(false)} disabled={busy}>Cancel</Button>
             <Button variant="destructive" onClick={confirm} disabled={busy}>
               {busy ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : null}
-              Disable
+              Remove
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -104,10 +118,10 @@ export default function DisableDialog({ open, onOpenChange, method, onDone }) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Disable two-factor authentication</DialogTitle>
+          <DialogTitle>Remove {METHOD_LABEL[method]}?</DialogTitle>
           <DialogDescription>
             {method === 'email'
-              ? 'Enter the code sent to your email to confirm.'
+              ? 'Enter the code sent to your email to confirm removal.'
               : 'Enter a current 6-digit code from your authenticator app.'}
           </DialogDescription>
         </DialogHeader>
@@ -123,12 +137,17 @@ export default function DisableDialog({ open, onOpenChange, method, onDone }) {
             autoFocus
           />
           {error && <p className="text-sm text-destructive">{error}</p>}
+          {method === 'email' && (
+            <Button variant="ghost" size="sm" onClick={sendEmail} disabled={busy} className="w-full">
+              {sent ? 'Resend code' : 'Send code'}
+            </Button>
+          )}
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={busy}>Cancel</Button>
           <Button variant="destructive" onClick={confirm} disabled={busy || code.length !== 6}>
             {busy ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : null}
-            Disable
+            Remove
           </Button>
         </DialogFooter>
       </DialogContent>

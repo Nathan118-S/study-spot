@@ -1,5 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { b64uDecode, decodeCbor, parseAuthData, coseToJwk, bufsEqual } from '../../shared/webauthn.ts';
+import { getMethods, withMethod } from '../../shared/twofa.ts';
 
 export default async function(req) {
   try {
@@ -44,6 +45,7 @@ export default async function(req) {
     // Validate the key is importable.
     await crypto.subtle.importKey('jwk', jwk, importAlg, false, ['verify']);
 
+    const methods = withMethod(getMethods(user), 'passkey');
     await base44.auth.updateMe({
       passkey_cred_id: credentialId,
       passkey_pub_key: jwk,
@@ -52,6 +54,7 @@ export default async function(req) {
       webauthn_challenge: '',
       twofa_method: 'passkey',
       twofa_enabled: true,
+      twofa_methods: methods,
     });
 
     return Response.json({ ok: true });

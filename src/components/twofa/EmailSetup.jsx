@@ -51,9 +51,8 @@ export default function EmailSetup({ open, onOpenChange, onDone }) {
     setBusy(true);
     try {
       await base44.functions.invoke('email2faVerify', { code, enable: true });
-      await base44.auth.updateMe({ twofa_enabled: true, twofa_method: 'email' });
       sessionStorage.setItem('cf-2fa-verified', '1');
-      toast({ title: 'Two-factor authentication enabled' });
+      toast({ title: 'Email verification enabled' });
       await onDone();
     } catch (e) {
       setError(e.response?.data?.error || e.message || 'Invalid code');

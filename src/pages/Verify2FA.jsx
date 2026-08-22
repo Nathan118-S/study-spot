@@ -4,17 +4,27 @@ import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Loader2, ShieldCheck, LogOut, Fingerprint } from 'lucide-react';
+import { Loader2, ShieldCheck, LogOut, Fingerprint, Smartphone, Mail } from 'lucide-react';
 import { b64uEncode, b64uDecode } from '@/lib/webauthn';
+import { getMethods, METHOD_LABEL } from '@/lib/twofa';
+import { cn } from '@/lib/utils';
+
+const METHOD_ICON = { totp: Smartphone, email: Mail, passkey: Fingerprint };
 
 export default function Verify2FA() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const method = user?.twofa_method || (user?.twofa_enabled ? 'totp' : '');
+  const methods = getMethods(user);
+  const [selected, setSelected] = useState(() => {
+    const pref = user?.twofa_method;
+    return methods.includes(pref) ? pref : methods[0] || 'totp';
+  });
   const [code, setCode] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
+
+  const method = methods.length > 1 ? selected : methods[0];
 
   const finish = () => {
     sessionStorage.setItem('cf-2fa-verified', '1');
@@ -92,11 +102,14 @@ export default function Verify2FA() {
   };
 
   useEffect(() => {
+    setCode('');
+    setError('');
+    setEmailSent(false);
     if (method === 'email' && !emailSent) sendEmail();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [method]);
 
-  if (user && !user?.twofa_enabled) return <Navigate to="/" replace />;
+  if (user && methods.length === 0) return <Navigate to="/" replace />;
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-background">
@@ -109,9 +122,33 @@ export default function Verify2FA() {
           <p className="text-sm text-muted-foreground">
             {method === 'email' && 'Enter the 6-digit code sent to your email to continue.'}
             {method === 'passkey' && 'Use your passkey to continue.'}
-            {(!method || method === 'totp') && 'Enter the 6-digit code from your authenticator app to continue.'}
+            {method === 'totp' && 'Enter the 6-digit code from your authenticator app to continue.'}
           </p>
         </div>
+
+        {methods.length > 1 && (
+          <div className="flex gap-2 justify-center">
+            {methods.map((m) => {
+              const Icon = METHOD_ICON[m];
+              return (
+                <button
+                  key={m}
+                  type="button"
+                  onClick={() => setSelected(m)}
+                  className={cn(
+                    'flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition-colors',
+                    method === m
+                      ? 'border-primary bg-primary/10 text-primary'
+                      : 'text-muted-foreground hover:bg-accent'
+                  )}
+                >
+                  <Icon className="h-4 w-4" />
+                  {METHOD_LABEL[m]}
+                </button>
+              );
+            })}
+          </div>
+        )}
 
         {method === 'passkey' ? (
           <div className="space-y-4">

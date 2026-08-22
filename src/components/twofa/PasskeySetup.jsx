@@ -36,7 +36,6 @@ export default function PasskeySetup({ open, onOpenChange, onDone }) {
         attestationObject: b64uEncode(cred.response.attestationObject),
         clientDataJSON: b64uEncode(cred.response.clientDataJSON),
       });
-      await base44.auth.updateMe({ twofa_enabled: true, twofa_method: 'passkey' });
       sessionStorage.setItem('cf-2fa-verified', '1');
       toast({ title: 'Passkey enabled' });
       await onDone();
