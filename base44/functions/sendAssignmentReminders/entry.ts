@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
+import { displayName } from '../../shared/user.ts';
 
 const FETCH_HORIZON_HOURS = 72; // wide enough to cover the max lead-time option (48h)
 const REMINDER_TZ = 'America/New_York';
@@ -100,7 +101,7 @@ export default async function(req: Request): Promise<Response> {
       const classPart = a.class_name ? ` for ${a.class_name}` : '';
       const subject = `Reminder: "${a.title}" is due soon`;
       const body = [
-        `Hi ${owner.full_name || 'there'},`,
+        `Hi ${displayName(owner)},`,
         '',
         `This is a reminder that "${a.title}"${classPart} is due ${due.toLocaleString()}.`,
         '',

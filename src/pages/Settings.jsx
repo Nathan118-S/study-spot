@@ -9,6 +9,7 @@ import TwoFactorSettings from '@/components/TwoFactorSettings';
 import BlackboardConnection from '@/components/BlackboardConnection';
 import ReminderSettings from '@/components/ReminderSettings';
 import DataExport from '@/components/DataExport';
+import AccountName from '@/components/AccountName';
 import { Switch } from '@/components/ui/switch';
 import {
   AlertDialog,
@@ -213,10 +214,7 @@ export default function Settings() {
 
       <section className="space-y-2">
         <h2 className="font-semibold text-lg">Account</h2>
-        <div className="rounded-lg border bg-card p-4">
-          <p className="text-sm font-medium">{user?.full_name || 'User'}</p>
-          <p className="text-sm text-muted-foreground">{user?.email}</p>
-        </div>
+        <AccountName />
       </section>
 
       <section className="space-y-2">

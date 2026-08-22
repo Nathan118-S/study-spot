@@ -8,6 +8,11 @@
         "user"
       ]
     },
+    "name": {
+      "type": "string",
+      "description": "The user's display name, used to personalize emails",
+      "default": null
+    },
     "totp_secret": {
       "type": "string",
       "description": "TOTP shared secret for two-factor authentication (base32)",

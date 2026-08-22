@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
+import { displayName } from '../../shared/user.ts';
 
 export default async function(req) {
   try {
@@ -13,7 +14,7 @@ export default async function(req) {
     await base44.asServiceRole.integrations.Core.SendEmail({
       to: user.email,
       subject: 'Your Study Spot verification code',
-      body: `Your verification code is ${code}. It expires in 10 minutes. If you didn't request this, you can ignore this email.`,
+      body: `Hi ${displayName(user)},\n\nYour verification code is ${code}. It expires in 10 minutes. If you didn't request this, you can ignore this email.\n\n— Study Spot`,
     });
 
     return Response.json({ ok: true });

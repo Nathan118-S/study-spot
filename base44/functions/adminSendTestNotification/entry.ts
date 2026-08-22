@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
+import { displayName } from '../../shared/user.ts';
 
 export default async function(req) {
   try {
@@ -28,7 +29,7 @@ export default async function(req) {
     await base44.asServiceRole.integrations.Core.SendEmail({
       to: target.email,
       subject: 'Test notification from Study Spot',
-      body: `Hi ${target.full_name || target.email},\n\nThis is a test email sent from the Study Spot admin dashboard to confirm email delivery is working.\n\n— Study Spot`,
+      body: `Hi ${displayName(target)},\n\nThis is a test email sent from the Study Spot admin dashboard to confirm email delivery is working.\n\n— Study Spot`,
     });
     return Response.json({ ok: true, sent: 'email' });
   } catch (error) {
