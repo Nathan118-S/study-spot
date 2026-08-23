@@ -71,7 +71,7 @@ export default function DataExport() {
             rows: classRows,
           },
         ],
-        'classflow-export.xls'
+        'study-spot-export.xls'
       );
 
       setCount({ assignments: assignmentRows.length, classes: classRows.length });

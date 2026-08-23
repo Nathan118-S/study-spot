@@ -256,7 +256,7 @@ export default function Dashboard() {
                 return name ? `, ${name}!` : '!';
               })()}
             </p>
-            <p className="mt-2 text-sm text-muted-foreground">Welcome back to ClassFlow</p>
+            <p className="mt-2 text-sm text-muted-foreground">Welcome back to Study Spot</p>
           </div>
         </div>
       )}
