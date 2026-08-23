@@ -11,6 +11,7 @@ import ReminderSettings from '@/components/ReminderSettings';
 import DataExport from '@/components/DataExport';
 import AccountName from '@/components/AccountName';
 import { Switch } from '@/components/ui/switch';
+import { isDemoUser, demoConnections } from '@/lib/demoData';
 import {
   AlertDialog,
   AlertDialogTrigger,
@@ -50,6 +51,11 @@ export default function Settings() {
 
   const check = useCallback(async () => {
     setLoading(true);
+    if (isDemoUser(user)) {
+      setStatus(demoConnections);
+      setLoading(false);
+      return;
+    }
     try {
       const res = await base44.functions.invoke('checkGoogleConnections', {});
       setStatus(res.data || { calendar: false, classroom: false });
@@ -58,13 +64,14 @@ export default function Settings() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     check();
   }, [check]);
 
   const connect = async (id, label) => {
+    if (isDemoUser(user)) return;
     setBusy(label);
     try {
       const url = await base44.connectors.connectAppUser(id);
@@ -81,6 +88,7 @@ export default function Settings() {
   };
 
   const disconnect = async (id, label) => {
+    if (isDemoUser(user)) return;
     setBusy(label);
     try {
       await base44.connectors.disconnectAppUser(id);

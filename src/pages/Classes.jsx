@@ -4,8 +4,11 @@ import ClassForm from '@/components/ClassForm';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Plus, Pencil, Trash2, Loader2, BookOpen } from 'lucide-react';
+import { useAuth } from '@/lib/AuthContext';
+import { isDemoUser, getDemoClasses, getDemoAssignments } from '@/lib/demoData';
 
 export default function Classes() {
+  const { user } = useAuth();
   const [classes, setClasses] = useState([]);
   const [assignments, setAssignments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -13,13 +16,18 @@ export default function Classes() {
   const [editing, setEditing] = useState(null);
 
   const load = useCallback(async () => {
+    if (isDemoUser(user)) {
+      setClasses(getDemoClasses());
+      setAssignments(getDemoAssignments());
+      return;
+    }
     const [c, a] = await Promise.all([
       base44.entities.Class.list(),
       base44.entities.Assignment.list('-due_date', 500),
     ]);
     setClasses(c);
     setAssignments(a);
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     (async () => {
@@ -32,6 +40,7 @@ export default function Classes() {
   const remove = async (c) => {
     const prev = classes;
     setClasses((p) => p.filter((x) => x.id !== c.id));
+    if (isDemoUser(user)) return;
     try {
       await base44.entities.Class.delete(c.id);
     } catch {

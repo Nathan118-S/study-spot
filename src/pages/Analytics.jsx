@@ -5,14 +5,23 @@ import { Button } from '@/components/ui/button';
 import { Loader2, Flame, AlertTriangle, ShieldAlert, ShieldCheck, Trophy, GraduationCap } from 'lucide-react';
 import { buildStreaks, streakSummary } from '@/lib/streaks';
 import StreakCard from '@/components/StreakCard';
+import { useAuth } from '@/lib/AuthContext';
+import { isDemoUser, getDemoClasses, getDemoAssignments, getDemoStreaks, demoStreakSummary, demoConnections } from '@/lib/demoData';
 
 export default function Analytics() {
+  const { user } = useAuth();
   const [classes, setClasses] = useState([]);
   const [assignments, setAssignments] = useState([]);
   const [connections, setConnections] = useState(null);
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
+    if (isDemoUser(user)) {
+      setClasses(getDemoClasses());
+      setAssignments(getDemoAssignments());
+      setConnections(demoConnections);
+      return;
+    }
     const [c, a, conn] = await Promise.all([
       base44.entities.Class.list(),
       base44.entities.Assignment.list('-due_date', 500),
@@ -21,7 +30,7 @@ export default function Analytics() {
     setClasses(c);
     setAssignments(a);
     setConnections(conn?.data ?? { classroom: false, blackboard: false });
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     (async () => {
@@ -34,10 +43,15 @@ export default function Analytics() {
   const classroomOn = connections?.classroom === true;
   const blackboardOn = connections?.blackboard === true;
   const streaks = useMemo(
-    () => buildStreaks(classes, assignments, { classroom: classroomOn, blackboard: blackboardOn }),
-    [classes, assignments, classroomOn, blackboardOn]
+    () => isDemoUser(user)
+      ? getDemoStreaks()
+      : buildStreaks(classes, assignments, { classroom: classroomOn, blackboard: blackboardOn }),
+    [classes, assignments, classroomOn, blackboardOn, user]
   );
-  const summary = useMemo(() => streakSummary(streaks), [streaks]);
+  const summary = useMemo(
+    () => isDemoUser(user) ? demoStreakSummary : streakSummary(streaks),
+    [streaks, user]
+  );
 
   if (loading) {
     return (
