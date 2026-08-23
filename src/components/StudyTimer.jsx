@@ -6,6 +6,7 @@ import SheetSelect from '@/components/SheetSelect';
 import { useToast } from '@/components/ui/use-toast';
 import { Play, Pause, RotateCcw, Coffee, Brain, Timer as TimerIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Input } from '@/components/ui/input';
 
 const PHASES = {
   focus: { label: 'Focus', minutes: 25, icon: Brain, accent: 'text-primary', ring: 'border-primary/40', bg: 'bg-primary/5' },
@@ -29,7 +30,11 @@ export default function StudyTimer({ assignments = [], classes = [] }) {
   const [cycles, setCycles] = useState(0);
   const [assignmentId, setAssignmentId] = useState('none');
   const [logging, setLogging] = useState(false);
+  const [customOpen, setCustomOpen] = useState(false);
+  const [customMin, setCustomMin] = useState('');
   const tickRef = useRef(null);
+  const PRESETS = [15, 25, 45, 50];
+  const isPreset = PRESETS.includes(focusMinutes);
 
   const phaseSeconds = useCallback(() => {
     const mins = phase === 'focus' ? focusMinutes : PHASES[phase].minutes;
@@ -171,21 +176,66 @@ export default function StudyTimer({ assignments = [], classes = [] }) {
           </div>
 
           {phase === 'focus' && (
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-muted-foreground shrink-0">Length</span>
-              <div className="flex gap-1">
-                {[15, 25, 45, 50].map((m) => (
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground shrink-0">Length</span>
+                <div className="flex gap-1 flex-wrap">
+                  {PRESETS.map((m) => (
+                    <Button
+                      key={m}
+                      size="sm"
+                      variant={focusMinutes === m ? 'secondary' : 'ghost'}
+                      className="h-7 px-2 text-xs"
+                      onClick={() => { changeFocus(m); setCustomOpen(false); }}
+                    >
+                      {m}m
+                    </Button>
+                  ))}
                   <Button
-                    key={m}
                     size="sm"
-                    variant={focusMinutes === m ? 'secondary' : 'ghost'}
+                    variant={!isPreset ? 'secondary' : 'ghost'}
                     className="h-7 px-2 text-xs"
-                    onClick={() => changeFocus(m)}
+                    onClick={() => setCustomOpen((v) => !v)}
                   >
-                    {m}m
+                    Other
                   </Button>
-                ))}
+                </div>
               </div>
+              {customOpen && (
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    min={1}
+                    max={180}
+                    value={customMin}
+                    onChange={(e) => setCustomMin(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        const m = Math.max(1, Math.min(180, parseInt(customMin) || 25));
+                        changeFocus(m);
+                        setCustomOpen(false);
+                      }
+                    }}
+                    className="h-7 w-20"
+                    placeholder="min"
+                    autoFocus
+                  />
+                  <Button
+                    size="sm"
+                    className="h-7"
+                    onClick={() => {
+                      const m = Math.max(1, Math.min(180, parseInt(customMin) || 25));
+                      changeFocus(m);
+                      setCustomOpen(false);
+                    }}
+                  >
+                    Set
+                  </Button>
+                </div>
+              )}
+              {!isPreset && !customOpen && (
+                <p className="text-xs text-muted-foreground">Custom: {focusMinutes} min</p>
+              )}
             </div>
           )}
 
