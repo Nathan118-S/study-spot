@@ -130,7 +130,7 @@ export default function Layout() {
           </Button>
           <div className="flex items-center gap-2 px-2">
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate">{user?.full_name || user?.email || 'User'}</p>
+              <p className="text-sm font-medium truncate">{user?.name || user?.full_name || user?.email || 'User'}</p>
               <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
             </div>
             <Button variant="ghost" size="icon" onClick={() => logout()} title="Sign out">
