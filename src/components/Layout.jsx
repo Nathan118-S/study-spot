@@ -6,6 +6,7 @@ import { Calendar, LayoutDashboard, BookOpen, Settings as SettingsIcon, Moon, Su
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import NotificationCenter from '@/components/NotificationCenter';
+import { isDemoUser } from '@/lib/demoData';
 
 const navItems = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
@@ -88,6 +89,11 @@ export default function Layout() {
           ))}
         </nav>
         <div className="p-4 border-t border-sidebar-border space-y-3">
+          {isDemoUser(user) && (
+            <div className="rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-sm font-medium text-emerald-700 dark:text-emerald-300">
+              Demo account
+            </div>
+          )}
           {isAdmin && (
             <NavLink
               to="/admin"
