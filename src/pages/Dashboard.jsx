@@ -249,15 +249,15 @@ export default function Dashboard() {
           onClick={() => setShowWelcome(false)}
         >
           <motion.div
-            initial={{ scale: 0.8, opacity: 0, y: 10 }}
-            animate={{ scale: 1, opacity: 1, y: 0 }}
-            transition={{ type: 'spring', stiffness: 260, damping: 20 }}
+            initial={{ opacity: 0, y: 16, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
             className="rounded-none md:rounded-3xl bg-card border-0 md:border border-border shadow-none md:shadow-2xl px-6 md:px-10 py-16 md:py-14 text-center w-full max-w-none md:max-w-md min-h-screen md:min-h-0 flex flex-col items-center justify-center"
           >
             <motion.div
-              initial={{ scale: 0, rotate: -20 }}
-              animate={{ scale: 1, rotate: 0 }}
-              transition={{ delay: 0.15, type: 'spring', stiffness: 300, damping: 12 }}
+              initial={{ opacity: 0, scale: 0.6, rotate: -12 }}
+              animate={{ opacity: 1, scale: 1, rotate: 0 }}
+              transition={{ delay: 0.18, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
               className="text-5xl mb-3"
             >
               👋
