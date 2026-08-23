@@ -29,7 +29,7 @@ export default function Layout() {
   const mainRef = useRef(null);
   const primaryRoots = ['/', '/classes', '/calendar', '/analytics', '/settings', '/admin'];
   const showBack = !primaryRoots.includes(location.pathname);
-  const bottomNav = navItems.filter((i) => i.to !== '/settings');
+  const bottomNav = navItems.filter((i) => i.to !== '/settings' && i.to !== '/calendar');
 
   const scrollToMainTop = () => {
     const el = mainRef.current;
