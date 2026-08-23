@@ -7,7 +7,8 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/components/ui/use-toast';
 import MergeDialog from '@/components/admin/MergeDialog';
 import UserManageDialog from '@/components/admin/UserManageDialog';
-import { Loader2, ShieldCheck, RefreshCw, ChevronRight } from 'lucide-react';
+import NotificationSender from '@/components/admin/NotificationSender';
+import { Loader2, ShieldCheck, RefreshCw, ChevronRight, Users, Bell } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export default function Admin() {
@@ -194,13 +195,13 @@ export default function Admin() {
   const selected = users.find((u) => u.id === selectedId) || null;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-2xl">
       <div className="flex items-center justify-between gap-3">
         <div>
           <h1 className="font-heading text-2xl md:text-3xl font-bold flex items-center gap-2">
             <ShieldCheck className="h-7 w-7 text-primary" /> Admin
           </h1>
-          <p className="text-muted-foreground text-sm">Manage users, roles, passwords, streaks, and accounts.</p>
+          <p className="text-muted-foreground text-sm">Manage users, roles, and send notifications.</p>
         </div>
         <Button variant="outline" size="icon" onClick={load} title="Refresh" disabled={loading}>
           <RefreshCw className={cn('h-4 w-4', loading && 'animate-spin')} />
@@ -211,39 +212,55 @@ export default function Admin() {
         Email addresses cannot be changed on a Base44 account. Use <span className="font-medium">Reset password</span> to send a password-reset link instead.
       </div>
 
-      {loading ? (
-        <div className="flex justify-center py-16"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
-      ) : users.length === 0 ? (
-        <p className="text-muted-foreground">No users found.</p>
-      ) : (
-        <div className="space-y-2">
-          {users.map((u) => (
-            <button
-              key={u.id}
-              onClick={() => setSelectedId(u.id)}
-              className="w-full text-left rounded-lg border bg-card p-4 hover:bg-accent transition-colors flex items-center justify-between gap-3"
-            >
-              <div className="min-w-0">
-                <p className="font-medium truncate">{u.name || u.full_name || u.email}</p>
-                <p className="text-sm text-muted-foreground truncate">{u.email}</p>
-              </div>
-              <div className="flex items-center gap-2 shrink-0">
-                <Badge
-                  variant={u.role === 'admin' ? 'default' : 'secondary'}
-                  className={cn(
-                    'capitalize',
-                    u.role === 'demo' && 'border-transparent bg-emerald-500 text-white hover:bg-emerald-500/90',
-                    u.role === 'disabled' && 'border-transparent bg-red-500 text-white hover:bg-red-500/90'
-                  )}
-                >
-                  {u.role}
-                </Badge>
-                <ChevronRight className="h-4 w-4 text-muted-foreground" />
-              </div>
-            </button>
-          ))}
-        </div>
-      )}
+      <section className="space-y-3">
+        <h2 className="font-semibold text-lg flex items-center gap-2">
+          <Users className="h-5 w-5 text-primary" /> People
+        </h2>
+        <p className="text-sm text-muted-foreground">Tap a user to manage roles, passwords, streaks, 2FA, and accounts.</p>
+        {loading ? (
+          <div className="flex justify-center py-16"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
+        ) : users.length === 0 ? (
+          <p className="text-muted-foreground">No users found.</p>
+        ) : (
+          <div className="space-y-2">
+            {users.map((u) => (
+              <button
+                key={u.id}
+                onClick={() => setSelectedId(u.id)}
+                className="w-full text-left rounded-lg border bg-card p-4 hover:bg-accent transition-colors flex items-center justify-between gap-3"
+              >
+                <div className="min-w-0">
+                  <p className="font-medium truncate">{u.name || u.full_name || u.email}</p>
+                  <p className="text-sm text-muted-foreground truncate">{u.email}</p>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <Badge
+                    variant={u.role === 'admin' ? 'default' : 'secondary'}
+                    className={cn(
+                      'capitalize',
+                      u.role === 'demo' && 'border-transparent bg-emerald-500 text-white hover:bg-emerald-500/90',
+                      u.role === 'disabled' && 'border-transparent bg-red-500 text-white hover:bg-red-500/90'
+                    )}
+                  >
+                    {u.role}
+                  </Badge>
+                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="font-semibold text-lg flex items-center gap-2">
+          <Bell className="h-5 w-5 text-primary" /> Send Notification
+        </h2>
+        <p className="text-sm text-muted-foreground">
+          Send a custom in-app notification to a single user or everyone at once.
+        </p>
+        <NotificationSender users={users} />
+      </section>
 
       <UserManageDialog
         open={!!selected}
