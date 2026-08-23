@@ -65,9 +65,6 @@ export default function Layout() {
         <div className="h-16 flex items-center gap-2 px-6 border-b border-sidebar-border">
           <GraduationCap className="h-7 w-7 text-primary" />
           <span className="font-heading font-bold text-lg">Study Spot</span>
-          <div className="ml-auto">
-            <NotificationCenter />
-          </div>
         </div>
         <nav className="flex-1 p-4 space-y-1">
           {items.map((item) => (
@@ -108,6 +105,7 @@ export default function Layout() {
               Admin
             </NavLink>
           )}
+          <NotificationCenter fullWidth />
           <Button variant="ghost" className="w-full justify-start" onClick={() => setDark((d) => !d)}>
             {dark ? <Sun className="h-5 w-5 mr-2" /> : <Moon className="h-5 w-5 mr-2" />}
             {dark ? 'Light mode' : 'Dark mode'}

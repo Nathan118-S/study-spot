@@ -25,7 +25,7 @@ const TYPE_TINT = {
   info: 'bg-muted text-muted-foreground',
 };
 
-export default function NotificationCenter() {
+export default function NotificationCenter({ fullWidth = false }) {
   const [items, setItems] = useState([]);
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
@@ -72,10 +72,21 @@ export default function NotificationCenter() {
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button variant="ghost" size="icon" className="relative" aria-label="Notifications">
+        <Button
+          variant="ghost"
+          size={fullWidth ? 'default' : 'icon'}
+          className={cn('relative', fullWidth && 'w-full justify-start gap-3 px-3 py-2')}
+          aria-label="Notifications"
+        >
           <Bell className="h-5 w-5" />
+          {fullWidth && <span>Notifications</span>}
           {unread > 0 && (
-            <span className="absolute top-1 right-1 min-w-4 h-4 px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center">
+            <span
+              className={cn(
+                'rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center',
+                fullWidth ? 'ml-auto min-w-5 h-5 px-1.5' : 'absolute top-1 right-1 min-w-4 h-4 px-1'
+              )}
+            >
               {unread > 9 ? '9+' : unread}
             </span>
           )}
