@@ -41,6 +41,7 @@ export default function Dashboard() {
   const [selectMode, setSelectMode] = useState(false);
   const [selected, setSelected] = useState({});
   const [showTimer, setShowTimer] = useState(false);
+  const [connections, setConnections] = useState({ calendar: false, classroom: false, blackboard: false });
 
   const load = useCallback(async () => {
     const [a, c] = await Promise.all([
@@ -63,6 +64,13 @@ export default function Dashboard() {
       setLoading(false);
     })();
   }, [load]);
+
+  useEffect(() => {
+    base44.functions
+      .invoke('checkGoogleConnections', {})
+      .then((res) => setConnections(res.data || {}))
+      .catch(() => {});
+  }, []);
 
   const runSync = useCallback(
     async (silent = false) => {
@@ -223,10 +231,12 @@ export default function Dashboard() {
           >
             <Timer className="h-4 w-4" />
           </Button>
-          <Button variant="outline" className="h-11 md:h-9" onClick={() => runSync(false)} disabled={syncing}>
-            {syncing ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
-            Sync Now
-          </Button>
+          {(connections.calendar || connections.classroom || connections.blackboard) && (
+            <Button variant="outline" className="h-11 md:h-9" onClick={() => runSync(false)} disabled={syncing}>
+              {syncing ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
+              Sync Now
+            </Button>
+          )}
           <Button
             className="h-11 md:h-9"
             onClick={() => {
