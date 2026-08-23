@@ -202,7 +202,12 @@ export default function Admin() {
                 <p className="text-sm text-muted-foreground truncate">{u.email}</p>
               </div>
               <div className="flex items-center gap-2 shrink-0">
-                <Badge variant={u.role === 'admin' ? 'default' : 'secondary'} className="capitalize">{u.role}</Badge>
+                <Badge
+                  variant={u.role === 'admin' ? 'default' : 'secondary'}
+                  className={cn('capitalize', u.role === 'demo' && 'border-transparent bg-emerald-500 text-white hover:bg-emerald-500/90')}
+                >
+                  {u.role}
+                </Badge>
                 <ChevronRight className="h-4 w-4 text-muted-foreground" />
               </div>
             </button>
