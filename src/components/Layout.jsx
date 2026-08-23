@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import { Outlet, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/lib/AuthContext';
@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import NotificationCenter from '@/components/NotificationCenter';
 import { isDemoUser } from '@/lib/demoData';
+import { useTheme } from '@/lib/theme';
 
 const navItems = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
@@ -18,12 +19,7 @@ const navItems = [
 
 export default function Layout() {
   const { user, logout } = useAuth();
-  const [dark, setDark] = useState(() => {
-    if (typeof window === 'undefined') return false;
-    const stored = localStorage.getItem('cf-theme');
-    if (stored) return stored === 'dark';
-    return window.matchMedia('(prefers-color-scheme: dark)').matches;
-  });
+  const { dark, setDarkMode } = useTheme();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [desktopOpen, setDesktopOpen] = useState(true);
   const location = useLocation();
@@ -43,18 +39,6 @@ export default function Layout() {
   };
   const items = navItems;
   const isAdmin = user?.role === 'admin';
-
-  useEffect(() => {
-    document.documentElement.classList.toggle('dark', dark);
-    localStorage.setItem('cf-theme', dark ? 'dark' : 'light');
-  }, [dark]);
-
-  useEffect(() => {
-    const mql = window.matchMedia('(prefers-color-scheme: dark)');
-    const handler = (e) => setDark(e.matches);
-    mql.addEventListener('change', handler);
-    return () => mql.removeEventListener('change', handler);
-  }, []);
 
   return (
     <div className="min-h-screen bg-background text-foreground flex">
@@ -124,7 +108,7 @@ export default function Layout() {
             </NavLink>
           )}
           <NotificationCenter fullWidth />
-          <Button variant="ghost" className="w-full justify-start" onClick={() => setDark((d) => !d)}>
+          <Button variant="ghost" className="w-full justify-start" onClick={() => setDarkMode(!dark)}>
             {dark ? <Sun className="h-5 w-5 mr-2" /> : <Moon className="h-5 w-5 mr-2" />}
             {dark ? 'Light mode' : 'Dark mode'}
           </Button>

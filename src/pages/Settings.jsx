@@ -3,7 +3,8 @@ import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, BookOpen, Loader2, Link2, Unlink, RefreshCw, Trash2, LogOut, Trophy, Moon, Sun } from 'lucide-react';
+import { Calendar, BookOpen, Loader2, Link2, Unlink, RefreshCw, Trash2, LogOut, Trophy, Moon, Sun, Smartphone } from 'lucide-react';
+import { useTheme } from '@/lib/theme';
 import GradingScaleEditor from '@/components/GradingScaleEditor';
 import TwoFactorSettings from '@/components/TwoFactorSettings';
 import BlackboardConnection from '@/components/BlackboardConnection';
@@ -40,18 +41,7 @@ export default function Settings() {
     (user?.leaderboard_enabled ?? user?.data?.leaderboard_enabled) === true
   );
   const [savingLeaderboard, setSavingLeaderboard] = useState(false);
-  const [dark, setDark] = useState(() => {
-    if (typeof window === 'undefined') return false;
-    const stored = localStorage.getItem('cf-theme');
-    if (stored) return stored === 'dark';
-    return window.matchMedia('(prefers-color-scheme: dark)').matches;
-  });
-
-  const toggleDark = (checked) => {
-    setDark(checked);
-    document.documentElement.classList.toggle('dark', checked);
-    localStorage.setItem('cf-theme', checked ? 'dark' : 'light');
-  };
+  const { dark, sync: syncTheme, setDarkMode, setSyncWithDevice } = useTheme();
 
   const toggleLeaderboard = async (checked) => {
     setLeaderboardEnabled(checked);
@@ -166,10 +156,22 @@ export default function Settings() {
               Dark mode
             </p>
             <p className="text-xs text-muted-foreground">
-              Switch between light and dark themes. Syncs with the sidebar toggle.
+              Switch between light and dark themes. Disabled while syncing with your device.
             </p>
           </div>
-          <Switch checked={dark} onCheckedChange={toggleDark} />
+          <Switch checked={dark} onCheckedChange={setDarkMode} disabled={syncTheme} />
+        </div>
+        <div className="rounded-lg border bg-card p-4 flex items-center justify-between gap-4">
+          <div className="min-w-0">
+            <p className="text-sm font-medium flex items-center gap-2">
+              <Smartphone className="h-4 w-4" />
+              Sync with device
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Automatically match light or dark mode to your system setting.
+            </p>
+          </div>
+          <Switch checked={syncTheme} onCheckedChange={setSyncWithDevice} />
         </div>
       </section>
 
