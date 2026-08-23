@@ -9,6 +9,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Plus, RefreshCw, Trash2, Pencil, AlertTriangle, Loader2, Inbox, CheckSquare, Timer } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { motion } from 'framer-motion';
 import { format, parseISO, isToday, isPast, isThisWeek } from 'date-fns';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { isGraded, DEFAULT_GRADING_SCALE } from '@/lib/grading';
@@ -247,8 +248,20 @@ export default function Dashboard() {
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm px-4"
           onClick={() => setShowWelcome(false)}
         >
-          <div className="rounded-3xl bg-card border border-border shadow-2xl px-10 py-14 text-center max-w-md w-full">
-            <div className="text-5xl mb-3">👋</div>
+          <motion.div
+            initial={{ scale: 0.8, opacity: 0, y: 10 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            transition={{ type: 'spring', stiffness: 260, damping: 20 }}
+            className="rounded-3xl bg-card border border-border shadow-2xl px-10 py-14 text-center max-w-md w-full"
+          >
+            <motion.div
+              initial={{ scale: 0, rotate: -20 }}
+              animate={{ scale: 1, rotate: 0 }}
+              transition={{ delay: 0.15, type: 'spring', stiffness: 300, damping: 12 }}
+              className="text-5xl mb-3"
+            >
+              👋
+            </motion.div>
             <p className="text-3xl md:text-4xl font-heading font-bold tracking-tight">
               <span className="bg-gradient-to-r from-primary to-amber-500 bg-clip-text text-transparent">Hello</span>
               {(() => {
@@ -257,7 +270,7 @@ export default function Dashboard() {
               })()}
             </p>
             <p className="mt-2 text-sm text-muted-foreground">Welcome back to Study Spot</p>
-          </div>
+          </motion.div>
         </div>
       )}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
