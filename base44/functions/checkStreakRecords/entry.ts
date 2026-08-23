@@ -53,6 +53,20 @@ export default async function(req: Request): Promise<Response> {
 
         if (streak > best && streak >= MIN_STREAK) {
           try {
+            await base44.asServiceRole.entities.Notification.create({
+              user_id: oid,
+              title: 'New streak record! 🔥',
+              content: `${c.name}: ${streak} assignments in a row — your new best.`,
+              type: 'streak',
+              read: false,
+              action_label: 'View streaks',
+              action_url: '/analytics',
+            });
+            notified++;
+          } catch {
+            // In-app notification create failed; continue.
+          }
+          try {
             await base44.asServiceRole.integrations.Core.SendPushNotification({
               user_id: oid,
               title: 'New streak record! 🔥',
@@ -60,10 +74,10 @@ export default async function(req: Request): Promise<Response> {
               action_label: 'View streaks',
               action_url: '/analytics',
             });
-            notified++;
           } catch {
-            // Push may fail if the user has no native mobile build; fall through
-            // and still record the best so we don't retry the same record.
+            // Push may fail if the user has no native mobile build; the in-app
+            // notification above still reaches them. Fall through and record the
+            // best so we don't retry the same record.
           }
         }
 

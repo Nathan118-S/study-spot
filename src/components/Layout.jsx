@@ -5,6 +5,7 @@ import { useAuth } from '@/lib/AuthContext';
 import { Calendar, LayoutDashboard, BookOpen, Settings as SettingsIcon, Moon, Sun, LogOut, GraduationCap, BarChart3, Flame, ArrowLeft, ShieldCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import NotificationCenter from '@/components/NotificationCenter';
 
 const navItems = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
@@ -64,6 +65,9 @@ export default function Layout() {
         <div className="h-16 flex items-center gap-2 px-6 border-b border-sidebar-border">
           <GraduationCap className="h-7 w-7 text-primary" />
           <span className="font-heading font-bold text-lg">Study Spot</span>
+          <div className="ml-auto">
+            <NotificationCenter />
+          </div>
         </div>
         <nav className="flex-1 p-4 space-y-1">
           {items.map((item) => (
@@ -144,6 +148,9 @@ export default function Layout() {
               </Button>
             )}
             <span className="font-heading font-bold text-lg ml-1">Study Spot</span>
+            <div className="ml-auto">
+              <NotificationCenter />
+            </div>
           </div>
         </header>
         <main ref={mainRef} className="flex-1 p-4 pb-24 md:p-8 md:pb-8 max-w-7xl w-full mx-auto overscroll-none">
