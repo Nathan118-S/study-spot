@@ -7,10 +7,13 @@ import {
   startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInterval,
   format, isSameMonth, isSameDay, parseISO, isToday,
 } from 'date-fns';
+import { useAuth } from '@/lib/AuthContext';
+import { isDemoUser, getDemoAssignments, getDemoClasses } from '@/lib/demoData';
 
 const PRIORITY_DOT = { high: 'bg-red-500', medium: 'bg-amber-500', low: 'bg-emerald-500' };
 
 export default function CalendarView() {
+  const { user } = useAuth();
   const [assignments, setAssignments] = useState([]);
   const [classes, setClasses] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -19,13 +22,18 @@ export default function CalendarView() {
   const [overKey, setOverKey] = useState(null);
 
   const load = useCallback(async () => {
+    if (isDemoUser(user)) {
+      setAssignments(getDemoAssignments());
+      setClasses(getDemoClasses());
+      return;
+    }
     const [a, c] = await Promise.all([
       base44.entities.Assignment.list('-due_date', 500),
       base44.entities.Class.list(),
     ]);
     setAssignments(a);
     setClasses(c);
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     (async () => {
@@ -56,6 +64,7 @@ export default function CalendarView() {
     next.setHours(old.getHours(), old.getMinutes(), old.getSeconds(), 0);
     const due_date = next.toISOString();
     setAssignments((prev) => prev.map((x) => (x.id === id ? { ...x, due_date } : x)));
+    if (isDemoUser(user)) return;
     await base44.entities.Assignment.update(id, { due_date });
   };
 
