@@ -3,7 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, BookOpen, Loader2, Link2, Unlink, RefreshCw, Trash2, LogOut } from 'lucide-react';
+import { Calendar, BookOpen, Loader2, Link2, Unlink, RefreshCw, Trash2, LogOut, Trophy } from 'lucide-react';
 import GradingScaleEditor from '@/components/GradingScaleEditor';
 import TwoFactorSettings from '@/components/TwoFactorSettings';
 import BlackboardConnection from '@/components/BlackboardConnection';
@@ -36,6 +36,21 @@ export default function Settings() {
   const [loggingOut, setLoggingOut] = useState(false);
   const [syncCompletion, setSyncCompletion] = useState(user?.data?.sync_completion_to_classroom !== false);
   const [savingSync, setSavingSync] = useState(false);
+  const [leaderboardEnabled, setLeaderboardEnabled] = useState(user?.data?.leaderboard_enabled === true);
+  const [savingLeaderboard, setSavingLeaderboard] = useState(false);
+
+  const toggleLeaderboard = async (checked) => {
+    setLeaderboardEnabled(checked);
+    if (isDemoUser(user)) return;
+    setSavingLeaderboard(true);
+    try {
+      await base44.auth.updateMe({ leaderboard_enabled: checked });
+    } catch {
+      setLeaderboardEnabled(!checked);
+    } finally {
+      setSavingLeaderboard(false);
+    }
+  };
 
   const toggleSyncCompletion = async (checked) => {
     setSyncCompletion(checked);
@@ -213,6 +228,22 @@ export default function Settings() {
           Set the minimum percentage for each letter grade. This is used to compute letter grades on graded assignments.
         </p>
         <GradingScaleEditor initialScale={user?.data?.grading_scale} />
+      </section>
+
+      <section className="space-y-2">
+        <h2 className="font-semibold text-lg">Leaderboard</h2>
+        <div className="rounded-lg border bg-card p-4 flex items-center justify-between gap-4">
+          <div className="min-w-0">
+            <p className="text-sm font-medium flex items-center gap-2">
+              <Trophy className="h-4 w-4 text-yellow-500" />
+              Show study-streak leaderboard
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Display the top study streaks on the Analytics page so you can compete with other students. Off by default.
+            </p>
+          </div>
+          <Switch checked={leaderboardEnabled} onCheckedChange={toggleLeaderboard} disabled={savingLeaderboard} />
+        </div>
       </section>
 
       <section className="space-y-2">
