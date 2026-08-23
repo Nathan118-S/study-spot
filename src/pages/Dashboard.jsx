@@ -16,7 +16,6 @@ import GradedList from '@/components/GradedList';
 import PullToRefresh from '@/components/PullToRefresh';
 import StudyTimer from '@/components/StudyTimer';
 import { isDemoUser, getDemoAssignments, getDemoClasses, demoConnections } from '@/lib/demoData';
-import { toast } from '@/components/ui/use-toast';
 
 const PRIORITY_BAR = { high: 'bg-red-500', medium: 'bg-amber-500', low: 'bg-emerald-500' };
 const PRIORITY_RANK = { high: 3, medium: 2, low: 1 };
@@ -47,6 +46,7 @@ export default function Dashboard() {
   const [selected, setSelected] = useState({});
   const [showTimer, setShowTimer] = useState(false);
   const [connections, setConnections] = useState({ calendar: false, classroom: false, blackboard: false });
+  const [showWelcome, setShowWelcome] = useState(false);
 
   const load = useCallback(async () => {
     if (isDemoUser(user)) {
@@ -124,12 +124,13 @@ export default function Dashboard() {
     }
   }, [user, runSync]);
 
-  // Welcome toast once per full page load.
+  // Welcome box once per full page load.
   useEffect(() => {
     if (!user || greetedThisLoad) return;
     greetedThisLoad = true;
-    const name = user.full_name || (user.email ? user.email.split('@')[0] : '');
-    toast({ title: name ? `Hello, ${name}!` : 'Hello!' });
+    setShowWelcome(true);
+    const t = setTimeout(() => setShowWelcome(false), 2800);
+    return () => clearTimeout(t);
   }, [user]);
 
   const toggleComplete = async (a) => {
@@ -241,6 +242,21 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
+      {showWelcome && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm px-4"
+          onClick={() => setShowWelcome(false)}
+        >
+          <div className="rounded-3xl bg-card border border-border shadow-2xl px-10 py-12 text-center max-w-md w-full">
+            <p className="text-4xl md:text-5xl font-heading font-bold">
+              {(() => {
+                const name = user?.full_name || (user?.email ? user.email.split('@')[0] : '');
+                return name ? `Hello, ${name}!` : 'Hello!';
+              })()}
+            </p>
+          </div>
+        </div>
+      )}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <h1 className="font-heading text-2xl md:text-3xl font-bold">Dashboard</h1>
