@@ -52,6 +52,31 @@
         ]
       },
       "default": []
+    },
+    "webauthn_challenge": {
+      "type": "string",
+      "description": "Base64url WebAuthn challenge currently in flight (registration or login)",
+      "default": null
+    },
+    "passkey_cred_id": {
+      "type": "string",
+      "description": "Base64url credential ID of the user's registered passkey",
+      "default": null
+    },
+    "passkey_pub_key": {
+      "type": "object",
+      "description": "JWK public key for the registered passkey",
+      "default": null
+    },
+    "passkey_alg": {
+      "type": "number",
+      "description": "COSE algorithm identifier of the registered passkey public key",
+      "default": null
+    },
+    "passkey_counter": {
+      "type": "number",
+      "description": "Last-seen signature counter for the registered passkey",
+      "default": 0
     }
   },
   "required": [
