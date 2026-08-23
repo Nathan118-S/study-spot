@@ -245,14 +245,14 @@ export default function Dashboard() {
     <div className="space-y-6">
       {showWelcome && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm px-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-card md:bg-black/30 md:backdrop-blur-sm p-0 md:px-4"
           onClick={() => setShowWelcome(false)}
         >
           <motion.div
             initial={{ scale: 0.8, opacity: 0, y: 10 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
             transition={{ type: 'spring', stiffness: 260, damping: 20 }}
-            className="rounded-3xl bg-card border border-border shadow-2xl px-10 py-14 text-center max-w-md w-full"
+            className="rounded-none md:rounded-3xl bg-card border-0 md:border border-border shadow-none md:shadow-2xl px-6 md:px-10 py-16 md:py-14 text-center w-full max-w-none md:max-w-md min-h-screen md:min-h-0 flex flex-col items-center justify-center"
           >
             <motion.div
               initial={{ scale: 0, rotate: -20 }}
