@@ -20,6 +20,7 @@ const CalendarView = lazy(() => import('@/pages/CalendarView'));
 const Analytics = lazy(() => import('@/pages/Analytics'));
 const Settings = lazy(() => import('@/pages/Settings'));
 const Admin = lazy(() => import('@/pages/Admin'));
+const AdminPeople = lazy(() => import('@/pages/AdminPeople'));
 const Verify2FA = lazy(() => import('@/pages/Verify2FA'));
 const BlackboardCallback = lazy(() => import('@/pages/BlackboardCallback'));
 import Landing from '@/pages/Landing';
@@ -75,6 +76,7 @@ const AuthenticatedApp = () => {
             <Route path="/analytics" element={<Suspense fallback={<PageLoader />}><Analytics /></Suspense>} />
             <Route path="/settings" element={<Suspense fallback={<PageLoader />}><Settings /></Suspense>} />
             <Route path="/admin" element={<Suspense fallback={<PageLoader />}><Admin /></Suspense>} />
+            <Route path="/admin/people" element={<Suspense fallback={<PageLoader />}><AdminPeople /></Suspense>} />
           </Route>
         </Route>
       </Route>

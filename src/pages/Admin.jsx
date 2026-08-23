@@ -1,23 +1,25 @@
 import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/components/ui/use-toast';
-import MergeDialog from '@/components/admin/MergeDialog';
-import UserManageDialog from '@/components/admin/UserManageDialog';
 import NotificationSender from '@/components/admin/NotificationSender';
-import { Loader2, ShieldCheck, RefreshCw, ChevronRight, Users, Bell } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { Loader2, ShieldCheck, Users, Bell, ChevronRight } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
 
 export default function Admin() {
   const { user, isLoadingAuth } = useAuth();
+  const navigate = useNavigate();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [busy, setBusy] = useState(null);
-  const [mergeSource, setMergeSource] = useState(null);
-  const [selectedId, setSelectedId] = useState(null);
+  const [notifOpen, setNotifOpen] = useState(false);
   const { toast } = useToast();
 
   const load = async () => {
@@ -41,258 +43,58 @@ export default function Admin() {
   }
   if (!user || user.role !== 'admin') return <Navigate to="/" replace />;
 
-  const setRole = async (u, role) => {
-    if (role === u.role) return;
-    setBusy(u.id);
-    try {
-      await base44.functions.invoke('adminUpdateUserRole', { userId: u.id, role });
-      setUsers((prev) => prev.map((x) => (x.id === u.id ? { ...x, role } : x)));
-      toast({ title: 'Role updated', description: `${u.email} is now ${role}` });
-    } catch (e) {
-      toast({ title: 'Update failed', description: e.message, variant: 'destructive' });
-    } finally {
-      setBusy(null);
-    }
-  };
-
-  const disableUser = async (u, reason) => {
-    setBusy(u.id);
-    try {
-      await base44.functions.invoke('adminUpdateUserRole', { userId: u.id, role: 'disabled', reason });
-      setUsers((prev) => prev.map((x) => (x.id === u.id ? { ...x, role: 'disabled', disabled_reason: reason || null } : x)));
-      toast({ title: 'Account disabled', description: `${u.email} can no longer log in.` });
-    } catch (e) {
-      toast({ title: 'Failed', description: e.message, variant: 'destructive' });
-    } finally {
-      setBusy(null);
-    }
-  };
-
-  const enableUser = async (u) => {
-    setBusy(u.id);
-    try {
-      await base44.functions.invoke('adminUpdateUserRole', { userId: u.id, role: 'user' });
-      setUsers((prev) => prev.map((x) => (x.id === u.id ? { ...x, role: 'user', disabled_reason: null } : x)));
-      toast({ title: 'Account re-enabled', description: `${u.email} can log in again.` });
-    } catch (e) {
-      toast({ title: 'Failed', description: e.message, variant: 'destructive' });
-    } finally {
-      setBusy(null);
-    }
-  };
-
-  const resetPassword = async (u) => {
-    setBusy(u.id);
-    try {
-      await base44.auth.resetPasswordRequest(u.email);
-      toast({ title: 'Reset email sent', description: u.email });
-    } catch (e) {
-      toast({ title: 'Failed', description: e.message, variant: 'destructive' });
-    } finally {
-      setBusy(null);
-    }
-  };
-
-  const restoreStreak = async (u) => {
-    setBusy(u.id);
-    try {
-      const res = await base44.functions.invoke('adminRestoreStreak', { userId: u.id });
-      toast({
-        title: 'Streak restored',
-        description: `${res.data.restored} overdue assignment(s) marked complete.`,
-      });
-    } catch (e) {
-      toast({ title: 'Failed', description: e.message, variant: 'destructive' });
-    } finally {
-      setBusy(null);
-    }
-  };
-
-  const reset2fa = async (u) => {
-    setBusy(u.id);
-    try {
-      await base44.functions.invoke('adminReset2fa', { userId: u.id });
-      setUsers((prev) => prev.map((x) => (x.id === u.id ? { ...x, twofa_enabled: false } : x)));
-      toast({ title: '2FA reset', description: `${u.email} can sign in without a code.` });
-    } catch (e) {
-      toast({ title: 'Failed', description: e.message, variant: 'destructive' });
-    } finally {
-      setBusy(null);
-    }
-  };
-
-  const verifyUser = async (u) => {
-    setBusy(u.id);
-    try {
-      await base44.functions.invoke('adminVerifyUser', { userId: u.id });
-      toast({ title: 'Verification email sent', description: u.email });
-    } catch (e) {
-      toast({ title: 'Failed', description: e.message, variant: 'destructive' });
-    } finally {
-      setBusy(null);
-    }
-  };
-
-  const deleteUser = async (u) => {
-    setBusy(u.id);
-    try {
-      await base44.functions.invoke('adminDeleteUser', { userId: u.id });
-      setUsers((prev) => prev.filter((x) => x.id !== u.id));
-      toast({ title: 'User deleted', description: u.email });
-    } catch (e) {
-      toast({ title: 'Failed', description: e.message, variant: 'destructive' });
-    } finally {
-      setBusy(null);
-    }
-  };
-
-  const sendTestNotification = async (u, type) => {
-    setBusy(u.id);
-    try {
-      await base44.functions.invoke('adminSendTestNotification', { userId: u.id, type });
-      toast({
-        title: type === 'push' ? 'Test push sent' : 'Test email sent',
-        description: type === 'push'
-          ? `Push notification sent to ${u.email}.`
-          : `Email sent to ${u.email}.`,
-      });
-    } catch (e) {
-      toast({ title: 'Failed', description: e.message, variant: 'destructive' });
-    } finally {
-      setBusy(null);
-    }
-  };
-
-  const mergeAccount = async (sourceId, targetId) => {
-    setBusy(sourceId);
-    try {
-      const res = await base44.functions.invoke('adminMergeAccounts', { sourceId, targetId });
-      setUsers((prev) => prev.filter((x) => x.id !== sourceId));
-      toast({
-        title: 'Accounts merged',
-        description: `Moved ${res.data.movedAssignments} assignment(s) and ${res.data.movedClasses} class(es).`,
-      });
-    } catch (e) {
-      toast({ title: 'Merge failed', description: e.message, variant: 'destructive' });
-    } finally {
-      setBusy(null);
-    }
-  };
-
-  const saveName = async (u, name) => {
-    setBusy(u.id);
-    try {
-      await base44.functions.invoke('adminUpdateUser', { userId: u.id, name });
-      setUsers((prev) => prev.map((x) => (x.id === u.id ? { ...x, name: name.trim() } : x)));
-      toast({ title: 'Name updated', description: u.email });
-    } catch (e) {
-      toast({ title: 'Failed', description: e.message, variant: 'destructive' });
-    } finally {
-      setBusy(null);
-    }
-  };
-
-  const selected = users.find((u) => u.id === selectedId) || null;
-
   return (
     <div className="space-y-6 max-w-2xl">
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <h1 className="font-heading text-2xl md:text-3xl font-bold flex items-center gap-2">
-            <ShieldCheck className="h-7 w-7 text-primary" /> Admin
-          </h1>
-          <p className="text-muted-foreground text-sm">Manage users, roles, and send notifications.</p>
-        </div>
-        <Button variant="outline" size="icon" onClick={load} title="Refresh" disabled={loading}>
-          <RefreshCw className={cn('h-4 w-4', loading && 'animate-spin')} />
-        </Button>
+      <div>
+        <h1 className="font-heading text-2xl md:text-3xl font-bold flex items-center gap-2">
+          <ShieldCheck className="h-7 w-7 text-primary" /> Admin
+        </h1>
+        <p className="text-muted-foreground text-sm">Manage users and send notifications.</p>
       </div>
 
-      <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-sm text-amber-900 dark:text-amber-200">
-        Email addresses cannot be changed on a Base44 account. Use <span className="font-medium">Reset password</span> to send a password-reset link instead.
-      </div>
-
-      <section className="space-y-3">
-        <h2 className="font-semibold text-lg flex items-center gap-2">
-          <Users className="h-5 w-5 text-primary" /> People
-        </h2>
-        <p className="text-sm text-muted-foreground">Tap a user to manage roles, passwords, streaks, 2FA, and accounts.</p>
-        {loading ? (
-          <div className="flex justify-center py-16"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
-        ) : users.length === 0 ? (
-          <p className="text-muted-foreground">No users found.</p>
-        ) : (
-          <div className="space-y-2">
-            {users.map((u) => (
-              <button
-                key={u.id}
-                onClick={() => setSelectedId(u.id)}
-                className="w-full text-left rounded-lg border bg-card p-4 hover:bg-accent transition-colors flex items-center justify-between gap-3"
-              >
-                <div className="min-w-0">
-                  <p className="font-medium truncate">{u.name || u.full_name || u.email}</p>
-                  <p className="text-sm text-muted-foreground truncate">{u.email}</p>
-                </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  <Badge
-                    variant={u.role === 'admin' ? 'default' : 'secondary'}
-                    className={cn(
-                      'capitalize',
-                      u.role === 'demo' && 'border-transparent bg-emerald-500 text-white hover:bg-emerald-500/90',
-                      u.role === 'disabled' && 'border-transparent bg-red-500 text-white hover:bg-red-500/90'
-                    )}
-                  >
-                    {u.role}
-                  </Badge>
-                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                </div>
-              </button>
-            ))}
+      <button
+        onClick={() => navigate('/admin/people')}
+        className="w-full text-left rounded-lg border bg-card p-4 hover:bg-accent transition-colors flex items-center justify-between gap-3"
+      >
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="h-10 w-10 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0">
+            <Users className="h-5 w-5" />
           </div>
-        )}
-      </section>
+          <div className="min-w-0">
+            <p className="font-medium">People</p>
+            <p className="text-sm text-muted-foreground truncate">
+              {loading ? 'Loading…' : `${users.length} user${users.length === 1 ? '' : 's'}`}
+            </p>
+          </div>
+        </div>
+        <ChevronRight className="h-5 w-5 text-muted-foreground shrink-0" />
+      </button>
 
-      <section className="space-y-3">
-        <h2 className="font-semibold text-lg flex items-center gap-2">
-          <Bell className="h-5 w-5 text-primary" /> Send Notification
-        </h2>
-        <p className="text-sm text-muted-foreground">
-          Send a custom in-app notification to a single user or everyone at once.
-        </p>
-        <NotificationSender users={users} />
-      </section>
+      <button
+        onClick={() => setNotifOpen(true)}
+        className="w-full text-left rounded-lg border bg-card p-4 hover:bg-accent transition-colors flex items-center justify-between gap-3"
+      >
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="h-10 w-10 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0">
+            <Bell className="h-5 w-5" />
+          </div>
+          <div className="min-w-0">
+            <p className="font-medium">Send Notification</p>
+            <p className="text-sm text-muted-foreground truncate">Send a custom in-app notification to a user or everyone.</p>
+          </div>
+        </div>
+        <ChevronRight className="h-5 w-5 text-muted-foreground shrink-0" />
+      </button>
 
-      <UserManageDialog
-        open={!!selected}
-        onOpenChange={(o) => !o && setSelectedId(null)}
-        user={selected}
-        currentUser={user}
-        busy={busy}
-        onSetRole={setRole}
-        onResetPassword={resetPassword}
-        onRestoreStreak={restoreStreak}
-        onVerifyUser={verifyUser}
-        onReset2fa={reset2fa}
-        onDeleteUser={deleteUser}
-        onMerge={(u) => { setSelectedId(null); setMergeSource(u); }}
-        onSendTestPush={(u) => sendTestNotification(u, 'push')}
-        onSendTestEmail={(u) => sendTestNotification(u, 'email')}
-        onSaveName={saveName}
-        onDisable={disableUser}
-        onEnable={enableUser}
-      />
-
-      <MergeDialog
-        open={!!mergeSource}
-        onOpenChange={(o) => !o && setMergeSource(null)}
-        source={mergeSource}
-        users={users}
-        onMerge={(targetId) => {
-          const s = mergeSource;
-          setMergeSource(null);
-          if (s) mergeAccount(s.id, targetId);
-        }}
-      />
+      <Dialog open={notifOpen} onOpenChange={setNotifOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Send Notification</DialogTitle>
+            <DialogDescription>Send a custom in-app notification to a single user or everyone at once.</DialogDescription>
+          </DialogHeader>
+          <NotificationSender users={users} />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
