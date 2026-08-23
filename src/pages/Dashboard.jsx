@@ -262,7 +262,7 @@ export default function Dashboard() {
         <GradedList assignments={assignments} gradingScale={gradingScale} onSelect={setDetail} />
       ) : (
       <div className="space-y-4 mt-4">
-      <div className="flex flex-wrap gap-2 items-center">
+      <div className="hidden md:flex flex-wrap gap-2 items-center">
         <SheetSelect
           value={filters.class}
           onValueChange={(v) => setFilters({ ...filters, class: v })}
