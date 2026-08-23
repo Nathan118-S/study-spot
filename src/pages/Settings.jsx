@@ -210,6 +210,22 @@ export default function Settings() {
       </section>
 
       <section className="space-y-2">
+        <h2 className="font-semibold text-lg">Leaderboard</h2>
+        <div className="rounded-lg border bg-card p-4 flex items-center justify-between gap-4">
+          <div className="min-w-0">
+            <p className="text-sm font-medium flex items-center gap-2">
+              <Trophy className="h-4 w-4 text-yellow-500" />
+              Show study-streak leaderboard
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Display the top study streaks on the Analytics page so you can compete with other students. Off by default.
+            </p>
+          </div>
+          <Switch checked={leaderboardEnabled} onCheckedChange={toggleLeaderboard} disabled={savingLeaderboard} />
+        </div>
+      </section>
+
+      <section className="space-y-2">
         <h2 className="font-semibold text-lg">Data</h2>
         <DataExport />
       </section>
@@ -228,22 +244,6 @@ export default function Settings() {
           Set the minimum percentage for each letter grade. This is used to compute letter grades on graded assignments.
         </p>
         <GradingScaleEditor initialScale={user?.data?.grading_scale} />
-      </section>
-
-      <section className="space-y-2">
-        <h2 className="font-semibold text-lg">Leaderboard</h2>
-        <div className="rounded-lg border bg-card p-4 flex items-center justify-between gap-4">
-          <div className="min-w-0">
-            <p className="text-sm font-medium flex items-center gap-2">
-              <Trophy className="h-4 w-4 text-yellow-500" />
-              Show study-streak leaderboard
-            </p>
-            <p className="text-xs text-muted-foreground">
-              Display the top study streaks on the Analytics page so you can compete with other students. Off by default.
-            </p>
-          </div>
-          <Switch checked={leaderboardEnabled} onCheckedChange={toggleLeaderboard} disabled={savingLeaderboard} />
-        </div>
       </section>
 
       <section className="space-y-2">
