@@ -34,6 +34,7 @@ export default function Login() {
     setLoading(true);
     try {
       await base44.auth.loginViaEmailPassword(email, password);
+      sessionStorage.setItem("cf-welcome", "1");
       window.location.href = returnTo;
     } catch (err) {
       setError(err.message || "Invalid email or password");
@@ -43,6 +44,7 @@ export default function Login() {
   };
 
   const handleGoogle = () => {
+    sessionStorage.setItem("cf-welcome", "1");
     base44.auth.loginWithProvider("google", returnTo);
   };
 

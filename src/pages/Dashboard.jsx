@@ -16,6 +16,7 @@ import GradedList from '@/components/GradedList';
 import PullToRefresh from '@/components/PullToRefresh';
 import StudyTimer from '@/components/StudyTimer';
 import { isDemoUser, getDemoAssignments, getDemoClasses, demoConnections } from '@/lib/demoData';
+import { toast } from '@/components/ui/use-toast';
 
 const PRIORITY_BAR = { high: 'bg-red-500', medium: 'bg-amber-500', low: 'bg-emerald-500' };
 const PRIORITY_RANK = { high: 3, medium: 2, low: 1 };
@@ -119,6 +120,15 @@ export default function Dashboard() {
       runSync(true);
     }
   }, [user, runSync]);
+
+  // Welcome toast right after login.
+  useEffect(() => {
+    if (!user) return;
+    if (sessionStorage.getItem('cf-welcome') !== '1') return;
+    sessionStorage.removeItem('cf-welcome');
+    const name = user.full_name || (user.email ? user.email.split('@')[0] : '');
+    toast({ title: name ? `Hello, ${name}!` : 'Hello!' });
+  }, [user]);
 
   const toggleComplete = async (a) => {
     const prev = assignments;
