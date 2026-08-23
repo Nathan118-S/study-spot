@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Outlet, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/lib/AuthContext';
-import { Calendar, LayoutDashboard, BookOpen, Settings as SettingsIcon, Moon, Sun, LogOut, GraduationCap, BarChart3, Flame, ArrowLeft, ShieldCheck } from 'lucide-react';
+import { Calendar, LayoutDashboard, BookOpen, Settings as SettingsIcon, Moon, Sun, LogOut, GraduationCap, BarChart3, Flame, ArrowLeft, ShieldCheck, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import NotificationCenter from '@/components/NotificationCenter';
@@ -25,6 +25,7 @@ export default function Layout() {
     return window.matchMedia('(prefers-color-scheme: dark)').matches;
   });
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [desktopOpen, setDesktopOpen] = useState(true);
   const location = useLocation();
   const navigate = useNavigate();
   const mainRef = useRef(null);
@@ -59,13 +60,24 @@ export default function Layout() {
     <div className="min-h-screen bg-background text-foreground flex">
       <aside
         className={cn(
-          'fixed inset-y-0 left-0 z-40 w-64 bg-sidebar border-r border-sidebar-border flex flex-col transition-transform md:translate-x-0',
-          mobileOpen ? 'translate-x-0' : '-translate-x-full'
+          'fixed inset-y-0 left-0 z-40 w-64 bg-sidebar border-r border-sidebar-border flex flex-col transition-transform',
+          mobileOpen ? 'translate-x-0' : '-translate-x-full',
+          desktopOpen ? 'md:translate-x-0' : 'md:-translate-x-full'
         )}
       >
         <div className="h-16 flex items-center gap-2 px-6 border-b border-sidebar-border">
           <GraduationCap className="h-7 w-7 text-primary" />
-          <span className="font-heading font-bold text-lg">Study Spot</span>
+          <span className="font-heading font-bold text-lg flex-1">Study Spot</span>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="hidden md:flex h-8 w-8"
+            onClick={() => setDesktopOpen(false)}
+            aria-label="Hide sidebar"
+            title="Hide sidebar"
+          >
+            <PanelLeftClose className="h-5 w-5" />
+          </Button>
         </div>
         <nav className="flex-1 p-4 space-y-1">
           {items.map((item) => (
@@ -132,7 +144,20 @@ export default function Layout() {
         <div className="fixed inset-0 z-30 bg-black/40 md:hidden" onClick={() => setMobileOpen(false)} />
       )}
 
-      <div className="flex-1 md:ml-64 flex flex-col min-w-0">
+      {!desktopOpen && (
+        <Button
+          variant="outline"
+          size="icon"
+          className="hidden md:flex fixed top-3 left-3 z-40 h-9 w-9 bg-background shadow-sm"
+          onClick={() => setDesktopOpen(true)}
+          aria-label="Show sidebar"
+          title="Show sidebar"
+        >
+          <PanelLeftOpen className="h-5 w-5" />
+        </Button>
+      )}
+
+      <div className={cn('flex-1 flex flex-col min-w-0', desktopOpen ? 'md:ml-64' : 'md:ml-0')}>
         <header
           className="md:hidden sticky top-0 z-20 bg-background border-b border-border"
           style={{ paddingTop: 'env(safe-area-inset-top)' }}
