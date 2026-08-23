@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { Outlet, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/lib/AuthContext';
-import { Calendar, LayoutDashboard, BookOpen, Settings as SettingsIcon, Moon, Sun, LogOut, GraduationCap, BarChart3, Flame, ArrowLeft, ShieldCheck, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { Calendar, LayoutDashboard, BookOpen, Settings as SettingsIcon, LogOut, GraduationCap, BarChart3, Flame, ArrowLeft, ShieldCheck, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import NotificationCenter from '@/components/NotificationCenter';
@@ -19,7 +19,7 @@ const navItems = [
 
 export default function Layout() {
   const { user, logout } = useAuth();
-  const { dark, setDarkMode } = useTheme();
+  useTheme();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [desktopOpen, setDesktopOpen] = useState(true);
   const location = useLocation();
@@ -108,10 +108,6 @@ export default function Layout() {
             </NavLink>
           )}
           <NotificationCenter fullWidth />
-          <Button variant="ghost" className="w-full justify-start" onClick={() => setDarkMode(!dark)}>
-            {dark ? <Sun className="h-5 w-5 mr-2" /> : <Moon className="h-5 w-5 mr-2" />}
-            {dark ? 'Light mode' : 'Dark mode'}
-          </Button>
           <div className="flex items-center gap-2 px-2">
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium truncate">{user?.name || user?.full_name || user?.email || 'User'}</p>
