@@ -26,6 +26,9 @@ const TYPE_LABEL = {
 };
 const SOURCE_LABEL = { manual: 'Manual', google_calendar: 'Calendar', google_classroom: 'Classroom', blackboard: 'Blackboard' };
 
+// Greet once per full page load (login, refresh, or opening already logged in).
+let greetedThisLoad = false;
+
 export default function Dashboard() {
   const { user } = useAuth();
   const [assignments, setAssignments] = useState([]);
@@ -121,11 +124,10 @@ export default function Dashboard() {
     }
   }, [user, runSync]);
 
-  // Welcome toast right after login.
+  // Welcome toast once per full page load.
   useEffect(() => {
-    if (!user) return;
-    if (sessionStorage.getItem('cf-welcome') !== '1') return;
-    sessionStorage.removeItem('cf-welcome');
+    if (!user || greetedThisLoad) return;
+    greetedThisLoad = true;
     const name = user.full_name || (user.email ? user.email.split('@')[0] : '');
     toast({ title: name ? `Hello, ${name}!` : 'Hello!' });
   }, [user]);
