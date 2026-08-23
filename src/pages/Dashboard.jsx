@@ -247,13 +247,16 @@ export default function Dashboard() {
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm px-4"
           onClick={() => setShowWelcome(false)}
         >
-          <div className="rounded-3xl bg-card border border-border shadow-2xl px-10 py-12 text-center max-w-md w-full">
-            <p className="text-4xl md:text-5xl font-heading font-bold">
+          <div className="rounded-3xl bg-card border border-border shadow-2xl px-10 py-14 text-center max-w-md w-full">
+            <div className="text-5xl mb-3">👋</div>
+            <p className="text-3xl md:text-4xl font-heading font-bold tracking-tight">
+              <span className="bg-gradient-to-r from-primary to-amber-500 bg-clip-text text-transparent">Hello</span>
               {(() => {
                 const name = user?.full_name || (user?.email ? user.email.split('@')[0] : '');
-                return name ? `Hello, ${name}!` : 'Hello!';
+                return name ? `, ${name}!` : '!';
               })()}
             </p>
+            <p className="mt-2 text-sm text-muted-foreground">Welcome back to ClassFlow</p>
           </div>
         </div>
       )}
