@@ -13,6 +13,8 @@ export default async function(req) {
         email: u.email,
         full_name: u.full_name,
         role: u.role,
+        name: u.name || null,
+        disabled_reason: u.disabled_reason || null,
         twofa_enabled: !!u.twofa_enabled,
         twofa_method: u.twofa_method || (u.twofa_enabled ? 'totp' : null),
         is_verified: !!u.is_verified,

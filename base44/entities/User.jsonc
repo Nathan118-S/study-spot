@@ -6,12 +6,18 @@
       "enum": [
         "admin",
         "user",
-        "demo"
+        "demo",
+        "disabled"
       ]
     },
     "name": {
       "type": "string",
       "description": "The user's display name, used to personalize emails",
+      "default": null
+    },
+    "disabled_reason": {
+      "type": "string",
+      "description": "Admin-provided reason shown when a disabled user attempts to log in",
       "default": null
     },
     "totp_secret": {

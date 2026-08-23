@@ -54,6 +54,32 @@ export default function Admin() {
     }
   };
 
+  const disableUser = async (u, reason) => {
+    setBusy(u.id);
+    try {
+      await base44.functions.invoke('adminUpdateUserRole', { userId: u.id, role: 'disabled', reason });
+      setUsers((prev) => prev.map((x) => (x.id === u.id ? { ...x, role: 'disabled', disabled_reason: reason || null } : x)));
+      toast({ title: 'Account disabled', description: `${u.email} can no longer log in.` });
+    } catch (e) {
+      toast({ title: 'Failed', description: e.message, variant: 'destructive' });
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const enableUser = async (u) => {
+    setBusy(u.id);
+    try {
+      await base44.functions.invoke('adminUpdateUserRole', { userId: u.id, role: 'user' });
+      setUsers((prev) => prev.map((x) => (x.id === u.id ? { ...x, role: 'user', disabled_reason: null } : x)));
+      toast({ title: 'Account re-enabled', description: `${u.email} can log in again.` });
+    } catch (e) {
+      toast({ title: 'Failed', description: e.message, variant: 'destructive' });
+    } finally {
+      setBusy(null);
+    }
+  };
+
   const resetPassword = async (u) => {
     setBusy(u.id);
     try {
@@ -204,7 +230,11 @@ export default function Admin() {
               <div className="flex items-center gap-2 shrink-0">
                 <Badge
                   variant={u.role === 'admin' ? 'default' : 'secondary'}
-                  className={cn('capitalize', u.role === 'demo' && 'border-transparent bg-emerald-500 text-white hover:bg-emerald-500/90')}
+                  className={cn(
+                    'capitalize',
+                    u.role === 'demo' && 'border-transparent bg-emerald-500 text-white hover:bg-emerald-500/90',
+                    u.role === 'disabled' && 'border-transparent bg-red-500 text-white hover:bg-red-500/90'
+                  )}
                 >
                   {u.role}
                 </Badge>
@@ -231,6 +261,8 @@ export default function Admin() {
         onSendTestPush={(u) => sendTestNotification(u, 'push')}
         onSendTestEmail={(u) => sendTestNotification(u, 'email')}
         onSaveName={saveName}
+        onDisable={disableUser}
+        onEnable={enableUser}
       />
 
       <MergeDialog

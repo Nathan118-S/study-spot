@@ -109,6 +109,16 @@ export const AuthProvider = ({ children }) => {
         base44.auth.logout();
         return;
       }
+      if (currentUser?.role === 'disabled') {
+        sessionStorage.setItem('cf-disabled-reason', currentUser.data?.disabled_reason || '');
+        localStorage.removeItem('cf-session-start');
+        setIsLoadingAuth(false);
+        setIsAuthenticated(false);
+        setAuthChecked(true);
+        setAuthError({ type: 'auth_required', message: 'Authentication required' });
+        base44.auth.logout();
+        return;
+      }
       setUser(currentUser);
       setIsAuthenticated(true);
       setIsLoadingAuth(false);

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
@@ -17,10 +17,20 @@ export default function Login() {
   // Post-login destination (e.g. the MCP OAuth consent page sends users here
   // with returnTo so the grant flow can resume). Same-origin paths only.
   const returnTo = safeReturnTo();
+  const [disabledReason, setDisabledReason] = useState("");
+
+  useEffect(() => {
+    const stored = sessionStorage.getItem("cf-disabled-reason");
+    if (stored !== null) {
+      setDisabledReason(stored || "Your account has been disabled.");
+      sessionStorage.removeItem("cf-disabled-reason");
+    }
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+    setDisabledReason("");
     setLoading(true);
     try {
       await base44.auth.loginViaEmailPassword(email, password);
@@ -70,6 +80,13 @@ export default function Login() {
           <span className="bg-card px-3 text-muted-foreground">or</span>
         </div>
       </div>
+
+      {disabledReason && (
+        <div className="mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/40 text-red-700 dark:text-red-300 text-sm">
+          <p className="font-medium">Your account has been disabled.</p>
+          <p className="mt-0.5">{disabledReason}</p>
+        </div>
+      )}
 
       {error && (
         <div className="mb-4 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">

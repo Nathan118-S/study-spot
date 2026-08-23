@@ -10,7 +10,10 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import SheetSelect from '@/components/SheetSelect';
-import { KeyRound, Trash2, Flame, ShieldOff, Mail, GitMerge, Bell, Send, UserCog, Loader2, Check } from 'lucide-react';
+import { KeyRound, Trash2, Flame, ShieldOff, Mail, GitMerge, Bell, Send, UserCog, Loader2, Check, Ban } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 
 function ActionRow({ icon, title, desc, children }) {
   return (
@@ -31,9 +34,11 @@ export default function UserManageDialog({
   open, onOpenChange, user: u, currentUser, busy,
   onSetRole, onResetPassword, onRestoreStreak, onVerifyUser, onReset2fa, onDeleteUser, onMerge,
   onSendTestPush, onSendTestEmail,
-  onSaveName,
+  onSaveName, onDisable, onEnable,
 }) {
   const [name, setName] = useState('');
+  const [disableOpen, setDisableOpen] = useState(false);
+  const [disableReason, setDisableReason] = useState('');
   useEffect(() => {
     setName(u?.name || u?.full_name || '');
   }, [u?.id]);
@@ -43,12 +48,18 @@ export default function UserManageDialog({
   const savedName = (u.name || u.full_name || '').trim();
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <span className="truncate">{u.full_name || u.email}</span>
-            <Badge variant={u.role === 'admin' ? 'default' : 'secondary'} className="capitalize">{u.role}</Badge>
+            <Badge
+              variant={u.role === 'admin' ? 'default' : 'secondary'}
+              className={cn('capitalize', u.role === 'disabled' && 'border-transparent bg-red-500 text-white hover:bg-red-500/90')}
+            >
+              {u.role}
+            </Badge>
           </DialogTitle>
           <DialogDescription className="truncate">{u.email}</DialogDescription>
         </DialogHeader>
@@ -191,6 +202,36 @@ export default function UserManageDialog({
             />
           </div>
 
+          {u.role === 'disabled' ? (
+            <div className="rounded-lg border border-red-500/40 bg-red-500/5 p-4 flex items-center justify-between gap-4">
+              <div className="flex items-start gap-3 min-w-0">
+                <div className="mt-0.5 text-red-500"><Ban className="h-5 w-5" /></div>
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-red-600 dark:text-red-400">Account disabled</p>
+                  <p className="text-xs text-muted-foreground">
+                    {u.disabled_reason ? `Reason: ${u.disabled_reason}` : 'This user cannot log in.'}
+                  </p>
+                </div>
+              </div>
+              <Button variant="outline" size="sm" onClick={() => onEnable(u)} disabled={disabled}>
+                Re-enable
+              </Button>
+            </div>
+          ) : (
+            <div className="rounded-lg border border-destructive/40 bg-card p-4 flex items-center justify-between gap-4">
+              <div className="flex items-start gap-3 min-w-0">
+                <div className="mt-0.5 text-destructive"><Ban className="h-5 w-5" /></div>
+                <div className="min-w-0">
+                  <p className="text-sm font-medium">Disable account</p>
+                  <p className="text-xs text-muted-foreground">Prevent this user from logging in. You can add a reason they'll see on login.</p>
+                </div>
+              </div>
+              <Button variant="destructive" size="sm" disabled={disabled || isSelf} onClick={() => setDisableOpen(true)}>
+                <Ban className="h-4 w-4 mr-1" /> Disable
+              </Button>
+            </div>
+          )}
+
           <div className="rounded-lg border border-destructive/40 bg-card p-4 flex items-center justify-between gap-4">
             <div className="flex items-start gap-3 min-w-0">
               <div className="mt-0.5 text-destructive"><Trash2 className="h-5 w-5" /></div>
@@ -230,5 +271,45 @@ export default function UserManageDialog({
         </div>
       </DialogContent>
     </Dialog>
+
+    <Dialog open={disableOpen} onOpenChange={setDisableOpen}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Disable {u.email}?</DialogTitle>
+          <DialogDescription>
+            This user will not be able to log in. The reason below is shown on their next login attempt.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-2">
+          <Label htmlFor="disable-reason">Reason (optional)</Label>
+          <Textarea
+            id="disable-reason"
+            value={disableReason}
+            onChange={(e) => setDisableReason(e.target.value)}
+            placeholder="e.g. Violation of community guidelines"
+            maxLength={500}
+            rows={3}
+          />
+        </div>
+        <div className="flex justify-end gap-2 pt-2">
+          <Button variant="outline" size="sm" onClick={() => { setDisableOpen(false); setDisableReason(''); }}>
+            Cancel
+          </Button>
+          <Button
+            variant="destructive"
+            size="sm"
+            disabled={disabled}
+            onClick={() => {
+              onDisable(u, disableReason);
+              setDisableOpen(false);
+              setDisableReason('');
+            }}
+          >
+            <Ban className="h-4 w-4 mr-1" /> Disable account
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+    </>
   );
 }
