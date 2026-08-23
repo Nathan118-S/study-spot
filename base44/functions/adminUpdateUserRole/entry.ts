@@ -8,7 +8,7 @@ export default async function(req) {
     if (user.role !== 'admin') return Response.json({ error: 'Forbidden' }, { status: 403 });
     const body = await req.json();
     const { userId, role } = body || {};
-    if (!userId || !['admin', 'user'].includes(role)) {
+    if (!userId || !['admin', 'user', 'demo'].includes(role)) {
       return Response.json({ error: 'Invalid input' }, { status: 400 });
     }
     await base44.asServiceRole.entities.User.update(userId, { role });

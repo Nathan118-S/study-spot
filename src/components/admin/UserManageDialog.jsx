@@ -186,6 +186,7 @@ export default function UserManageDialog({
               options={[
                 { value: 'user', label: 'User' },
                 { value: 'admin', label: 'Admin' },
+                { value: 'demo', label: 'Demo' },
               ]}
             />
           </div>

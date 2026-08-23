@@ -15,6 +15,7 @@ import { isGraded, DEFAULT_GRADING_SCALE } from '@/lib/grading';
 import GradedList from '@/components/GradedList';
 import PullToRefresh from '@/components/PullToRefresh';
 import StudyTimer from '@/components/StudyTimer';
+import { isDemoUser, getDemoAssignments, getDemoClasses, demoConnections } from '@/lib/demoData';
 
 const PRIORITY_BAR = { high: 'bg-red-500', medium: 'bg-amber-500', low: 'bg-emerald-500' };
 const PRIORITY_RANK = { high: 3, medium: 2, low: 1 };
@@ -44,6 +45,11 @@ export default function Dashboard() {
   const [connections, setConnections] = useState({ calendar: false, classroom: false, blackboard: false });
 
   const load = useCallback(async () => {
+    if (isDemoUser(user)) {
+      setAssignments(getDemoAssignments());
+      setClasses(getDemoClasses());
+      return;
+    }
     const [a, c] = await Promise.all([
       base44.entities.Assignment.list('-due_date', 500),
       base44.entities.Class.list(),
@@ -55,7 +61,7 @@ export default function Dashboard() {
       const gs = me?.data?.grading_scale;
       if (gs && gs.length) setGradingScale(gs);
     } catch {}
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     (async () => {
@@ -66,11 +72,15 @@ export default function Dashboard() {
   }, [load]);
 
   useEffect(() => {
+    if (isDemoUser(user)) {
+      setConnections(demoConnections);
+      return;
+    }
     base44.functions
       .invoke('checkGoogleConnections', {})
       .then((res) => setConnections(res.data || {}))
       .catch(() => {});
-  }, []);
+  }, [user]);
 
   const runSync = useCallback(
     async (silent = false) => {
@@ -103,7 +113,7 @@ export default function Dashboard() {
 
   // Auto-refresh Google data if last sync was more than 6 hours ago.
   useEffect(() => {
-    if (!user) return;
+    if (!user || isDemoUser(user)) return;
     const last = user.data?.last_sync ? new Date(user.data.last_sync) : null;
     if (!last || Date.now() - last.getTime() > 6 * 60 * 60 * 1000) {
       runSync(true);
@@ -114,6 +124,7 @@ export default function Dashboard() {
     const prev = assignments;
     const next = !a.completed;
     setAssignments((p) => p.map((x) => (x.id === a.id ? { ...x, completed: next } : x)));
+    if (isDemoUser(user)) return;
     try {
       await base44.entities.Assignment.update(a.id, { completed: next });
       if (next && a.source === 'google_classroom' && a.external_id && user?.data?.sync_completion_to_classroom !== false) {
@@ -128,6 +139,7 @@ export default function Dashboard() {
     const prev = assignments;
     setAssignments((p) => p.filter((x) => x.id !== a.id));
     setDetail(null);
+    if (isDemoUser(user)) return;
     try {
       await base44.entities.Assignment.delete(a.id);
     } catch {
@@ -154,6 +166,7 @@ export default function Dashboard() {
     const prev = assignments;
     setAssignments((p) => p.map((a) => (selected[a.id] ? { ...a, ...patch } : a)));
     setSelected({});
+    if (isDemoUser(user)) return;
     try {
       await base44.entities.Assignment.bulkUpdate(ids.map((id) => ({ id, ...patch })));
     } catch {
