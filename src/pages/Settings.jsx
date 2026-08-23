@@ -36,7 +36,9 @@ export default function Settings() {
   const [loggingOut, setLoggingOut] = useState(false);
   const [syncCompletion, setSyncCompletion] = useState(user?.data?.sync_completion_to_classroom !== false);
   const [savingSync, setSavingSync] = useState(false);
-  const [leaderboardEnabled, setLeaderboardEnabled] = useState(user?.data?.leaderboard_enabled === true);
+  const [leaderboardEnabled, setLeaderboardEnabled] = useState(
+    (user?.leaderboard_enabled ?? user?.data?.leaderboard_enabled) === true
+  );
   const [savingLeaderboard, setSavingLeaderboard] = useState(false);
   const [dark, setDark] = useState(() => {
     if (typeof window === 'undefined') return false;

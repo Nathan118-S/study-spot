@@ -102,7 +102,7 @@ export default function Analytics() {
         </div>
       )}
 
-      {user?.data?.leaderboard_enabled === true && <Leaderboard />}
+      {(user?.leaderboard_enabled ?? user?.data?.leaderboard_enabled) === true && <Leaderboard />}
     </div>
   );
 }
