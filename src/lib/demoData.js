@@ -50,3 +50,16 @@ export function getDemoStreaks() {
 }
 
 export const demoStreakSummary = { active: 2, atRisk: 1, broken: 1, best: 14, total: 4 };
+
+export function getDemoLeaderboard() {
+  return {
+    currentUserId: 'demo-self',
+    entries: [
+      { userId: 'demo-u1', name: 'Aisha K.', bestStreak: 28 },
+      { userId: 'demo-u2', name: 'Marcus T.', bestStreak: 22 },
+      { userId: 'demo-self', name: 'You', bestStreak: 14 },
+      { userId: 'demo-u3', name: 'Sofia R.', bestStreak: 11 },
+      { userId: 'demo-u4', name: 'Liam P.', bestStreak: 8 },
+    ],
+  };
+}

@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Loader2, Flame, AlertTriangle, ShieldAlert, ShieldCheck, Trophy, GraduationCap } from 'lucide-react';
 import { buildStreaks, streakSummary } from '@/lib/streaks';
 import StreakCard from '@/components/StreakCard';
+import Leaderboard from '@/components/Leaderboard';
 import { useAuth } from '@/lib/AuthContext';
 import { isDemoUser, getDemoClasses, getDemoAssignments, getDemoStreaks, demoStreakSummary, demoConnections } from '@/lib/demoData';
 
@@ -100,6 +101,8 @@ export default function Analytics() {
           ))}
         </div>
       )}
+
+      <Leaderboard />
     </div>
   );
 }
