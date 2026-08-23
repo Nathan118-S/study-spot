@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bell, CheckCheck, Flame, TestTube, Info } from 'lucide-react';
+import { Bell, CheckCheck, Flame, TestTube, Info, Trash2 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
@@ -56,6 +56,17 @@ export default function NotificationCenter({ fullWidth = false }) {
     }
   };
 
+  const clearAll = async () => {
+    if (!items.length) return;
+    const prev = items;
+    setItems([]);
+    try {
+      await base44.entities.Notification.deleteMany({});
+    } catch {
+      setItems(prev);
+    }
+  };
+
   const openItem = async (n) => {
     if (!n.read) {
       setItems((prev) => prev.map((x) => (x.id === n.id ? { ...x, read: true } : x)));
@@ -95,11 +106,18 @@ export default function NotificationCenter({ fullWidth = false }) {
       <PopoverContent className="w-80 p-0" align="end">
         <div className="flex items-center justify-between px-3 py-2 border-b">
           <p className="text-sm font-semibold">Notifications</p>
-          {unread > 0 && (
-            <Button variant="ghost" size="sm" onClick={markAllRead} className="h-7 text-xs">
-              <CheckCheck className="h-3.5 w-3.5 mr-1" /> Mark all read
-            </Button>
-          )}
+          <div className="flex items-center gap-1">
+            {unread > 0 && (
+              <Button variant="ghost" size="sm" onClick={markAllRead} className="h-7 text-xs">
+                <CheckCheck className="h-3.5 w-3.5 mr-1" /> Mark all read
+              </Button>
+            )}
+            {items.length > 0 && (
+              <Button variant="ghost" size="sm" onClick={clearAll} className="h-7 text-xs text-destructive hover:text-destructive">
+                <Trash2 className="h-3.5 w-3.5 mr-1" /> Clear all
+              </Button>
+            )}
+          </div>
         </div>
         <div className="max-h-80 overflow-y-auto">
           {items.length === 0 ? (
