@@ -3,7 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, BookOpen, Loader2, Link2, Unlink, RefreshCw, Trash2, LogOut, Trophy } from 'lucide-react';
+import { Calendar, BookOpen, Loader2, Link2, Unlink, RefreshCw, Trash2, LogOut, Trophy, Moon, Sun } from 'lucide-react';
 import GradingScaleEditor from '@/components/GradingScaleEditor';
 import TwoFactorSettings from '@/components/TwoFactorSettings';
 import BlackboardConnection from '@/components/BlackboardConnection';
@@ -38,6 +38,18 @@ export default function Settings() {
   const [savingSync, setSavingSync] = useState(false);
   const [leaderboardEnabled, setLeaderboardEnabled] = useState(user?.data?.leaderboard_enabled === true);
   const [savingLeaderboard, setSavingLeaderboard] = useState(false);
+  const [dark, setDark] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    const stored = localStorage.getItem('cf-theme');
+    if (stored) return stored === 'dark';
+    return window.matchMedia('(prefers-color-scheme: dark)').matches;
+  });
+
+  const toggleDark = (checked) => {
+    setDark(checked);
+    document.documentElement.classList.toggle('dark', checked);
+    localStorage.setItem('cf-theme', checked ? 'dark' : 'light');
+  };
 
   const toggleLeaderboard = async (checked) => {
     setLeaderboardEnabled(checked);
@@ -142,6 +154,22 @@ export default function Settings() {
         <h1 className="font-heading text-2xl md:text-3xl font-bold">Settings</h1>
         <p className="text-muted-foreground text-sm">Manage your Google connections and account.</p>
       </div>
+
+      <section className="space-y-2">
+        <h2 className="font-semibold text-lg">Appearance</h2>
+        <div className="rounded-lg border bg-card p-4 flex items-center justify-between gap-4">
+          <div className="min-w-0">
+            <p className="text-sm font-medium flex items-center gap-2">
+              {dark ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
+              Dark mode
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Switch between light and dark themes. Syncs with the sidebar toggle.
+            </p>
+          </div>
+          <Switch checked={dark} onCheckedChange={toggleDark} />
+        </div>
+      </section>
 
       <section className="space-y-3">
         <h2 className="font-semibold text-lg">Google Integrations</h2>
