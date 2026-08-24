@@ -3,7 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, BookOpen, Loader2, Link2, Unlink, RefreshCw, Trash2, LogOut, Trophy, Moon, Sun, Smartphone, Palette, Plug, RefreshCcw, Database, AlarmClock, GraduationCap, Lock, User, AlertTriangle } from 'lucide-react';
+import { Calendar, BookOpen, Loader2, Link2, Unlink, RefreshCw, Trash2, LogOut, Trophy, Moon, Sun, Smartphone, Palette, Plug, RefreshCcw, Database, AlarmClock, GraduationCap, Lock, User, AlertTriangle, ChevronRight } from 'lucide-react';
 import { useTheme } from '@/lib/theme';
 import GradingScaleEditor from '@/components/GradingScaleEditor';
 import TwoFactorSettings from '@/components/TwoFactorSettings';
@@ -12,7 +12,13 @@ import ReminderSettings from '@/components/ReminderSettings';
 import DataExport from '@/components/DataExport';
 import AccountName from '@/components/AccountName';
 import { Switch } from '@/components/ui/switch';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
 import { isDemoUser, demoConnections } from '@/lib/demoData';
 import {
   AlertDialog,
@@ -29,18 +35,18 @@ import {
 const CALENDAR_ID = '6a87a0a86ad979ee05f39b0c';
 const CLASSROOM_ID = '6a87a2e5f3be615b69035dcd';
 
-const TABS = [
-  { value: 'appearance', label: 'Appearance', icon: Palette },
-  { value: 'google', label: 'Google', icon: Plug },
-  { value: 'blackboard', label: 'Blackboard', icon: BookOpen },
-  { value: 'sync', label: 'Sync', icon: RefreshCcw },
-  { value: 'leaderboard', label: 'Leaderboard', icon: Trophy },
-  { value: 'data', label: 'Data', icon: Database },
-  { value: 'reminders', label: 'Reminders', icon: AlarmClock },
-  { value: 'grading', label: 'Grading', icon: GraduationCap },
-  { value: 'security', label: 'Security', icon: Lock },
-  { value: 'account', label: 'Account', icon: User },
-  { value: 'danger', label: 'Danger Zone', icon: AlertTriangle },
+const CARDS = [
+  { value: 'appearance', label: 'Appearance', desc: 'Light/dark mode and device sync', icon: Palette },
+  { value: 'google', label: 'Google', desc: 'Calendar and Classroom connections', icon: Plug },
+  { value: 'blackboard', label: 'Blackboard', desc: 'Connect your school’s Blackboard', icon: BookOpen },
+  { value: 'sync', label: 'Sync', desc: 'Refresh synced data', icon: RefreshCcw },
+  { value: 'leaderboard', label: 'Leaderboard', desc: 'Show study-streak rankings', icon: Trophy },
+  { value: 'data', label: 'Data', desc: 'Export your assignments', icon: Database },
+  { value: 'reminders', label: 'Reminders', desc: 'Email reminder timing', icon: AlarmClock },
+  { value: 'grading', label: 'Grading', desc: 'Letter-grade thresholds', icon: GraduationCap },
+  { value: 'security', label: 'Security', desc: 'Two-factor authentication', icon: Lock },
+  { value: 'account', label: 'Account', desc: 'Your name and email', icon: User },
+  { value: 'danger', label: 'Danger Zone', desc: 'Log out all devices, delete account', icon: AlertTriangle, danger: true },
 ];
 
 export default function Settings() {
@@ -56,6 +62,7 @@ export default function Settings() {
     (user?.leaderboard_enabled ?? user?.data?.leaderboard_enabled) === true
   );
   const [savingLeaderboard, setSavingLeaderboard] = useState(false);
+  const [openSection, setOpenSection] = useState(null);
   const { dark, sync: syncTheme, setDarkMode, setSyncWithDevice } = useTheme();
 
   const toggleLeaderboard = async (checked) => {
@@ -154,242 +161,260 @@ export default function Settings() {
   };
 
   const lastSync = user?.data?.last_sync ? new Date(user.data.last_sync) : null;
+  const activeCard = CARDS.find((c) => c.value === openSection);
+
+  const renderSection = (value) => {
+    switch (value) {
+      case 'appearance':
+        return (
+          <div className="space-y-3">
+            <div className="rounded-lg border bg-card p-4 flex items-center justify-between gap-4">
+              <div className="min-w-0">
+                <p className="text-sm font-medium flex items-center gap-2">
+                  {dark ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
+                  Dark mode
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Switch between light and dark themes. Disabled while syncing with your device.
+                </p>
+              </div>
+              <Switch checked={dark} onCheckedChange={setDarkMode} disabled={syncTheme} />
+            </div>
+            <div className="rounded-lg border bg-card p-4 flex items-center justify-between gap-4">
+              <div className="min-w-0">
+                <p className="text-sm font-medium flex items-center gap-2">
+                  <Smartphone className="h-4 w-4" />
+                  Sync with device
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Automatically match light or dark mode to your system setting.
+                </p>
+              </div>
+              <Switch checked={syncTheme} onCheckedChange={setSyncWithDevice} />
+            </div>
+          </div>
+        );
+      case 'google':
+        return (
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Connect your own Google account to import assignments. Each user connects separately — your data stays private to you.
+            </p>
+            <ConnectionRow
+              icon={<Calendar className="h-5 w-5 text-blue-500" />}
+              title="Google Calendar"
+              desc="Import calendar events labeled as assignments."
+              loading={loading}
+              connected={status.calendar}
+              busy={busy === 'calendar'}
+              onConnect={() => connect(CALENDAR_ID, 'calendar')}
+              onDisconnect={() => disconnect(CALENDAR_ID, 'calendar')}
+            />
+            <ConnectionRow
+              icon={<BookOpen className="h-5 w-5 text-emerald-500" />}
+              title="Google Classroom"
+              desc="Import courses and coursework with due dates."
+              loading={loading}
+              connected={status.classroom}
+              busy={busy === 'classroom'}
+              onConnect={() => connect(CLASSROOM_ID, 'classroom')}
+              onDisconnect={() => disconnect(CLASSROOM_ID, 'classroom')}
+              extra={status.classroom && !loading ? (
+                <div className="border-t pt-3 flex items-center justify-between gap-4">
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium">Mark Classroom assignments done</p>
+                    <p className="text-xs text-muted-foreground">
+                      When you complete a Google Classroom assignment here, turn it in on Classroom so your teacher sees it as done.
+                    </p>
+                  </div>
+                  <Switch checked={syncCompletion} onCheckedChange={toggleSyncCompletion} disabled={savingSync} />
+                </div>
+              ) : null}
+            />
+          </div>
+        );
+      case 'blackboard':
+        return (
+          <BlackboardConnection
+            connected={status.blackboard}
+            instanceUrl={user?.data?.blackboard_instance_url}
+            onChanged={check}
+          />
+        );
+      case 'sync':
+        return (
+          <div className="rounded-lg border bg-card p-4 flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium">Auto-refresh</p>
+              <p className="text-xs text-muted-foreground">
+                {lastSync ? `Last synced ${lastSync.toLocaleString()}` : 'Not synced yet. The dashboard auto-syncs every 6 hours.'}
+              </p>
+            </div>
+            <Button variant="outline" onClick={check} disabled={loading}>
+              <RefreshCw className="h-4 w-4 mr-2" /> Refresh status
+            </Button>
+          </div>
+        );
+      case 'leaderboard':
+        return (
+          <div className="rounded-lg border bg-card p-4 flex items-center justify-between gap-4">
+            <div className="min-w-0">
+              <p className="text-sm font-medium flex items-center gap-2">
+                <Trophy className="h-4 w-4 text-yellow-500" />
+                Show study-streak leaderboard
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Display the top study streaks on the Analytics page so you can compete with other students. Off by default.
+              </p>
+            </div>
+            <Switch checked={leaderboardEnabled} onCheckedChange={toggleLeaderboard} disabled={savingLeaderboard} />
+          </div>
+        );
+      case 'data':
+        return <DataExport />;
+      case 'reminders':
+        return (
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Control when you get email notifications about upcoming assignments.
+            </p>
+            <ReminderSettings />
+          </div>
+        );
+      case 'grading':
+        return (
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Set the minimum percentage for each letter grade. This is used to compute letter grades on graded assignments.
+            </p>
+            <GradingScaleEditor initialScale={user?.data?.grading_scale} />
+          </div>
+        );
+      case 'security':
+        return <TwoFactorSettings />;
+      case 'account':
+        return <AccountName />;
+      case 'danger':
+        return (
+          <div className="space-y-3">
+            <div className="rounded-lg border border-destructive/40 bg-card p-4 flex items-center justify-between gap-4">
+              <div className="min-w-0">
+                <p className="text-sm font-medium">Log out of all devices</p>
+                <p className="text-xs text-muted-foreground">
+                  Signs out this device and any other devices currently logged into your account.
+                </p>
+              </div>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="outline" size="sm" disabled={loggingOut}>
+                    {loggingOut ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <LogOut className="h-4 w-4 mr-1" />}
+                    Log out all
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Log out of all devices?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      You'll be signed out here, and any other device signed into your account will be signed out the next time it opens the app.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel disabled={loggingOut}>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={logoutAllDevices} disabled={loggingOut}>
+                      {loggingOut ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : null}
+                      Log out all
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
+            <div className="rounded-lg border border-destructive/40 bg-card p-4 flex items-center justify-between gap-4">
+              <div className="min-w-0">
+                <p className="text-sm font-medium">Delete account</p>
+                <p className="text-xs text-muted-foreground">
+                  Removes your assignments and classes, then signs you out. This can't be undone.
+                </p>
+              </div>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="destructive" size="sm" disabled={deleting}>
+                    {deleting ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Trash2 className="h-4 w-4 mr-1" />}
+                    Delete
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete account?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This permanently deletes all your assignments and classes and signs you out. This action cannot be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      onClick={deleteAccount}
+                      disabled={deleting}
+                    >
+                      {deleting ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : null}
+                      Delete
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
+          </div>
+        );
+      default:
+        return null;
+    }
+  };
 
   return (
-    <div className="space-y-6 max-w-3xl">
+    <div className="space-y-6 max-w-2xl">
       <div>
         <h1 className="font-heading text-2xl md:text-3xl font-bold">Settings</h1>
         <p className="text-muted-foreground text-sm">Manage your Google connections and account.</p>
       </div>
 
-      <Tabs defaultValue="appearance" className="w-full">
-        <div className="md:flex md:gap-6">
-          <TabsList className="flex w-full overflow-x-auto md:flex-col md:w-52 md:h-auto md:items-stretch md:justify-start mb-4 md:mb-0 shrink-0">
-            {TABS.map((t) => (
-              <TabsTrigger
-                key={t.value}
-                value={t.value}
-                className="md:justify-start md:w-full gap-2"
+      <div className="grid gap-3 sm:grid-cols-2">
+        {CARDS.map((c) => (
+          <button
+            key={c.value}
+            onClick={() => setOpenSection(c.value)}
+            className={`w-full text-left rounded-lg border bg-card p-4 hover:bg-accent transition-colors flex items-center justify-between gap-3 ${
+              c.danger ? 'border-destructive/40' : ''
+            }`}
+          >
+            <div className="flex items-center gap-3 min-w-0">
+              <div
+                className={`h-10 w-10 rounded-full flex items-center justify-center shrink-0 ${
+                  c.danger ? 'bg-destructive/10 text-destructive' : 'bg-primary/10 text-primary'
+                }`}
               >
-                <t.icon className="h-4 w-4" />
-                {t.label}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-
-          <div className="flex-1 min-w-0">
-            <TabsContent value="appearance" className="space-y-2 mt-0">
-              <h2 className="font-semibold text-lg">Appearance</h2>
-              <div className="rounded-lg border bg-card p-4 flex items-center justify-between gap-4">
-                <div className="min-w-0">
-                  <p className="text-sm font-medium flex items-center gap-2">
-                    {dark ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
-                    Dark mode
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    Switch between light and dark themes. Disabled while syncing with your device.
-                  </p>
-                </div>
-                <Switch checked={dark} onCheckedChange={setDarkMode} disabled={syncTheme} />
+                <c.icon className="h-5 w-5" />
               </div>
-              <div className="rounded-lg border bg-card p-4 flex items-center justify-between gap-4">
-                <div className="min-w-0">
-                  <p className="text-sm font-medium flex items-center gap-2">
-                    <Smartphone className="h-4 w-4" />
-                    Sync with device
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    Automatically match light or dark mode to your system setting.
-                  </p>
-                </div>
-                <Switch checked={syncTheme} onCheckedChange={setSyncWithDevice} />
+              <div className="min-w-0">
+                <p className={`font-medium ${c.danger ? 'text-destructive' : ''}`}>{c.label}</p>
+                <p className="text-sm text-muted-foreground truncate">{c.desc}</p>
               </div>
-            </TabsContent>
+            </div>
+            <ChevronRight className="h-5 w-5 text-muted-foreground shrink-0" />
+          </button>
+        ))}
+      </div>
 
-            <TabsContent value="google" className="space-y-3 mt-0">
-              <h2 className="font-semibold text-lg">Google Integrations</h2>
-              <p className="text-sm text-muted-foreground">
-                Connect your own Google account to import assignments. Each user connects separately — your data stays private to you.
-              </p>
-              <ConnectionRow
-                icon={<Calendar className="h-5 w-5 text-blue-500" />}
-                title="Google Calendar"
-                desc="Import calendar events labeled as assignments."
-                loading={loading}
-                connected={status.calendar}
-                busy={busy === 'calendar'}
-                onConnect={() => connect(CALENDAR_ID, 'calendar')}
-                onDisconnect={() => disconnect(CALENDAR_ID, 'calendar')}
-              />
-              <ConnectionRow
-                icon={<BookOpen className="h-5 w-5 text-emerald-500" />}
-                title="Google Classroom"
-                desc="Import courses and coursework with due dates."
-                loading={loading}
-                connected={status.classroom}
-                busy={busy === 'classroom'}
-                onConnect={() => connect(CLASSROOM_ID, 'classroom')}
-                onDisconnect={() => disconnect(CLASSROOM_ID, 'classroom')}
-                extra={status.classroom && !loading ? (
-                  <div className="border-t pt-3 flex items-center justify-between gap-4">
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium">Mark Classroom assignments done</p>
-                      <p className="text-xs text-muted-foreground">
-                        When you complete a Google Classroom assignment here, turn it in on Classroom so your teacher sees it as done.
-                      </p>
-                    </div>
-                    <Switch checked={syncCompletion} onCheckedChange={toggleSyncCompletion} disabled={savingSync} />
-                  </div>
-                ) : null}
-              />
-            </TabsContent>
-
-            <TabsContent value="blackboard" className="space-y-3 mt-0">
-              <h2 className="font-semibold text-lg">Blackboard</h2>
-              <p className="text-sm text-muted-foreground">
-                Connect your school's Blackboard Learn instance to import courses and due-dated gradebook items.
-              </p>
-              <BlackboardConnection
-                connected={status.blackboard}
-                instanceUrl={user?.data?.blackboard_instance_url}
-                onChanged={check}
-              />
-            </TabsContent>
-
-            <TabsContent value="sync" className="space-y-2 mt-0">
-              <h2 className="font-semibold text-lg">Sync</h2>
-              <div className="rounded-lg border bg-card p-4 flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium">Auto-refresh</p>
-                  <p className="text-xs text-muted-foreground">
-                    {lastSync ? `Last synced ${lastSync.toLocaleString()}` : 'Not synced yet. The dashboard auto-syncs every 6 hours.'}
-                  </p>
-                </div>
-                <Button variant="outline" onClick={check} disabled={loading}>
-                  <RefreshCw className="h-4 w-4 mr-2" /> Refresh status
-                </Button>
-              </div>
-            </TabsContent>
-
-            <TabsContent value="leaderboard" className="space-y-2 mt-0">
-              <h2 className="font-semibold text-lg">Leaderboard</h2>
-              <div className="rounded-lg border bg-card p-4 flex items-center justify-between gap-4">
-                <div className="min-w-0">
-                  <p className="text-sm font-medium flex items-center gap-2">
-                    <Trophy className="h-4 w-4 text-yellow-500" />
-                    Show study-streak leaderboard
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    Display the top study streaks on the Analytics page so you can compete with other students. Off by default.
-                  </p>
-                </div>
-                <Switch checked={leaderboardEnabled} onCheckedChange={toggleLeaderboard} disabled={savingLeaderboard} />
-              </div>
-            </TabsContent>
-
-            <TabsContent value="data" className="space-y-2 mt-0">
-              <h2 className="font-semibold text-lg">Data</h2>
-              <DataExport />
-            </TabsContent>
-
-            <TabsContent value="reminders" className="space-y-2 mt-0">
-              <h2 className="font-semibold text-lg">Reminders</h2>
-              <p className="text-sm text-muted-foreground">
-                Control when you get email notifications about upcoming assignments.
-              </p>
-              <ReminderSettings />
-            </TabsContent>
-
-            <TabsContent value="grading" className="space-y-2 mt-0">
-              <h2 className="font-semibold text-lg">Grading Scale</h2>
-              <p className="text-sm text-muted-foreground">
-                Set the minimum percentage for each letter grade. This is used to compute letter grades on graded assignments.
-              </p>
-              <GradingScaleEditor initialScale={user?.data?.grading_scale} />
-            </TabsContent>
-
-            <TabsContent value="security" className="space-y-2 mt-0">
-              <h2 className="font-semibold text-lg">Security</h2>
-              <TwoFactorSettings />
-            </TabsContent>
-
-            <TabsContent value="account" className="space-y-2 mt-0">
-              <h2 className="font-semibold text-lg">Account</h2>
-              <AccountName />
-            </TabsContent>
-
-            <TabsContent value="danger" className="space-y-2 mt-0">
-              <h2 className="font-semibold text-lg text-destructive">Danger Zone</h2>
-              <div className="rounded-lg border border-destructive/40 bg-card p-4 flex items-center justify-between gap-4">
-                <div className="min-w-0">
-                  <p className="text-sm font-medium">Log out of all devices</p>
-                  <p className="text-xs text-muted-foreground">
-                    Signs out this device and any other devices currently logged into your account.
-                  </p>
-                </div>
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button variant="outline" size="sm" disabled={loggingOut}>
-                      {loggingOut ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <LogOut className="h-4 w-4 mr-1" />}
-                      Log out all
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Log out of all devices?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        You'll be signed out here, and any other device signed into your account will be signed out the next time it opens the app.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel disabled={loggingOut}>Cancel</AlertDialogCancel>
-                      <AlertDialogAction onClick={logoutAllDevices} disabled={loggingOut}>
-                        {loggingOut ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : null}
-                        Log out all
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              </div>
-              <div className="rounded-lg border border-destructive/40 bg-card p-4 flex items-center justify-between gap-4">
-                <div className="min-w-0">
-                  <p className="text-sm font-medium">Delete account</p>
-                  <p className="text-xs text-muted-foreground">
-                    Removes your assignments and classes, then signs you out. This can't be undone.
-                  </p>
-                </div>
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button variant="destructive" size="sm" disabled={deleting}>
-                      {deleting ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Trash2 className="h-4 w-4 mr-1" />}
-                      Delete
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Delete account?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        This permanently deletes all your assignments and classes and signs you out. This action cannot be undone.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
-                      <AlertDialogAction
-                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                        onClick={deleteAccount}
-                        disabled={deleting}
-                      >
-                        {deleting ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : null}
-                        Delete
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              </div>
-            </TabsContent>
-          </div>
-        </div>
-      </Tabs>
+      <Dialog open={!!openSection} onOpenChange={(o) => !o && setOpenSection(null)}>
+        <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className={activeCard?.danger ? 'text-destructive' : ''}>
+              {activeCard?.label}
+            </DialogTitle>
+            <DialogDescription>{activeCard?.desc}</DialogDescription>
+          </DialogHeader>
+          {renderSection(openSection)}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
