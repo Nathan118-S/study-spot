@@ -14,7 +14,6 @@ const navItems = [
   { to: '/classes', label: 'Classes', icon: BookOpen, end: false },
   { to: '/calendar', label: 'Calendar View', icon: Calendar, end: false },
   { to: '/analytics', label: 'Streaks', icon: Flame, end: false },
-  { to: '/settings', label: 'Settings', icon: SettingsIcon, end: false },
 ];
 
 export default function Layout() {
@@ -27,7 +26,7 @@ export default function Layout() {
   const mainRef = useRef(null);
   const primaryRoots = ['/', '/classes', '/calendar', '/analytics', '/settings', '/admin'];
   const showBack = !primaryRoots.includes(location.pathname);
-  const bottomNav = navItems.filter((i) => i.to !== '/settings' && i.to !== '/calendar');
+  const bottomNav = navItems.filter((i) => i.to !== '/calendar');
 
   const scrollToMainTop = () => {
     const el = mainRef.current;
@@ -108,6 +107,21 @@ export default function Layout() {
             </NavLink>
           )}
           <NotificationCenter fullWidth />
+          <NavLink
+            to="/settings"
+            onClick={() => setMobileOpen(false)}
+            className={({ isActive }) =>
+              cn(
+                'flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors',
+                isActive
+                  ? 'bg-sidebar-accent text-sidebar-accent-foreground'
+                  : 'text-sidebar-foreground hover:bg-sidebar-accent/60'
+              )
+            }
+          >
+            <SettingsIcon className="h-5 w-5" />
+            Settings
+          </NavLink>
           <div className="flex items-center gap-2 px-2">
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium truncate">{user?.name || user?.full_name || user?.email || 'User'}</p>
