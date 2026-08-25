@@ -15,6 +15,7 @@ import ForgotPassword from '@/pages/ForgotPassword';
 import ResetPassword from '@/pages/ResetPassword';
 import { lazy, Suspense } from 'react';
 const Dashboard = lazy(() => import('@/pages/Dashboard'));
+const Board = lazy(() => import('@/pages/Board'));
 const Classes = lazy(() => import('@/pages/Classes'));
 const CalendarView = lazy(() => import('@/pages/CalendarView'));
 const Analytics = lazy(() => import('@/pages/Analytics'));
@@ -71,6 +72,7 @@ const AuthenticatedApp = () => {
         <Route element={<Require2fa />}>
           <Route element={<Layout />}>
             <Route path="/" element={<Suspense fallback={<PageLoader />}><Dashboard /></Suspense>} />
+            <Route path="/board" element={<Suspense fallback={<PageLoader />}><Board /></Suspense>} />
             <Route path="/classes" element={<Suspense fallback={<PageLoader />}><Classes /></Suspense>} />
             <Route path="/calendar" element={<Suspense fallback={<PageLoader />}><CalendarView /></Suspense>} />
             <Route path="/analytics" element={<Suspense fallback={<PageLoader />}><Analytics /></Suspense>} />
