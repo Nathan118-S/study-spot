@@ -122,3 +122,15 @@
   animation: fade-up 0.35s ease-out both;
   will-change: opacity, transform;
 }
+
+.no-animations .animate-fade-up {
+  animation: none;
+}
+
+.no-animations .transition-transform {
+  transition: none;
+}
+
+.no-animations .hover\:-translate-y-0\.5:hover {
+  transform: none;
+}

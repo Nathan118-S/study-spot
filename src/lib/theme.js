@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 
 const THEME_KEY = 'cf-theme';
 const SYNC_KEY = 'cf-theme-sync';
+const ANIM_KEY = 'cf-animations';
 
 export function getSystemDark() {
   if (typeof window === 'undefined') return false;
@@ -25,6 +26,16 @@ function applyDark(dark) {
   document.documentElement.classList.toggle('dark', dark);
 }
 
+function readAnimations() {
+  if (typeof window === 'undefined') return true;
+  const v = localStorage.getItem(ANIM_KEY);
+  return v === null ? true : v === 'true';
+}
+
+function applyAnimations(on) {
+  document.documentElement.classList.toggle('no-animations', !on);
+}
+
 function persist(sync, dark) {
   localStorage.setItem(SYNC_KEY, sync ? 'true' : 'false');
   if (!sync) localStorage.setItem(THEME_KEY, dark ? 'dark' : 'light');
@@ -34,10 +45,15 @@ function persist(sync, dark) {
 export function useTheme() {
   const [sync, setSync] = useState(readSync);
   const [dark, setDark] = useState(readDark);
+  const [animations, setAnimationsState] = useState(readAnimations);
 
   useEffect(() => {
     applyDark(dark);
   }, [dark]);
+
+  useEffect(() => {
+    applyAnimations(animations);
+  }, [animations]);
 
   // Stay in sync with changes made from the other component.
   useEffect(() => {
@@ -81,5 +97,10 @@ export function useTheme() {
     }
   };
 
-  return { dark, sync, setDarkMode, setSyncWithDevice };
+  const setAnimations = (on) => {
+    setAnimationsState(on);
+    localStorage.setItem(ANIM_KEY, on ? 'true' : 'false');
+  };
+
+  return { dark, sync, animations, setDarkMode, setSyncWithDevice, setAnimations };
 }

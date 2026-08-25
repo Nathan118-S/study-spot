@@ -3,7 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, BookOpen, Loader2, Link2, Unlink, RefreshCw, Trash2, LogOut, Trophy, Moon, Sun, Smartphone, Palette, Plug, RefreshCcw, Database, AlarmClock, GraduationCap, Lock, User, AlertTriangle, ChevronRight } from 'lucide-react';
+import { Calendar, BookOpen, Loader2, Link2, Unlink, RefreshCw, Trash2, LogOut, Trophy, Moon, Sun, Smartphone, Palette, Plug, RefreshCcw, Database, AlarmClock, GraduationCap, Lock, User, AlertTriangle, ChevronRight, Sparkles } from 'lucide-react';
 import { useTheme } from '@/lib/theme';
 import GradingScaleEditor from '@/components/GradingScaleEditor';
 import TwoFactorSettings from '@/components/TwoFactorSettings';
@@ -63,7 +63,7 @@ export default function Settings() {
   );
   const [savingLeaderboard, setSavingLeaderboard] = useState(false);
   const [openSection, setOpenSection] = useState(null);
-  const { dark, sync: syncTheme, setDarkMode, setSyncWithDevice } = useTheme();
+  const { dark, sync: syncTheme, setDarkMode, setSyncWithDevice, animations, setAnimations } = useTheme();
 
   const toggleLeaderboard = async (checked) => {
     setLeaderboardEnabled(checked);
@@ -191,6 +191,18 @@ export default function Settings() {
                 </p>
               </div>
               <Switch checked={syncTheme} onCheckedChange={setSyncWithDevice} />
+            </div>
+            <div className="rounded-lg border bg-card p-4 flex items-center justify-between gap-4">
+              <div className="min-w-0">
+                <p className="text-sm font-medium flex items-center gap-2">
+                  <Sparkles className="h-4 w-4" />
+                  Animations
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Show entrance and hover animations across the app. Turn off for a calmer, faster feel.
+                </p>
+              </div>
+              <Switch checked={animations} onCheckedChange={setAnimations} />
             </div>
           </div>
         );
