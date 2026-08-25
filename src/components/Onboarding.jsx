@@ -105,13 +105,13 @@ export default function Onboarding() {
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto bg-background"
+      className="fixed inset-0 z-50 flex items-stretch md:items-center justify-center p-0 md:p-4 overflow-y-auto bg-background"
     >
       <motion.div
         initial={{ opacity: 0, y: 24, scale: 0.96 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-        className="relative w-full max-w-lg my-auto flex flex-col rounded-2xl border border-amber-300 dark:border-amber-500/30 bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-900/40 dark:to-amber-950/50 shadow-2xl"
+        className="relative w-full max-w-lg md:my-auto flex flex-col min-h-screen md:min-h-0 rounded-none md:rounded-2xl border border-amber-300 dark:border-amber-500/30 bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-900/40 dark:to-amber-950/50 shadow-2xl"
       >
         <div className="p-5 border-b border-border">
           <div className="flex items-center justify-between gap-3">
