@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { Outlet, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/lib/AuthContext';
-import { Calendar, LayoutDashboard, BookOpen, Settings as SettingsIcon, LogOut, GraduationCap, BarChart3, Flame, ArrowLeft, ShieldCheck, PanelLeftClose, Trello } from 'lucide-react';
+import { Calendar, LayoutDashboard, BookOpen, Settings as SettingsIcon, LogOut, GraduationCap, BarChart3, Flame, ArrowLeft, ShieldCheck, PanelLeftClose } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import NotificationCenter from '@/components/NotificationCenter';
@@ -12,7 +12,6 @@ import { useIsMobile } from '@/hooks/use-mobile';
 
 const navItems = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
-  { to: '/board', label: 'Board', icon: Trello, end: false },
   { to: '/classes', label: 'Classes', icon: BookOpen, end: false },
   { to: '/calendar', label: 'Calendar View', icon: Calendar, end: false },
   { to: '/analytics', label: 'Streaks', icon: Flame, end: false },
@@ -27,7 +26,7 @@ export default function Layout() {
   const location = useLocation();
   const navigate = useNavigate();
   const mainRef = useRef(null);
-  const primaryRoots = ['/', '/board', '/classes', '/calendar', '/analytics', '/settings', '/admin'];
+  const primaryRoots = ['/', '/classes', '/calendar', '/analytics', '/settings', '/admin'];
   const showBack = !primaryRoots.includes(location.pathname);
   const bottomNav = navItems.filter((i) => i.to !== '/calendar');
 

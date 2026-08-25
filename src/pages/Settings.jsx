@@ -3,9 +3,8 @@ import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, BookOpen, Loader2, Link2, Unlink, RefreshCw, Trash2, LogOut, Trophy, Smartphone, Palette, Plug, RefreshCcw, Database, AlarmClock, GraduationCap, Lock, User, AlertTriangle, ChevronRight, Sparkles } from 'lucide-react';
-import { useTheme, THEMES } from '@/lib/theme';
-import { cn } from '@/lib/utils';
+import { Calendar, BookOpen, Loader2, Link2, Unlink, RefreshCw, Trash2, LogOut, Trophy, Moon, Sun, Smartphone, Palette, Plug, RefreshCcw, Database, AlarmClock, GraduationCap, Lock, User, AlertTriangle, ChevronRight, Sparkles } from 'lucide-react';
+import { useTheme } from '@/lib/theme';
 import GradingScaleEditor from '@/components/GradingScaleEditor';
 import TwoFactorSettings from '@/components/TwoFactorSettings';
 import BlackboardConnection from '@/components/BlackboardConnection';
@@ -36,13 +35,6 @@ import {
 const CALENDAR_ID = '6a87a0a86ad979ee05f39b0c';
 const CLASSROOM_ID = '6a87a2e5f3be615b69035dcd';
 
-const THEME_SWATCH = {
-  light: 'bg-white border-slate-300',
-  dark: 'bg-slate-900 border-slate-600',
-  'deep-blue': 'bg-blue-950 border-blue-700',
-  midnight: 'bg-black border-slate-700',
-};
-
 const CARDS = [
   { value: 'appearance', label: 'Appearance', desc: 'Light/dark mode and device sync', icon: Palette },
   { value: 'google', label: 'Google', desc: 'Calendar and Classroom connections', icon: Plug },
@@ -71,7 +63,7 @@ export default function Settings() {
   );
   const [savingLeaderboard, setSavingLeaderboard] = useState(false);
   const [openSection, setOpenSection] = useState(null);
-  const { theme, setTheme, sync: syncTheme, setSyncWithDevice, animations, setAnimations } = useTheme();
+  const { dark, sync: syncTheme, setDarkMode, setSyncWithDevice, animations, setAnimations } = useTheme();
 
   const toggleLeaderboard = async (checked) => {
     setLeaderboardEnabled(checked);
@@ -176,31 +168,17 @@ export default function Settings() {
       case 'appearance':
         return (
           <div className="space-y-3">
-            <div className="rounded-lg border bg-card p-4">
-              <p className="text-sm font-medium flex items-center gap-2 mb-3">
-                <Palette className="h-4 w-4" />
-                Theme
-              </p>
-              <div className="grid grid-cols-2 gap-2">
-                {THEMES.map((t) => (
-                  <button
-                    key={t.id}
-                    onClick={() => setTheme(t.id)}
-                    className={cn(
-                      'rounded-md border p-3 flex items-center gap-2 text-sm font-medium transition-colors',
-                      theme === t.id ? 'border-primary bg-primary/10 text-primary' : 'hover:bg-accent'
-                    )}
-                  >
-                    <span className={cn('h-4 w-4 rounded-full border', THEME_SWATCH[t.id])} />
-                    {t.label}
-                  </button>
-                ))}
-              </div>
-              {syncTheme && (
-                <p className="text-xs text-muted-foreground mt-2">
-                  Sync with device is on — theme follows your system setting (light or dark).
+            <div className="rounded-lg border bg-card p-4 flex items-center justify-between gap-4">
+              <div className="min-w-0">
+                <p className="text-sm font-medium flex items-center gap-2">
+                  {dark ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
+                  Dark mode
                 </p>
-              )}
+                <p className="text-xs text-muted-foreground">
+                  Switch between light and dark themes. Disabled while syncing with your device.
+                </p>
+              </div>
+              <Switch checked={dark} onCheckedChange={setDarkMode} disabled={syncTheme} />
             </div>
             <div className="rounded-lg border bg-card p-4 flex items-center justify-between gap-4">
               <div className="min-w-0">
