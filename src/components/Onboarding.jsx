@@ -113,7 +113,7 @@ export default function Onboarding() {
         transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
         className="relative w-full max-w-lg md:my-auto flex flex-col min-h-screen md:min-h-0 rounded-none md:rounded-2xl border border-amber-300 dark:border-amber-500/30 bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-900/40 dark:to-amber-950/50 shadow-2xl"
       >
-        <div className="p-5 border-b border-border">
+        <div className="p-5 border-b border-border" style={{ paddingTop: 'calc(env(safe-area-inset-top) + 1.25rem)' }}>
           <div className="flex items-center justify-between gap-3">
             <motion.div
               key={current.key}
@@ -162,7 +162,7 @@ export default function Onboarding() {
           </AnimatePresence>
         </div>
 
-        <div className="p-5 border-t border-border flex items-center justify-between gap-3">
+        <div className="p-5 border-t border-border flex items-center justify-between gap-3" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 1.25rem)' }}>
           <Button variant="ghost" onClick={back} disabled={step === 0 || finishing}>
             <ArrowLeft className="h-4 w-4 mr-1" /> Back
           </Button>
