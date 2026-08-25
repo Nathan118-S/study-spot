@@ -124,9 +124,11 @@ export default function Dashboard() {
     }
   }, [user, runSync]);
 
-  // Welcome box once per full page load.
+  // Welcome box once per full page load, only after onboarding is complete.
   useEffect(() => {
     if (!user || greetedThisLoad) return;
+    const done = (user.onboarding_completed ?? user.data?.onboarding_completed) === true;
+    if (!done) return;
     greetedThisLoad = true;
     setShowWelcome(true);
     const t = setTimeout(() => setShowWelcome(false), 2800);
