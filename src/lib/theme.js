@@ -4,6 +4,18 @@ const THEME_KEY = 'cf-theme';
 const SYNC_KEY = 'cf-theme-sync';
 const ANIM_KEY = 'cf-animations';
 
+export const THEMES = [
+  { id: 'light', label: 'Light' },
+  { id: 'dark', label: 'Dark' },
+  { id: 'deep-blue', label: 'Deep Blue' },
+  { id: 'midnight', label: 'Midnight' },
+];
+
+const THEME_CLASSES = {
+  'deep-blue': 'theme-deep-blue',
+  midnight: 'theme-midnight',
+};
+
 export function getSystemDark() {
   if (typeof window === 'undefined') return false;
   return window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -14,16 +26,20 @@ function readSync() {
   return localStorage.getItem(SYNC_KEY) === 'true';
 }
 
-function readDark() {
-  if (typeof window === 'undefined') return false;
-  if (readSync()) return getSystemDark();
+function readTheme() {
+  if (typeof window === 'undefined') return 'light';
+  if (readSync()) return getSystemDark() ? 'dark' : 'light';
   const stored = localStorage.getItem(THEME_KEY);
-  if (stored) return stored === 'dark';
-  return getSystemDark();
+  if (stored && THEMES.some((t) => t.id === stored)) return stored;
+  return getSystemDark() ? 'dark' : 'light';
 }
 
-function applyDark(dark) {
-  document.documentElement.classList.toggle('dark', dark);
+function applyTheme(theme) {
+  const el = document.documentElement;
+  el.classList.remove('theme-deep-blue', 'theme-midnight');
+  el.classList.toggle('dark', theme !== 'light');
+  const cls = THEME_CLASSES[theme];
+  if (cls) el.classList.add(cls);
 }
 
 function readAnimations() {
@@ -36,30 +52,29 @@ function applyAnimations(on) {
   document.documentElement.classList.toggle('no-animations', !on);
 }
 
-function persist(sync, dark) {
-  localStorage.setItem(SYNC_KEY, sync ? 'true' : 'false');
-  if (!sync) localStorage.setItem(THEME_KEY, dark ? 'dark' : 'light');
+function notify() {
   window.dispatchEvent(new CustomEvent('cf-theme-change'));
 }
 
 export function useTheme() {
   const [sync, setSync] = useState(readSync);
-  const [dark, setDark] = useState(readDark);
+  const [theme, setThemeState] = useState(readTheme);
   const [animations, setAnimationsState] = useState(readAnimations);
 
   useEffect(() => {
-    applyDark(dark);
-  }, [dark]);
+    applyTheme(theme);
+  }, [theme]);
 
   useEffect(() => {
     applyAnimations(animations);
   }, [animations]);
 
-  // Stay in sync with changes made from the other component.
+  // Stay in sync with changes made from other components.
   useEffect(() => {
     const onChange = () => {
       setSync(readSync());
-      setDark(readDark());
+      setThemeState(readTheme());
+      setAnimationsState(readAnimations());
     };
     window.addEventListener('cf-theme-change', onChange);
     window.addEventListener('storage', onChange);
@@ -69,38 +84,45 @@ export function useTheme() {
     };
   }, []);
 
-  // While syncing, follow the system preference live.
+  // While syncing, follow the system preference live (light/dark only).
   useEffect(() => {
     if (!sync) return;
     const mql = window.matchMedia('(prefers-color-scheme: dark)');
-    setDark(mql.matches);
-    const handler = (e) => setDark(e.matches);
+    const follow = () => setThemeState(mql.matches ? 'dark' : 'light');
+    follow();
+    const handler = (e) => setThemeState(e.matches ? 'dark' : 'light');
     mql.addEventListener('change', handler);
     return () => mql.removeEventListener('change', handler);
   }, [sync]);
 
-  // Manually pick a mode; this turns off device sync.
-  const setDarkMode = (checked) => {
+  const setTheme = (next) => {
     setSync(false);
-    setDark(checked);
-    persist(false, checked);
+    localStorage.setItem(SYNC_KEY, 'false');
+    setThemeState(next);
+    localStorage.setItem(THEME_KEY, next);
+    notify();
   };
 
   const setSyncWithDevice = (checked) => {
     setSync(checked);
+    localStorage.setItem(SYNC_KEY, checked ? 'true' : 'false');
     if (checked) {
-      const sys = getSystemDark();
-      setDark(sys);
-      persist(true, sys);
-    } else {
-      persist(false, dark);
+      const next = getSystemDark() ? 'dark' : 'light';
+      setThemeState(next);
+      localStorage.setItem(THEME_KEY, next);
     }
+    notify();
   };
 
   const setAnimations = (on) => {
     setAnimationsState(on);
     localStorage.setItem(ANIM_KEY, on ? 'true' : 'false');
+    notify();
   };
 
-  return { dark, sync, animations, setDarkMode, setSyncWithDevice, setAnimations };
+  // Backward-compatible dark boolean + setter for any legacy callers.
+  const dark = theme !== 'light';
+  const setDarkMode = (checked) => setTheme(checked ? 'dark' : 'light');
+
+  return { theme, setTheme, dark, sync, animations, setDarkMode, setSyncWithDevice, setAnimations };
 }
