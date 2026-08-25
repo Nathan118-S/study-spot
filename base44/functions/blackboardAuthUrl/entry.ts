@@ -1,6 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { secrets } from 'base44:runtime';
-import { buildAuthUrl } from '../../shared/blackboard.ts';
+import { buildAuthUrl, validateInstanceUrl } from '../../shared/blackboard.ts';
 
 export default async function(req) {
   try {
@@ -9,10 +9,13 @@ export default async function(req) {
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
     const body = await req.json().catch(() => ({}));
-    const instanceUrl = (body?.instanceUrl || '').trim().replace(/\/$/, '');
-    if (!instanceUrl) return Response.json({ error: 'instanceUrl is required' }, { status: 400 });
-    if (!/^https:\/\//i.test(instanceUrl)) {
-      return Response.json({ error: 'Instance URL must start with https://' }, { status: 400 });
+    const raw = (body?.instanceUrl || '').trim();
+    if (!raw) return Response.json({ error: 'instanceUrl is required' }, { status: 400 });
+    let instanceUrl;
+    try {
+      instanceUrl = validateInstanceUrl(raw);
+    } catch (e) {
+      return Response.json({ error: e.message }, { status: 400 });
     }
 
     const clientId = secrets.get('BLACKBOARD_CLIENT_ID');

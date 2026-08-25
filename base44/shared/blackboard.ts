@@ -9,6 +9,43 @@ function basicHeader() {
   return "Basic " + btoa(`${id}:${secret}`);
 }
 
+// Validate a user-supplied Blackboard instance URL before any authenticated
+// outbound request is made against it. Returns the normalized origin so a
+// path or query string cannot be smuggled into credential-bearing requests.
+export function validateInstanceUrl(instanceUrl) {
+  let url;
+  try {
+    url = new URL(instanceUrl);
+  } catch {
+    throw new Error("Invalid Blackboard instance URL");
+  }
+  if (url.protocol !== "https:") {
+    throw new Error("Blackboard instance URL must use https");
+  }
+  const host = url.hostname.toLowerCase();
+  if (!host) throw new Error("Blackboard instance URL missing host");
+  if (url.username || url.password || url.port) {
+    throw new Error("Blackboard instance URL must not include credentials or a port");
+  }
+  // Reject raw IP addresses (SSRF vector).
+  if (/^\d{1,3}(\.\d{1,3}){3}$/.test(host) || host.includes(":")) {
+    throw new Error("Blackboard instance URL must be a domain name, not an IP address");
+  }
+  // Reject localhost / local-only / link-local hosts.
+  if (host === "localhost" || host.endsWith(".localhost") || host.endsWith(".local") || host.endsWith(".internal")) {
+    throw new Error("Blackboard instance URL must be a public domain");
+  }
+  // Reject cloud metadata endpoints.
+  if (host === "metadata.google.internal" || host === "169.254.169.254" || host.includes("metadata")) {
+    throw new Error("Blackboard instance URL must not target a metadata service");
+  }
+  // Require a fully-qualified public domain (at least one dot).
+  if (!host.includes(".")) {
+    throw new Error("Blackboard instance URL must be a fully-qualified domain");
+  }
+  return url.origin;
+}
+
 export function buildAuthUrl(instanceUrl, clientId, redirectUri, state) {
   const params = new URLSearchParams({
     redirect_uri: redirectUri,
@@ -22,7 +59,8 @@ export function buildAuthUrl(instanceUrl, clientId, redirectUri, state) {
 
 // Exchange an authorization code for an access token (and refresh token).
 export async function exchangeCode(instanceUrl, code, redirectUri) {
-  const url = `${instanceUrl}/learn/api/public/v1/oauth2/token?code=${encodeURIComponent(code)}&redirect_uri=${encodeURIComponent(redirectUri)}`;
+  const base = validateInstanceUrl(instanceUrl);
+  const url = `${base}/learn/api/public/v1/oauth2/token?code=${encodeURIComponent(code)}&redirect_uri=${encodeURIComponent(redirectUri)}`;
   const res = await fetch(url, {
     method: "POST",
     headers: {
@@ -37,7 +75,8 @@ export async function exchangeCode(instanceUrl, code, redirectUri) {
 
 // Refresh an expired access token using a refresh token.
 export async function refreshAccessToken(instanceUrl, refreshToken, redirectUri) {
-  const url = `${instanceUrl}/learn/api/public/v1/oauth2/token?refresh_token=${encodeURIComponent(refreshToken)}&redirect_uri=${encodeURIComponent(redirectUri)}`;
+  const base = validateInstanceUrl(instanceUrl);
+  const url = `${base}/learn/api/public/v1/oauth2/token?refresh_token=${encodeURIComponent(refreshToken)}&redirect_uri=${encodeURIComponent(redirectUri)}`;
   const res = await fetch(url, {
     method: "POST",
     headers: {
