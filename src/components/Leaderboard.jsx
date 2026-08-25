@@ -37,9 +37,9 @@ export default function Leaderboard() {
   return (
     <div className="rounded-lg border bg-card p-4">
       <div className="flex items-center gap-2 mb-3">
-        <Trophy className="h-5 w-5 text-yellow-500" />
+        <Trophy className="h-5 w-5 text-yellow-500 shrink-0" />
         <h2 className="font-semibold">Leaderboard</h2>
-        <span className="text-xs text-muted-foreground">Top study streaks</span>
+        <span className="text-xs text-muted-foreground hidden sm:inline">Top study streaks</span>
       </div>
 
       {loading ? (
@@ -62,7 +62,7 @@ export default function Leaderboard() {
                   isMe ? 'bg-primary/10 border border-primary/30' : 'hover:bg-accent'
                 )}
               >
-                <span className="flex items-center gap-3 min-w-0">
+                <span className="flex items-center gap-3 min-w-0 flex-1">
                   <span className="w-6 text-center text-sm font-medium shrink-0">
                     {MEDAL[i] || i + 1}
                   </span>
