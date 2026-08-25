@@ -78,10 +78,10 @@ export default function Analytics() {
       <StatusBox classroom={classroomOn} blackboard={blackboardOn} />
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <StatCard icon={<Flame className="h-4 w-4 text-orange-500" />} label="Active streaks" value={summary.active} />
-        <StatCard icon={<ShieldAlert className="h-4 w-4 text-amber-500" />} label="At risk" value={summary.atRisk} />
-        <StatCard icon={<AlertTriangle className="h-4 w-4 text-red-500" />} label="Broken" value={summary.broken} />
-        <StatCard icon={<Trophy className="h-4 w-4 text-yellow-500" />} label="Best streak" value={summary.best} />
+        <StatCard icon={<Flame className="h-4 w-4 text-orange-500" />} label="Active streaks" value={summary.active} index={0} />
+        <StatCard icon={<ShieldAlert className="h-4 w-4 text-amber-500" />} label="At risk" value={summary.atRisk} index={1} />
+        <StatCard icon={<AlertTriangle className="h-4 w-4 text-red-500" />} label="Broken" value={summary.broken} index={2} />
+        <StatCard icon={<Trophy className="h-4 w-4 text-yellow-500" />} label="Best streak" value={summary.best} index={3} />
       </div>
 
       {streaks.length === 0 ? (
@@ -96,8 +96,10 @@ export default function Analytics() {
         </div>
       ) : (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {streaks.map((s) => (
-            <StreakCard key={s.class.id} streak={s} />
+          {streaks.map((s, index) => (
+            <div key={s.class.id} className="animate-fade-up" style={{ animationDelay: `${Math.min(index, 10) * 40}ms` }}>
+              <StreakCard streak={s} />
+            </div>
           ))}
         </div>
       )}
@@ -107,9 +109,12 @@ export default function Analytics() {
   );
 }
 
-function StatCard({ icon, label, value }) {
+function StatCard({ icon, label, value, index = 0 }) {
   return (
-    <div className="rounded-lg border bg-card p-4">
+    <div
+      className="rounded-lg border bg-card p-4 transition-transform duration-200 hover:-translate-y-0.5 animate-fade-up"
+      style={{ animationDelay: `${index * 70}ms` }}
+    >
       <div className="flex items-center gap-2 text-xs text-muted-foreground">
         {icon}
         {label}

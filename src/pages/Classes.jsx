@@ -71,8 +71,12 @@ export default function Classes() {
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {classes.map((c) => (
-            <div key={c.id} className="rounded-lg border bg-card p-4 flex flex-col">
+          {classes.map((c, index) => (
+            <div
+              key={c.id}
+              className="rounded-lg border bg-card p-4 flex flex-col transition-transform duration-200 hover:-translate-y-0.5 animate-fade-up"
+              style={{ animationDelay: `${Math.min(index, 10) * 40}ms` }}
+            >
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-2">
                   <span className="w-3 h-3 rounded-full" style={{ background: c.color }} />
