@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { motion } from 'framer-motion';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -9,6 +10,12 @@ import { isDemoUser } from '@/lib/demoData';
 
 const CALENDAR_ID = '6a87a0a86ad979ee05f39b0c';
 const CLASSROOM_ID = '6a87a2e5f3be615b69035dcd';
+
+const container = { hidden: {}, show: { transition: { staggerChildren: 0.1 } } };
+const item = {
+  hidden: { opacity: 0, y: 14 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: [0.16, 1, 0.3, 1] } },
+};
 
 export default function ServicesStep() {
   const { user } = useAuth();
@@ -69,40 +76,48 @@ export default function ServicesStep() {
   };
 
   return (
-    <div className="space-y-3">
-      <p className="text-sm text-muted-foreground">Connect your school accounts to import assignments automatically. Each user connects separately — your data stays private.</p>
-      <ServiceRow
-        icon={<Calendar className="h-5 w-5 text-blue-500" />}
-        title="Google Calendar"
-        desc="Import calendar events labeled as assignments."
-        loading={loading}
-        connected={status.calendar}
-        busy={busy === 'calendar'}
-        onConnect={() => connect(CALENDAR_ID, 'calendar')}
-        onDisconnect={() => disconnect(CALENDAR_ID, 'calendar')}
-      />
-      <ServiceRow
-        icon={<BookOpen className="h-5 w-5 text-emerald-500" />}
-        title="Google Classroom"
-        desc="Import courses and coursework with due dates."
-        loading={loading}
-        connected={status.classroom}
-        busy={busy === 'classroom'}
-        onConnect={() => connect(CLASSROOM_ID, 'classroom')}
-        onDisconnect={() => disconnect(CLASSROOM_ID, 'classroom')}
-      />
-      <BlackboardConnection
-        connected={status.blackboard}
-        instanceUrl={user?.data?.blackboard_instance_url}
-        onChanged={check}
-      />
-    </div>
+    <motion.div variants={container} initial="hidden" animate="show" className="space-y-3">
+      <motion.p variants={item} className="text-sm text-muted-foreground">
+        Connect your school accounts to import assignments automatically. Each user connects separately — your data stays private.
+      </motion.p>
+      <motion.div variants={item}>
+        <ServiceRow
+          icon={<Calendar className="h-5 w-5 text-blue-500" />}
+          title="Google Calendar"
+          desc="Import calendar events labeled as assignments."
+          loading={loading}
+          connected={status.calendar}
+          busy={busy === 'calendar'}
+          onConnect={() => connect(CALENDAR_ID, 'calendar')}
+          onDisconnect={() => disconnect(CALENDAR_ID, 'calendar')}
+        />
+      </motion.div>
+      <motion.div variants={item}>
+        <ServiceRow
+          icon={<BookOpen className="h-5 w-5 text-emerald-500" />}
+          title="Google Classroom"
+          desc="Import courses and coursework with due dates."
+          loading={loading}
+          connected={status.classroom}
+          busy={busy === 'classroom'}
+          onConnect={() => connect(CLASSROOM_ID, 'classroom')}
+          onDisconnect={() => disconnect(CLASSROOM_ID, 'classroom')}
+        />
+      </motion.div>
+      <motion.div variants={item}>
+        <BlackboardConnection
+          connected={status.blackboard}
+          instanceUrl={user?.data?.blackboard_instance_url}
+          onChanged={check}
+        />
+      </motion.div>
+    </motion.div>
   );
 }
 
 function ServiceRow({ icon, title, desc, loading, connected, busy, onConnect, onDisconnect }) {
   return (
-    <div className="rounded-lg border bg-card p-4 flex flex-col gap-4">
+    <motion.div whileHover={{ scale: 1.01 }} className="rounded-lg border bg-card p-4 flex flex-col gap-4">
       <div className="flex items-start gap-3 min-w-0">
         <div className="mt-0.5">{icon}</div>
         <div className="min-w-0">
@@ -111,7 +126,13 @@ function ServiceRow({ icon, title, desc, loading, connected, busy, onConnect, on
             {loading ? (
               <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
             ) : connected ? (
-              <Badge className="bg-emerald-500 hover:bg-emerald-500">Connected</Badge>
+              <motion.span
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ type: 'spring', stiffness: 400, damping: 15 }}
+              >
+                <Badge className="bg-emerald-500 hover:bg-emerald-500">Connected</Badge>
+              </motion.span>
             ) : (
               <Badge variant="secondary">Not connected</Badge>
             )}
@@ -132,6 +153,6 @@ function ServiceRow({ icon, title, desc, loading, connected, busy, onConnect, on
           </Button>
         )}
       </div>
-    </div>
+    </motion.div>
   );
 }

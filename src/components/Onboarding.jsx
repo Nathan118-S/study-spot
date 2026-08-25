@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { useAuth } from '@/lib/AuthContext';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
-import { Loader2, GraduationCap, Palette, Trophy, ShieldCheck, Plug, ClipboardCheck, Check, ArrowLeft, ArrowRight } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Loader2, GraduationCap, Palette, Trophy, ShieldCheck, Plug, ClipboardCheck, Check, ArrowLeft, ArrowRight, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import AppearanceStep from './onboarding/AppearanceStep';
 import LeaderboardStep from './onboarding/LeaderboardStep';
@@ -18,6 +19,15 @@ const STEPS = [
   { key: 'services', title: 'Services', icon: Plug },
   { key: 'grading', title: 'Grading', icon: ClipboardCheck },
 ];
+
+const container = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.07, delayChildren: 0.05 } },
+};
+const item = {
+  hidden: { opacity: 0, y: 14 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: [0.16, 1, 0.3, 1] } },
+};
 
 export default function Onboarding() {
   const { user, checkUserAuth } = useAuth();
@@ -43,15 +53,38 @@ export default function Onboarding() {
     switch (current.key) {
       case 'welcome':
         return (
-          <div className="text-center py-6">
-            <div className="mx-auto h-14 w-14 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-              <GraduationCap className="h-7 w-7 text-primary" />
-            </div>
-            <h2 className="font-heading text-xl font-bold">Welcome to Study Spot</h2>
-            <p className="text-sm text-muted-foreground mt-2 max-w-sm mx-auto">
+          <motion.div
+            key="welcome"
+            variants={container}
+            initial="hidden"
+            animate="show"
+            className="text-center py-6"
+          >
+            <motion.div variants={item} className="mx-auto h-20 w-20 rounded-full bg-primary/15 flex items-center justify-center mb-5">
+              <motion.div
+                animate={{ y: [0, -8, 0], rotate: [0, -6, 6, 0] }}
+                transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
+              >
+                <GraduationCap className="h-10 w-10 text-primary" />
+              </motion.div>
+            </motion.div>
+            <motion.h2 variants={item} className="font-heading text-2xl font-bold">
+              Welcome to <span className="text-primary">Study Spot</span>
+            </motion.h2>
+            <motion.p variants={item} className="text-sm text-muted-foreground mt-3 max-w-sm mx-auto">
               Let's set up your account in a few quick steps. You can change any of these later in Settings.
-            </p>
-          </div>
+            </motion.p>
+            <motion.div variants={item} className="flex items-center justify-center gap-1.5 mt-5 text-primary">
+              {[0, 1, 2].map((i) => (
+                <motion.span
+                  key={i}
+                  className="h-1.5 w-1.5 rounded-full bg-primary"
+                  animate={{ opacity: [0.3, 1, 0.3], scale: [0.8, 1.2, 0.8] }}
+                  transition={{ duration: 1.2, repeat: Infinity, delay: i * 0.2 }}
+                />
+              ))}
+            </motion.div>
+          </motion.div>
         );
       case 'appearance':
         return <AppearanceStep />;
@@ -69,14 +102,47 @@ export default function Onboarding() {
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="w-full max-w-lg max-h-[90vh] flex flex-col rounded-xl border bg-card shadow-xl">
-        <div className="p-5 border-b">
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto"
+    >
+      {/* Yellow gradient backdrop */}
+      <div className="absolute inset-0 bg-gradient-to-br from-primary/30 via-amber-200/40 to-amber-100/60 dark:from-primary/20 dark:via-amber-900/10 dark:to-background" />
+      <motion.div
+        animate={{ scale: [1, 1.05, 1], opacity: [0.5, 0.7, 0.5] }}
+        transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
+        className="absolute -top-24 -right-24 h-72 w-72 rounded-full bg-amber-300/40 blur-3xl"
+      />
+      <motion.div
+        animate={{ scale: [1.1, 1, 1.1], opacity: [0.4, 0.6, 0.4] }}
+        transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
+        className="absolute -bottom-24 -left-24 h-72 w-72 rounded-full bg-primary/30 blur-3xl"
+      />
+
+      <motion.div
+        initial={{ opacity: 0, y: 24, scale: 0.96 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+        className="relative w-full max-w-lg my-auto flex flex-col rounded-2xl border border-amber-200/60 dark:border-amber-500/20 bg-card/95 backdrop-blur-md shadow-2xl"
+      >
+        <div className="p-5 border-b border-border">
           <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2 min-w-0">
-              <current.icon className="h-5 w-5 text-primary shrink-0" />
+            <motion.div
+              key={current.key}
+              initial={{ opacity: 0, x: -8 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.3 }}
+              className="flex items-center gap-2 min-w-0"
+            >
+              <motion.div
+                animate={{ rotate: [0, -8, 8, 0] }}
+                transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+              >
+                <current.icon className="h-5 w-5 text-primary shrink-0" />
+              </motion.div>
               <h2 className="font-heading font-bold truncate">{current.title}</h2>
-            </div>
+            </motion.div>
             <Button variant="ghost" size="sm" onClick={finish} disabled={finishing} className="text-muted-foreground">
               {finishing ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : null}
               Skip setup
@@ -84,31 +150,59 @@ export default function Onboarding() {
           </div>
           <div className="flex gap-1.5 mt-3">
             {STEPS.map((s, i) => (
-              <div
+              <motion.div
                 key={s.key}
-                className={cn('h-1.5 flex-1 rounded-full transition-colors', i <= step ? 'bg-primary' : 'bg-muted')}
+                className={cn('h-1.5 flex-1 rounded-full', i <= step ? 'bg-primary' : 'bg-muted')}
+                animate={i === step ? { scaleX: [1, 1.15, 1] } : {}}
+                transition={{ duration: 0.6 }}
+                style={{ transformOrigin: 'left' }}
               />
             ))}
           </div>
         </div>
-        <div className="p-5 overflow-y-auto flex-1">{renderStep()}</div>
-        <div className="p-5 border-t flex items-center justify-between gap-3">
+
+        <div className="p-5 overflow-y-auto flex-1 min-h-[280px]">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={current.key}
+              initial={{ opacity: 0, x: 30 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -30 }}
+              transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+            >
+              {renderStep()}
+            </motion.div>
+          </AnimatePresence>
+        </div>
+
+        <div className="p-5 border-t border-border flex items-center justify-between gap-3">
           <Button variant="ghost" onClick={back} disabled={step === 0 || finishing}>
             <ArrowLeft className="h-4 w-4 mr-1" /> Back
           </Button>
           {isLast ? (
-            <Button onClick={finish} disabled={finishing}>
-              {finishing ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Check className="h-4 w-4 mr-1" />}
-              Finish
-            </Button>
+            <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
+              <Button onClick={finish} disabled={finishing} className="bg-gradient-to-r from-primary to-amber-500">
+                {finishing ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Check className="h-4 w-4 mr-1" />}
+                Finish
+              </Button>
+            </motion.div>
           ) : (
-            <Button onClick={next} disabled={finishing}>
-              {step === 0 ? 'Get started' : 'Next'}
-              <ArrowRight className="h-4 w-4 ml-1" />
-            </Button>
+            <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
+              <Button onClick={next} disabled={finishing} className="bg-gradient-to-r from-primary to-amber-500">
+                {step === 0 ? (
+                  <>
+                    Get started <Sparkles className="h-4 w-4 ml-1" />
+                  </>
+                ) : (
+                  <>
+                    Next <ArrowRight className="h-4 w-4 ml-1" />
+                  </>
+                )}
+              </Button>
+            </motion.div>
           )}
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }
