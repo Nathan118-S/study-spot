@@ -3,7 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, BookOpen, Loader2, Link2, Unlink, RefreshCw, Trash2, LogOut, Trophy, Moon, Sun, Smartphone, Palette, Plug, RefreshCcw, Database, AlarmClock, GraduationCap, Lock, User, AlertTriangle, ChevronRight, Sparkles, RotateCcw } from 'lucide-react';
+import { Calendar, BookOpen, Loader2, Link2, Unlink, RefreshCw, Trash2, LogOut, Trophy, Moon, Sun, Smartphone, Palette, Plug, RefreshCcw, Database, AlarmClock, GraduationCap, Lock, User, AlertTriangle, ChevronRight, Sparkles, RotateCcw, Hand } from 'lucide-react';
 import { useTheme } from '@/lib/theme';
 import GradingScaleEditor from '@/components/GradingScaleEditor';
 import TwoFactorSettings from '@/components/TwoFactorSettings';
@@ -11,6 +11,7 @@ import BlackboardConnection from '@/components/BlackboardConnection';
 import ReminderSettings from '@/components/ReminderSettings';
 import DataExport from '@/components/DataExport';
 import AccountName from '@/components/AccountName';
+import { AccentPicker, WelcomeStyleSelect } from '@/components/ThemeControls';
 import { Switch } from '@/components/ui/switch';
 import {
   Dialog,
@@ -216,6 +217,24 @@ export default function Settings() {
                 </p>
               </div>
               <Switch checked={animations} onCheckedChange={setAnimations} />
+            </div>
+            <div className="rounded-lg border bg-card p-4 space-y-3">
+              <div>
+                <p className="text-sm font-medium flex items-center gap-2">
+                  <Palette className="h-4 w-4" /> Accent color
+                </p>
+                <p className="text-xs text-muted-foreground">Pick the highlight color used across the app.</p>
+              </div>
+              <AccentPicker />
+            </div>
+            <div className="rounded-lg border bg-card p-4 space-y-3">
+              <div>
+                <p className="text-sm font-medium flex items-center gap-2">
+                  <Hand className="h-4 w-4" /> Welcome message
+                </p>
+                <p className="text-xs text-muted-foreground">Choose how Study Spot greets you on login.</p>
+              </div>
+              <WelcomeStyleSelect />
             </div>
           </div>
         );

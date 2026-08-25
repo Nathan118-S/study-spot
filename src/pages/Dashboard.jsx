@@ -124,16 +124,19 @@ export default function Dashboard() {
     }
   }, [user, runSync]);
 
+  const welcomeStyle = user?.welcome_style ?? user?.data?.welcome_style ?? 'large';
+
   // Welcome box once per full page load, only after onboarding is complete.
   useEffect(() => {
     if (!user || greetedThisLoad) return;
     const done = (user.onboarding_completed ?? user.data?.onboarding_completed) === true;
     if (!done) return;
+    if (welcomeStyle === 'off') return;
     greetedThisLoad = true;
     setShowWelcome(true);
     const t = setTimeout(() => setShowWelcome(false), 2800);
     return () => clearTimeout(t);
-  }, [user]);
+  }, [user, welcomeStyle]);
 
   const toggleComplete = async (a) => {
     const prev = assignments;
@@ -244,7 +247,7 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
-      {showWelcome && (
+      {showWelcome && welcomeStyle === 'large' && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-card md:bg-black/30 md:backdrop-blur-sm p-0 md:px-4"
           onClick={() => setShowWelcome(false)}
@@ -271,6 +274,36 @@ export default function Dashboard() {
               })()}
             </p>
             <p className="mt-2 text-sm text-muted-foreground">Welcome back to Study Spot</p>
+          </motion.div>
+        </div>
+      )}
+      {showWelcome && welcomeStyle === 'small' && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50" onClick={() => setShowWelcome(false)}>
+          <motion.div
+            initial={{ opacity: 0, y: -20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+            className="rounded-xl border border-border bg-card shadow-xl px-5 py-4 flex items-center gap-3 cursor-pointer"
+          >
+            <motion.span
+              initial={{ scale: 0.6, rotate: -12 }}
+              animate={{ scale: 1, rotate: 0 }}
+              transition={{ delay: 0.1, duration: 0.4 }}
+              className="text-2xl"
+            >
+              👋
+            </motion.span>
+            <div>
+              <p className="font-heading font-bold text-lg leading-tight">
+                <span className="bg-gradient-to-r from-primary to-amber-500 bg-clip-text text-transparent">Hello</span>
+                {(() => {
+                  const name = user?.name || user?.full_name || (user?.email ? user.email.split('@')[0] : '');
+                  return name ? `, ${name}!` : '!';
+                })()}
+              </p>
+              <p className="text-xs text-muted-foreground">Welcome back to Study Spot</p>
+            </div>
           </motion.div>
         </div>
       )}
