@@ -308,10 +308,10 @@ export default function Dashboard() {
       {syncMsg && <p className="text-sm text-muted-foreground">{syncMsg}</p>}
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <StatCard label="Total" value={stats.total} />
-        <StatCard label="Overdue" value={stats.overdue} accent="text-red-500" />
-        <StatCard label="Due Today" value={stats.today} accent="text-amber-500" />
-        <StatCard label="Completed" value={stats.completed} accent="text-emerald-500" />
+        <StatCard label="Total" value={stats.total} index={0} />
+        <StatCard label="Overdue" value={stats.overdue} accent="text-red-500" index={1} />
+        <StatCard label="Due Today" value={stats.today} accent="text-amber-500" index={2} />
+        <StatCard label="Completed" value={stats.completed} accent="text-emerald-500" index={3} />
       </div>
 
       {showTimer && <StudyTimer assignments={assignments} classes={classes} />}
@@ -427,15 +427,16 @@ export default function Dashboard() {
         </div>
       ) : (
         <div className="space-y-2">
-          {filtered.map((a) => {
+          {filtered.map((a, index) => {
             const overdue = a.due_date && isPast(parseISO(a.due_date)) && !a.completed;
             return (
               <div
                 key={a.id}
                 className={cn(
-                  'flex items-stretch rounded-lg border bg-card overflow-hidden',
+                  'flex items-stretch rounded-lg border bg-card overflow-hidden animate-fade-up transition-colors hover:border-primary/40',
                   overdue && 'border-red-500/60 bg-red-500/5'
                 )}
+                style={{ animationDelay: `${Math.min(index, 10) * 30}ms` }}
               >
                 {selectMode && (
                   <div className="flex items-center justify-center w-11 h-11 shrink-0">
@@ -523,9 +524,12 @@ export default function Dashboard() {
   );
 }
 
-function StatCard({ label, value, accent }) {
+function StatCard({ label, value, accent, index = 0 }) {
   return (
-    <div className="rounded-lg border bg-card p-4">
+    <div
+      className="rounded-lg border bg-card p-4 transition-transform duration-200 hover:-translate-y-0.5 animate-fade-up"
+      style={{ animationDelay: `${index * 70}ms` }}
+    >
       <p className="text-xs text-muted-foreground">{label}</p>
       <p className={cn('text-2xl font-bold mt-1', accent)}>{value}</p>
     </div>
