@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
-import { Loader2, Flame, AlertTriangle, ShieldAlert, ShieldCheck, Trophy, GraduationCap } from 'lucide-react';
+import { Loader2, Flame, AlertTriangle, ShieldAlert, ShieldCheck, Trophy, GraduationCap, X } from 'lucide-react';
 import { buildStreaks, streakSummary } from '@/lib/streaks';
 import StreakCard from '@/components/StreakCard';
 import Leaderboard from '@/components/Leaderboard';
@@ -125,6 +125,8 @@ function StatCard({ icon, label, value, index = 0 }) {
 }
 
 function StatusBox({ classroom, blackboard }) {
+  const [dismissed, setDismissed] = useState(() => localStorage.getItem('cf-streaks-unverified-dismissed') === 'true');
+
   if (classroom || blackboard) {
     const sources = [classroom && 'Google Classroom', blackboard && 'Blackboard'].filter(Boolean).join(' and ');
     return (
@@ -139,6 +141,7 @@ function StatusBox({ classroom, blackboard }) {
       </div>
     );
   }
+  if (dismissed) return null;
   return (
     <div className="flex items-start gap-3 rounded-lg border border-amber-500/40 bg-amber-500/10 p-4">
       <ShieldAlert className="h-5 w-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
@@ -151,6 +154,19 @@ function StatusBox({ classroom, blackboard }) {
       </div>
       <Button asChild variant="outline" size="sm" className="shrink-0">
         <Link to="/settings">Connect</Link>
+      </Button>
+      <Button
+        variant="ghost"
+        size="icon"
+        className="shrink-0 h-8 w-8 text-muted-foreground hover:text-foreground"
+        onClick={() => {
+          localStorage.setItem('cf-streaks-unverified-dismissed', 'true');
+          setDismissed(true);
+        }}
+        aria-label="Dismiss"
+        title="Dismiss"
+      >
+        <X className="h-4 w-4" />
       </Button>
     </div>
   );
