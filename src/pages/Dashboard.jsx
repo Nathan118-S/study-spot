@@ -18,7 +18,6 @@ import PullToRefresh from '@/components/PullToRefresh';
 import StudyTimer from '@/components/StudyTimer';
 import { isDemoUser, getDemoAssignments, getDemoClasses, demoConnections } from '@/lib/demoData';
 
-const PRIORITY_BAR = { high: 'bg-red-500', medium: 'bg-amber-500', low: 'bg-emerald-500' };
 const PRIORITY_RANK = { high: 3, medium: 2, low: 1 };
 const PRIORITY_LABEL = { high: 'High', medium: 'Medium', low: 'Low' };
 const TYPE_LABEL = {
@@ -443,7 +442,7 @@ export default function Dashboard() {
                     <Checkbox checked={!!selected[a.id]} onCheckedChange={() => toggleSelect(a.id)} />
                   </div>
                 )}
-                <div className={cn('w-1.5 shrink-0', PRIORITY_BAR[a.priority])} />
+                <div className="w-1.5 shrink-0" style={{ background: classColor(a.class_id) }} />
                 <div className="flex items-center justify-center w-11 h-11 shrink-0">
                   <Checkbox checked={!!a.completed} onCheckedChange={() => toggleComplete(a)} />
                 </div>
