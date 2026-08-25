@@ -105,26 +105,13 @@ export default function Onboarding() {
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto bg-background"
     >
-      {/* Yellow gradient backdrop */}
-      <div className="absolute inset-0 bg-gradient-to-br from-primary/30 via-amber-200/40 to-amber-100/60 dark:from-primary/20 dark:via-amber-900/10 dark:to-background" />
-      <motion.div
-        animate={{ scale: [1, 1.05, 1], opacity: [0.5, 0.7, 0.5] }}
-        transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
-        className="absolute -top-24 -right-24 h-72 w-72 rounded-full bg-amber-300/40 blur-3xl"
-      />
-      <motion.div
-        animate={{ scale: [1.1, 1, 1.1], opacity: [0.4, 0.6, 0.4] }}
-        transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
-        className="absolute -bottom-24 -left-24 h-72 w-72 rounded-full bg-primary/30 blur-3xl"
-      />
-
       <motion.div
         initial={{ opacity: 0, y: 24, scale: 0.96 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-        className="relative w-full max-w-lg my-auto flex flex-col rounded-2xl border border-amber-200/60 dark:border-amber-500/20 bg-card/95 backdrop-blur-md shadow-2xl"
+        className="relative w-full max-w-lg my-auto flex flex-col rounded-2xl border border-amber-300 dark:border-amber-500/30 bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-900/40 dark:to-amber-950/50 shadow-2xl"
       >
         <div className="p-5 border-b border-border">
           <div className="flex items-center justify-between gap-3">
