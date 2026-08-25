@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/components/ui/use-toast';
 import MergeDialog from '@/components/admin/MergeDialog';
 import UserManageDialog from '@/components/admin/UserManageDialog';
-import { Loader2, RefreshCw, ChevronRight, ArrowLeft } from 'lucide-react';
+import { Loader2, RefreshCw, ChevronRight, ArrowLeft, CheckCircle2, Circle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export default function AdminPeople() {
@@ -98,6 +98,19 @@ export default function AdminPeople() {
     try {
       const res = await base44.functions.invoke('adminRestoreStreak', { userId: u.id });
       toast({ title: 'Streak restored', description: `${res.data.restored} overdue assignment(s) marked complete.` });
+    } catch (e) {
+      toast({ title: 'Failed', description: e.message, variant: 'destructive' });
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const resetOnboarding = async (u) => {
+    setBusy(u.id);
+    try {
+      await base44.functions.invoke('adminResetOnboarding', { userId: u.id });
+      setUsers((prev) => prev.map((x) => (x.id === u.id ? { ...x, onboarding_completed: false } : x)));
+      toast({ title: 'Onboarding reset', description: `${u.email} will be asked to set up again.` });
     } catch (e) {
       toast({ title: 'Failed', description: e.message, variant: 'destructive' });
     } finally {
@@ -224,6 +237,17 @@ export default function AdminPeople() {
                 <p className="text-sm text-muted-foreground truncate">{u.email}</p>
               </div>
               <div className="flex items-center gap-2 shrink-0">
+                <span
+                  className="flex items-center gap-1 text-xs text-muted-foreground"
+                  title={u.onboarding_completed ? 'Onboarding complete' : 'Onboarding pending'}
+                >
+                  {u.onboarding_completed ? (
+                    <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                  ) : (
+                    <Circle className="h-4 w-4 text-amber-500" />
+                  )}
+                  <span className="hidden sm:inline">{u.onboarding_completed ? 'Onboarded' : 'Pending'}</span>
+                </span>
                 <Badge
                   variant={u.role === 'admin' ? 'default' : 'secondary'}
                   className={cn(
@@ -252,6 +276,7 @@ export default function AdminPeople() {
         onRestoreStreak={restoreStreak}
         onVerifyUser={verifyUser}
         onReset2fa={reset2fa}
+        onResetOnboarding={resetOnboarding}
         onDeleteUser={deleteUser}
         onMerge={(u) => { setSelectedId(null); setMergeSource(u); }}
         onSendTestPush={(u) => sendTestNotification(u, 'push')}

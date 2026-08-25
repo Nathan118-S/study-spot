@@ -18,6 +18,7 @@ export default async function(req) {
         twofa_enabled: !!u.twofa_enabled,
         twofa_method: u.twofa_method || (u.twofa_enabled ? 'totp' : null),
         is_verified: !!u.is_verified,
+        onboarding_completed: !!(u.onboarding_completed ?? u.data?.onboarding_completed),
         created_date: u.created_date,
       })),
     });

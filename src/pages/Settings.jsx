@@ -3,7 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, BookOpen, Loader2, Link2, Unlink, RefreshCw, Trash2, LogOut, Trophy, Moon, Sun, Smartphone, Palette, Plug, RefreshCcw, Database, AlarmClock, GraduationCap, Lock, User, AlertTriangle, ChevronRight, Sparkles } from 'lucide-react';
+import { Calendar, BookOpen, Loader2, Link2, Unlink, RefreshCw, Trash2, LogOut, Trophy, Moon, Sun, Smartphone, Palette, Plug, RefreshCcw, Database, AlarmClock, GraduationCap, Lock, User, AlertTriangle, ChevronRight, Sparkles, RotateCcw } from 'lucide-react';
 import { useTheme } from '@/lib/theme';
 import GradingScaleEditor from '@/components/GradingScaleEditor';
 import TwoFactorSettings from '@/components/TwoFactorSettings';
@@ -41,6 +41,7 @@ const CARDS = [
   { value: 'blackboard', label: 'Blackboard', desc: 'Connect your school’s Blackboard', icon: BookOpen },
   { value: 'sync', label: 'Sync', desc: 'Refresh synced data', icon: RefreshCcw },
   { value: 'leaderboard', label: 'Leaderboard', desc: 'Show study-streak rankings', icon: Trophy },
+  { value: 'onboarding', label: 'Onboarding', desc: 'Run the setup wizard again', icon: RotateCcw },
   { value: 'data', label: 'Data', desc: 'Export your assignments', icon: Database },
   { value: 'reminders', label: 'Reminders', desc: 'Email reminder timing', icon: AlarmClock },
   { value: 'grading', label: 'Grading', desc: 'Letter-grade thresholds', icon: GraduationCap },
@@ -50,7 +51,7 @@ const CARDS = [
 ];
 
 export default function Settings() {
-  const { user, logout } = useAuth();
+  const { user, logout, checkUserAuth } = useAuth();
   const [status, setStatus] = useState({ calendar: false, classroom: false, blackboard: false });
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(null);
@@ -63,6 +64,7 @@ export default function Settings() {
   );
   const [savingLeaderboard, setSavingLeaderboard] = useState(false);
   const [openSection, setOpenSection] = useState(null);
+  const [restarting, setRestarting] = useState(false);
   const { dark, sync: syncTheme, setDarkMode, setSyncWithDevice, animations, setAnimations } = useTheme();
 
   const toggleLeaderboard = async (checked) => {
@@ -162,6 +164,17 @@ export default function Settings() {
 
   const lastSync = user?.data?.last_sync ? new Date(user.data.last_sync) : null;
   const activeCard = CARDS.find((c) => c.value === openSection);
+
+  const restartOnboarding = async () => {
+    setRestarting(true);
+    try {
+      await base44.auth.updateMe({ onboarding_completed: false });
+      setOpenSection(null);
+      await checkUserAuth();
+    } catch {
+      setRestarting(false);
+    }
+  };
 
   const renderSection = (value) => {
     switch (value) {
@@ -280,6 +293,18 @@ export default function Settings() {
               </p>
             </div>
             <Switch checked={leaderboardEnabled} onCheckedChange={toggleLeaderboard} disabled={savingLeaderboard} />
+          </div>
+        );
+      case 'onboarding':
+        return (
+          <div className="rounded-lg border bg-card p-4 space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Re-run the first-time setup wizard to revisit your theme, leaderboard, security, services, and grading choices.
+            </p>
+            <Button onClick={restartOnboarding} disabled={restarting}>
+              {restarting ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <RotateCcw className="h-4 w-4 mr-1" />}
+              Restart onboarding
+            </Button>
           </div>
         );
       case 'data':

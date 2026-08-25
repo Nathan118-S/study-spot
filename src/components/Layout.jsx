@@ -6,6 +6,7 @@ import { Calendar, LayoutDashboard, BookOpen, Settings as SettingsIcon, LogOut, 
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import NotificationCenter from '@/components/NotificationCenter';
+import Onboarding from '@/components/Onboarding';
 import { isDemoUser } from '@/lib/demoData';
 import { useTheme } from '@/lib/theme';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -40,9 +41,12 @@ export default function Layout() {
   };
   const items = navItems;
   const isAdmin = user?.role === 'admin';
+  const onboardingDone = (user?.onboarding_completed ?? user?.data?.onboarding_completed) === true;
+  const showOnboarding = !!user && !isDemoUser(user) && !onboardingDone;
 
   return (
     <div className="min-h-screen bg-background text-foreground flex">
+      {showOnboarding && <Onboarding />}
       <aside
         className={cn(
           'fixed inset-y-0 left-0 z-40 w-64 bg-sidebar border-r border-sidebar-border flex flex-col transition-all duration-200',

@@ -10,7 +10,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import SheetSelect from '@/components/SheetSelect';
-import { KeyRound, Trash2, Flame, ShieldOff, Mail, GitMerge, Bell, Send, UserCog, Loader2, Check, Ban } from 'lucide-react';
+import { KeyRound, Trash2, Flame, ShieldOff, Mail, GitMerge, Bell, Send, UserCog, Loader2, Check, Ban, RotateCcw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -34,7 +34,7 @@ export default function UserManageDialog({
   open, onOpenChange, user: u, currentUser, busy,
   onSetRole, onResetPassword, onRestoreStreak, onVerifyUser, onReset2fa, onDeleteUser, onMerge,
   onSendTestPush, onSendTestEmail,
-  onSaveName, onDisable, onEnable,
+  onSaveName, onDisable, onEnable, onResetOnboarding,
 }) {
   const [name, setName] = useState('');
   const [disableOpen, setDisableOpen] = useState(false);
@@ -151,6 +151,16 @@ export default function UserManageDialog({
           >
             <Button variant="outline" size="sm" onClick={() => onMerge(u)} disabled={disabled || isSelf}>
               <GitMerge className="h-4 w-4 mr-1" /> Merge
+            </Button>
+          </ActionRow>
+
+          <ActionRow
+            icon={<RotateCcw className="h-5 w-5" />}
+            title="Reset onboarding"
+            desc={u.onboarding_completed ? 'Require the setup wizard to run again on next visit.' : 'Onboarding has not been completed yet.'}
+          >
+            <Button variant="outline" size="sm" onClick={() => onResetOnboarding(u)} disabled={disabled || isSelf}>
+              <RotateCcw className="h-4 w-4 mr-1" /> Reset
             </Button>
           </ActionRow>
 
