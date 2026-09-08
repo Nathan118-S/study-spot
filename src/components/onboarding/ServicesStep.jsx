@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { base44 } from '@/api/base44Client';
+import { api } from '@/api/client';
 import { useAuth } from '@/lib/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -8,8 +8,8 @@ import { Calendar, BookOpen, Loader2, Link2, Unlink } from 'lucide-react';
 import BlackboardConnection from '@/components/BlackboardConnection';
 import { isDemoUser } from '@/lib/demoData';
 
-const CALENDAR_ID = '6a87a0a86ad979ee05f39b0c';
-const CLASSROOM_ID = '6a87a2e5f3be615b69035dcd';
+const CALENDAR_ID = 'google_calendar';
+const CLASSROOM_ID = 'google_classroom';
 
 const container = { hidden: {}, show: { transition: { staggerChildren: 0.1 } } };
 const item = {
@@ -30,7 +30,7 @@ export default function ServicesStep() {
       return;
     }
     try {
-      const res = await base44.functions.invoke('checkGoogleConnections', {});
+      const res = await api.functions.invoke('checkGoogleConnections', {});
       setStatus({
         calendar: !!res.data?.calendar,
         classroom: !!res.data?.classroom,
@@ -51,7 +51,7 @@ export default function ServicesStep() {
     if (isDemoUser(user)) return;
     setBusy(label);
     try {
-      const url = await base44.connectors.connectAppUser(id);
+      const url = await api.connectors.connectAppUser(id);
       const popup = window.open(url, '_blank');
       const timer = setInterval(() => {
         if (!popup || popup.closed) {
@@ -68,7 +68,7 @@ export default function ServicesStep() {
     if (isDemoUser(user)) return;
     setBusy(label);
     try {
-      await base44.connectors.disconnectAppUser(id);
+      await api.connectors.disconnectAppUser(id);
       await check();
     } finally {
       setBusy(null);

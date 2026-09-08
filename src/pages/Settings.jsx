@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { base44 } from '@/api/base44Client';
+import { api } from '@/api/client';
 import { useAuth } from '@/lib/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -33,8 +33,8 @@ import {
   AlertDialogAction,
 } from '@/components/ui/alert-dialog';
 
-const CALENDAR_ID = '6a87a0a86ad979ee05f39b0c';
-const CLASSROOM_ID = '6a87a2e5f3be615b69035dcd';
+const CALENDAR_ID = 'google_calendar';
+const CLASSROOM_ID = 'google_classroom';
 
 const CARDS = [
   { value: 'appearance', label: 'Appearance', desc: 'Light/dark mode and device sync', icon: Palette },
@@ -73,7 +73,7 @@ export default function Settings() {
     if (isDemoUser(user)) return;
     setSavingLeaderboard(true);
     try {
-      await base44.auth.updateMe({ leaderboard_enabled: checked });
+      await api.auth.updateMe({ leaderboard_enabled: checked });
     } catch {
       setLeaderboardEnabled(!checked);
     } finally {
@@ -85,7 +85,7 @@ export default function Settings() {
     setSyncCompletion(checked);
     setSavingSync(true);
     try {
-      await base44.auth.updateMe({ sync_completion_to_classroom: checked });
+      await api.auth.updateMe({ sync_completion_to_classroom: checked });
     } catch {
       setSyncCompletion(!checked);
     } finally {
@@ -101,7 +101,7 @@ export default function Settings() {
       return;
     }
     try {
-      const res = await base44.functions.invoke('checkGoogleConnections', {});
+      const res = await api.functions.invoke('checkGoogleConnections', {});
       setStatus(res.data || { calendar: false, classroom: false });
     } catch {
       setStatus({ calendar: false, classroom: false, blackboard: false });
@@ -118,7 +118,7 @@ export default function Settings() {
     if (isDemoUser(user)) return;
     setBusy(label);
     try {
-      const url = await base44.connectors.connectAppUser(id);
+      const url = await api.connectors.connectAppUser(id);
       const popup = window.open(url, '_blank');
       const timer = setInterval(() => {
         if (!popup || popup.closed) {
@@ -135,7 +135,7 @@ export default function Settings() {
     if (isDemoUser(user)) return;
     setBusy(label);
     try {
-      await base44.connectors.disconnectAppUser(id);
+      await api.connectors.disconnectAppUser(id);
       await check();
     } finally {
       setBusy(null);
@@ -145,9 +145,9 @@ export default function Settings() {
   const deleteAccount = async () => {
     setDeleting(true);
     try {
-      await base44.entities.Assignment.deleteMany({});
-      await base44.entities.Class.deleteMany({});
-      await base44.auth.logout();
+      await api.entities.Assignment.deleteMany({});
+      await api.entities.Class.deleteMany({});
+      await api.auth.logout();
     } catch {
       setDeleting(false);
     }
@@ -156,7 +156,7 @@ export default function Settings() {
   const logoutAllDevices = async () => {
     setLoggingOut(true);
     try {
-      await base44.auth.updateMe({ sessions_invalidated_at: new Date().toISOString() });
+      await api.auth.updateMe({ sessions_invalidated_at: new Date().toISOString() });
       logout();
     } catch {
       setLoggingOut(false);
@@ -169,7 +169,7 @@ export default function Settings() {
   const restartOnboarding = async () => {
     setRestarting(true);
     try {
-      await base44.auth.updateMe({ onboarding_completed: false });
+      await api.auth.updateMe({ onboarding_completed: false });
       setOpenSection(null);
       await checkUserAuth();
     } catch {

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { base44 } from '@/api/base44Client';
+import { api } from '@/api/client';
 import ClassForm from '@/components/ClassForm';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -22,8 +22,8 @@ export default function Classes() {
       return;
     }
     const [c, a] = await Promise.all([
-      base44.entities.Class.list(),
-      base44.entities.Assignment.list('-due_date', 500),
+      api.entities.Class.list(),
+      api.entities.Assignment.list('-due_date', 500),
     ]);
     setClasses(c);
     setAssignments(a);
@@ -42,7 +42,7 @@ export default function Classes() {
     setClasses((p) => p.filter((x) => x.id !== c.id));
     if (isDemoUser(user)) return;
     try {
-      await base44.entities.Class.delete(c.id);
+      await api.entities.Class.delete(c.id);
     } catch {
       setClasses(prev);
     }

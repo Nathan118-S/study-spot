@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/components/ui/use-toast';
-import { base44 } from '@/api/base44Client';
+import { api } from '@/api/client';
 import TemplateForm from '@/components/TemplateForm';
 import {
   AlertDialog,
@@ -32,7 +32,7 @@ export default function TemplateManager({ open, onOpenChange, templates, onChang
   const remove = async (t) => {
     setBusy(t.id);
     try {
-      await base44.entities.AssignmentTemplate.delete(t.id);
+      await api.entities.AssignmentTemplate.delete(t.id);
       onChanged?.();
       toast({ title: 'Template deleted' });
     } catch (e) {

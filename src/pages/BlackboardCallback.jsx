@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { base44 } from '@/api/base44Client';
+import { api } from '@/api/client';
 import { Button } from '@/components/ui/button';
 import { Loader2, CheckCircle2, XCircle } from 'lucide-react';
 
@@ -20,7 +20,7 @@ export default function BlackboardCallback() {
     }
     (async () => {
       try {
-        await base44.functions.invoke('blackboardCallback', { code, state });
+        await api.functions.invoke('blackboardCallback', { code, state });
         setStatus('success');
         setTimeout(() => navigate('/settings'), 1500);
       } catch (e) {

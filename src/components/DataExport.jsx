@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { base44 } from '@/api/base44Client';
+import { api } from '@/api/client';
 import { Button } from '@/components/ui/button';
 import { Download, Loader2 } from 'lucide-react';
 import { downloadExcelXml } from '@/lib/exportExcel';
@@ -12,8 +12,8 @@ export default function DataExport() {
     setBusy(true);
     try {
       const [assignments, classes] = await Promise.all([
-        base44.entities.Assignment.list('-due_date', 2000),
-        base44.entities.Class.list(),
+        api.entities.Assignment.list('-due_date', 2000),
+        api.entities.Class.list(),
       ]);
       const classMap = {};
       classes.forEach((c) => {

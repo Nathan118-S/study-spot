@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { base44 } from '@/api/base44Client';
+import { api } from '@/api/client';
 import { useAuth } from '@/lib/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,7 +16,7 @@ export default function AccountName() {
   const save = async () => {
     setSaving(true);
     try {
-      await base44.auth.updateMe({ name: name.trim() });
+      await api.auth.updateMe({ name: name.trim() });
       await checkUserAuth();
       toast({ title: 'Name saved' });
     } catch (e) {

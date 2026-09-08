@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
+import { api } from '@/api/client';
 import { useAuth } from '@/lib/AuthContext';
 import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
@@ -27,7 +27,7 @@ export default function EmailSetup({ open, onOpenChange, onDone }) {
     setSending(true);
     setError('');
     try {
-      await base44.functions.invoke('email2faSend', {});
+      await api.functions.invoke('email2faSend', {});
       setSent(true);
     } catch (e) {
       setError(e.response?.data?.error || e.message || 'Failed to send code');
@@ -43,14 +43,14 @@ export default function EmailSetup({ open, onOpenChange, onDone }) {
       setSent(false);
       send();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [open]);
 
   const confirm = async () => {
     setError('');
     setBusy(true);
     try {
-      await base44.functions.invoke('email2faVerify', { code, enable: true });
+      await api.functions.invoke('email2faVerify', { code, enable: true });
       sessionStorage.setItem('cf-2fa-verified', '1');
       toast({ title: 'Email verification enabled' });
       await onDone();

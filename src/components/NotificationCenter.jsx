@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Bell, CheckCheck, Flame, TestTube, Info, Trash2 } from 'lucide-react';
-import { base44 } from '@/api/base44Client';
+import { api } from '@/api/client';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -32,14 +32,14 @@ export default function NotificationCenter({ fullWidth = false }) {
 
   const load = useCallback(async () => {
     try {
-      const list = await base44.entities.Notification.list('-created_date', 30);
+      const list = await api.entities.Notification.list('-created_date', 30);
       setItems(list);
     } catch {}
   }, []);
 
   useEffect(() => {
     load();
-    const unsub = base44.entities.Notification.subscribe(() => load());
+    const unsub = api.entities.Notification.subscribe(() => load());
     return unsub;
   }, [load]);
 
@@ -50,7 +50,7 @@ export default function NotificationCenter({ fullWidth = false }) {
     if (!ids.length) return;
     setItems((prev) => prev.map((n) => ({ ...n, read: true })));
     try {
-      await base44.entities.Notification.bulkUpdate(ids.map((id) => ({ id, read: true })));
+      await api.entities.Notification.bulkUpdate(ids.map((id) => ({ id, read: true })));
     } catch {
       load();
     }
@@ -61,7 +61,7 @@ export default function NotificationCenter({ fullWidth = false }) {
     const prev = items;
     setItems([]);
     try {
-      await base44.entities.Notification.deleteMany({});
+      await api.entities.Notification.deleteMany({});
     } catch {
       setItems(prev);
     }
@@ -71,7 +71,7 @@ export default function NotificationCenter({ fullWidth = false }) {
     if (!n.read) {
       setItems((prev) => prev.map((x) => (x.id === n.id ? { ...x, read: true } : x)));
       try {
-        await base44.entities.Notification.update(n.id, { read: true });
+        await api.entities.Notification.update(n.id, { read: true });
       } catch {
         load();
       }

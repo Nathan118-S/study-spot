@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
+import { api } from '@/api/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Loader2, Plus, Trash2, RotateCcw } from 'lucide-react';
@@ -32,7 +32,7 @@ export default function GradingScaleEditor({ initialScale }) {
       const sorted = [...rows]
         .filter((r) => r.letter && r.letter.trim())
         .sort((a, b) => b.min - a.min);
-      await base44.auth.updateMe({ grading_scale: sorted });
+      await api.auth.updateMe({ grading_scale: sorted });
       setRows(sorted);
     } finally {
       setSaving(false);

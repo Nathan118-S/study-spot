@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { base44 } from '@/api/base44Client';
+import { api } from '@/api/client';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import SheetSelect from '@/components/SheetSelect';
@@ -56,7 +56,7 @@ export default function StudyTimer({ assignments = [], classes = [] }) {
     update();
     tickRef.current = setInterval(update, 250);
     return () => clearInterval(tickRef.current);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [running, endsAt]);
 
   const completePhase = async () => {
@@ -68,7 +68,7 @@ export default function StudyTimer({ assignments = [], classes = [] }) {
       const a = assignments.find((x) => x.id === assignmentId);
       setLogging(true);
       try {
-        await base44.entities.StudySession.create({
+        await api.entities.StudySession.create({
           assignment_id: a?.id || null,
           assignment_title: a?.title || null,
           class_id: a?.class_id || null,

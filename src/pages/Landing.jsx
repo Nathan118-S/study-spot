@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { GraduationCap, Calendar, BookOpen, Flame, ShieldCheck, BarChart3, CheckCircle2, ArrowRight, Timer, Bell, Layers, School } from 'lucide-react';
+import { GraduationCap, Calendar, BookOpen, Flame, ShieldCheck, CheckCircle2, ArrowRight, Timer, Bell, Layers, School } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 

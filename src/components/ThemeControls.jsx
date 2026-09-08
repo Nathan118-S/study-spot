@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { base44 } from '@/api/base44Client';
+import { api } from '@/api/client';
 import { useAuth } from '@/lib/AuthContext';
 import { useTheme, ACCENTS } from '@/lib/theme';
 import { cn } from '@/lib/utils';
@@ -49,7 +49,7 @@ export function WelcomeStyleSelect() {
     setValue(v);
     setSaving(true);
     try {
-      await base44.auth.updateMe({ welcome_style: v });
+      await api.auth.updateMe({ welcome_style: v });
     } catch {
       setValue((prev) => prev);
     } finally {

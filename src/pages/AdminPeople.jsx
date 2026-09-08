@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
+import { api } from '@/api/client';
 import { useAuth } from '@/lib/AuthContext';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -23,7 +23,7 @@ export default function AdminPeople() {
   const load = async () => {
     setLoading(true);
     try {
-      const res = await base44.functions.invoke('adminListUsers', {});
+      const res = await api.functions.invoke('adminListUsers', {});
       setUsers(res.data.users);
     } catch (e) {
       toast({ title: 'Failed to load users', description: e.message, variant: 'destructive' });
@@ -45,7 +45,7 @@ export default function AdminPeople() {
     if (role === u.role) return;
     setBusy(u.id);
     try {
-      await base44.functions.invoke('adminUpdateUserRole', { userId: u.id, role });
+      await api.functions.invoke('adminUpdateUserRole', { userId: u.id, role });
       setUsers((prev) => prev.map((x) => (x.id === u.id ? { ...x, role } : x)));
       toast({ title: 'Role updated', description: `${u.email} is now ${role}` });
     } catch (e) {
@@ -58,7 +58,7 @@ export default function AdminPeople() {
   const disableUser = async (u, reason) => {
     setBusy(u.id);
     try {
-      await base44.functions.invoke('adminUpdateUserRole', { userId: u.id, role: 'disabled', reason });
+      await api.functions.invoke('adminUpdateUserRole', { userId: u.id, role: 'disabled', reason });
       setUsers((prev) => prev.map((x) => (x.id === u.id ? { ...x, role: 'disabled', disabled_reason: reason || null } : x)));
       toast({ title: 'Account disabled', description: `${u.email} can no longer log in.` });
     } catch (e) {
@@ -71,7 +71,7 @@ export default function AdminPeople() {
   const enableUser = async (u) => {
     setBusy(u.id);
     try {
-      await base44.functions.invoke('adminUpdateUserRole', { userId: u.id, role: 'user' });
+      await api.functions.invoke('adminUpdateUserRole', { userId: u.id, role: 'user' });
       setUsers((prev) => prev.map((x) => (x.id === u.id ? { ...x, role: 'user', disabled_reason: null } : x)));
       toast({ title: 'Account re-enabled', description: `${u.email} can log in again.` });
     } catch (e) {
@@ -84,7 +84,7 @@ export default function AdminPeople() {
   const resetPassword = async (u) => {
     setBusy(u.id);
     try {
-      await base44.auth.resetPasswordRequest(u.email);
+      await api.auth.resetPasswordRequest(u.email);
       toast({ title: 'Reset email sent', description: u.email });
     } catch (e) {
       toast({ title: 'Failed', description: e.message, variant: 'destructive' });
@@ -96,7 +96,7 @@ export default function AdminPeople() {
   const restoreStreak = async (u) => {
     setBusy(u.id);
     try {
-      const res = await base44.functions.invoke('adminRestoreStreak', { userId: u.id });
+      const res = await api.functions.invoke('adminRestoreStreak', { userId: u.id });
       toast({ title: 'Streak restored', description: `${res.data.restored} overdue assignment(s) marked complete.` });
     } catch (e) {
       toast({ title: 'Failed', description: e.message, variant: 'destructive' });
@@ -108,7 +108,7 @@ export default function AdminPeople() {
   const resetOnboarding = async (u) => {
     setBusy(u.id);
     try {
-      await base44.functions.invoke('adminResetOnboarding', { userId: u.id });
+      await api.functions.invoke('adminResetOnboarding', { userId: u.id });
       setUsers((prev) => prev.map((x) => (x.id === u.id ? { ...x, onboarding_completed: false } : x)));
       toast({ title: 'Onboarding reset', description: `${u.email} will be asked to set up again.` });
     } catch (e) {
@@ -121,7 +121,7 @@ export default function AdminPeople() {
   const reset2fa = async (u) => {
     setBusy(u.id);
     try {
-      await base44.functions.invoke('adminReset2fa', { userId: u.id });
+      await api.functions.invoke('adminReset2fa', { userId: u.id });
       setUsers((prev) => prev.map((x) => (x.id === u.id ? { ...x, twofa_enabled: false } : x)));
       toast({ title: '2FA reset', description: `${u.email} can sign in without a code.` });
     } catch (e) {
@@ -134,7 +134,7 @@ export default function AdminPeople() {
   const verifyUser = async (u) => {
     setBusy(u.id);
     try {
-      await base44.functions.invoke('adminVerifyUser', { userId: u.id });
+      await api.functions.invoke('adminVerifyUser', { userId: u.id });
       toast({ title: 'Verification email sent', description: u.email });
     } catch (e) {
       toast({ title: 'Failed', description: e.message, variant: 'destructive' });
@@ -146,7 +146,7 @@ export default function AdminPeople() {
   const deleteUser = async (u) => {
     setBusy(u.id);
     try {
-      await base44.functions.invoke('adminDeleteUser', { userId: u.id });
+      await api.functions.invoke('adminDeleteUser', { userId: u.id });
       setUsers((prev) => prev.filter((x) => x.id !== u.id));
       toast({ title: 'User deleted', description: u.email });
     } catch (e) {
@@ -159,7 +159,7 @@ export default function AdminPeople() {
   const sendTestNotification = async (u, type) => {
     setBusy(u.id);
     try {
-      await base44.functions.invoke('adminSendTestNotification', { userId: u.id, type });
+      await api.functions.invoke('adminSendTestNotification', { userId: u.id, type });
       toast({
         title: type === 'push' ? 'Test push sent' : 'Test email sent',
         description: type === 'push' ? `Push notification sent to ${u.email}.` : `Email sent to ${u.email}.`,
@@ -174,7 +174,7 @@ export default function AdminPeople() {
   const mergeAccount = async (sourceId, targetId) => {
     setBusy(sourceId);
     try {
-      const res = await base44.functions.invoke('adminMergeAccounts', { sourceId, targetId });
+      const res = await api.functions.invoke('adminMergeAccounts', { sourceId, targetId });
       setUsers((prev) => prev.filter((x) => x.id !== sourceId));
       toast({ title: 'Accounts merged', description: `Moved ${res.data.movedAssignments} assignment(s) and ${res.data.movedClasses} class(es).` });
     } catch (e) {
@@ -187,7 +187,7 @@ export default function AdminPeople() {
   const saveName = async (u, name) => {
     setBusy(u.id);
     try {
-      await base44.functions.invoke('adminUpdateUser', { userId: u.id, name });
+      await api.functions.invoke('adminUpdateUser', { userId: u.id, name });
       setUsers((prev) => prev.map((x) => (x.id === u.id ? { ...x, name: name.trim() } : x)));
       toast({ title: 'Name updated', description: u.email });
     } catch (e) {
@@ -217,7 +217,7 @@ export default function AdminPeople() {
       </div>
 
       <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-sm text-amber-900 dark:text-amber-200">
-        Email addresses cannot be changed on a Base44 account. Use <span className="font-medium">Reset password</span> to send a password-reset link instead.
+        Email addresses cannot be changed. Use <span className="font-medium">Reset password</span> to send a password-reset link instead.
       </div>
 
       {loading ? (

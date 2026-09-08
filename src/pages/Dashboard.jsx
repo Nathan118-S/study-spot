@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { base44 } from '@/api/base44Client';
+import { api } from '@/api/client';
 import { useAuth } from '@/lib/AuthContext';
 import AssignmentForm from '@/components/AssignmentForm';
 import AssignmentDetail from '@/components/AssignmentDetail';
@@ -55,13 +55,13 @@ export default function Dashboard() {
       return;
     }
     const [a, c] = await Promise.all([
-      base44.entities.Assignment.list('-due_date', 500),
-      base44.entities.Class.list(),
+      api.entities.Assignment.list('-due_date', 500),
+      api.entities.Class.list(),
     ]);
     setAssignments(a);
     setClasses(c);
     try {
-      const me = await base44.auth.me();
+      const me = await api.auth.me();
       const gs = me?.data?.grading_scale;
       if (gs && gs.length) setGradingScale(gs);
     } catch {}
@@ -80,7 +80,7 @@ export default function Dashboard() {
       setConnections(demoConnections);
       return;
     }
-    base44.functions
+    api.functions
       .invoke('checkGoogleConnections', {})
       .then((res) => setConnections(res.data || {}))
       .catch(() => {});
@@ -92,9 +92,9 @@ export default function Dashboard() {
       if (!silent) setSyncMsg('Syncing...');
       try {
         const [calRes, clsRes, bbRes] = await Promise.allSettled([
-          base44.functions.invoke('syncGoogleCalendar', {}),
-          base44.functions.invoke('syncGoogleClassroom', {}),
-          base44.functions.invoke('syncBlackboard', {}),
+          api.functions.invoke('syncGoogleCalendar', {}),
+          api.functions.invoke('syncGoogleClassroom', {}),
+          api.functions.invoke('syncBlackboard', {}),
         ]);
         const parts = [];
         if (calRes.status === 'fulfilled') parts.push(`Calendar: ${calRes.value.data?.imported ?? 0} new`);
@@ -105,7 +105,7 @@ export default function Dashboard() {
         else parts.push('Blackboard: not connected');
         if (!silent) setSyncMsg(parts.join(' · '));
         await load();
-        await base44.auth.updateMe({ last_sync: new Date().toISOString() });
+        await api.auth.updateMe({ last_sync: new Date().toISOString() });
       } catch (e) {
         if (!silent) setSyncMsg('Sync failed: ' + (e.message || 'error'));
       } finally {
@@ -144,9 +144,9 @@ export default function Dashboard() {
     setAssignments((p) => p.map((x) => (x.id === a.id ? { ...x, completed: next } : x)));
     if (isDemoUser(user)) return;
     try {
-      await base44.entities.Assignment.update(a.id, { completed: next });
+      await api.entities.Assignment.update(a.id, { completed: next });
       if (next && a.source === 'google_classroom' && a.external_id && user?.data?.sync_completion_to_classroom !== false) {
-        base44.functions.invoke('syncCompletionToClassroom', { assignment_id: a.id }).catch(() => {});
+        api.functions.invoke('syncCompletionToClassroom', { assignment_id: a.id }).catch(() => {});
       }
     } catch {
       setAssignments(prev);
@@ -159,7 +159,7 @@ export default function Dashboard() {
     setDetail(null);
     if (isDemoUser(user)) return;
     try {
-      await base44.entities.Assignment.delete(a.id);
+      await api.entities.Assignment.delete(a.id);
     } catch {
       setAssignments(prev);
     }
@@ -186,7 +186,7 @@ export default function Dashboard() {
     setSelected({});
     if (isDemoUser(user)) return;
     try {
-      await base44.entities.Assignment.bulkUpdate(ids.map((id) => ({ id, ...patch })));
+      await api.entities.Assignment.bulkUpdate(ids.map((id) => ({ id, ...patch })));
     } catch {
       setAssignments(prev);
     }

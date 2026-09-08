@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
+import { api } from '@/api/client';
 import { useAuth } from '@/lib/AuthContext';
 import { Navigate, useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import NotificationSender from '@/components/admin/NotificationSender';
 import { Loader2, ShieldCheck, Users, Bell, ChevronRight } from 'lucide-react';
@@ -25,7 +24,7 @@ export default function Admin() {
   const load = async () => {
     setLoading(true);
     try {
-      const res = await base44.functions.invoke('adminListUsers', {});
+      const res = await api.functions.invoke('adminListUsers', {});
       setUsers(res.data.users);
     } catch (e) {
       toast({ title: 'Failed to load users', description: e.message, variant: 'destructive' });

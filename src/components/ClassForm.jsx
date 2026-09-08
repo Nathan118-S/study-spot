@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { base44 } from '@/api/base44Client';
+import { api } from '@/api/client';
 
 const COLORS = ['#6366f1', '#ec4899', '#f59e0b', '#10b981', '#06b6d4', '#8b5cf6', '#ef4444', '#14b8a6', '#f97316', '#0ea5e9'];
 
@@ -25,9 +25,9 @@ export default function ClassForm({ open, onOpenChange, cls, onSaved }) {
     try {
       const payload = { name: form.name.trim(), color: form.color, teacher_name: form.teacher_name.trim() };
       if (cls) {
-        await base44.entities.Class.update(cls.id, payload);
+        await api.entities.Class.update(cls.id, payload);
       } else {
-        await base44.entities.Class.create({ ...payload, source: 'manual' });
+        await api.entities.Class.create({ ...payload, source: 'manual' });
       }
       onSaved?.();
       onOpenChange(false);

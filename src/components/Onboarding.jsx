@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '@/lib/AuthContext';
-import { base44 } from '@/api/base44Client';
+import { api } from '@/api/client';
 import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Loader2, GraduationCap, Palette, Trophy, ShieldCheck, Plug, ClipboardCheck, Check, ArrowLeft, ArrowRight, Sparkles } from 'lucide-react';
@@ -37,7 +37,7 @@ export default function Onboarding() {
   const finish = async () => {
     setFinishing(true);
     try {
-      await base44.auth.updateMe({ onboarding_completed: true });
+      await api.auth.updateMe({ onboarding_completed: true });
       await checkUserAuth();
     } catch {
       setFinishing(false);

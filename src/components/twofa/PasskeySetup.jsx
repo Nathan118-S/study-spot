@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
+import { api } from '@/api/client';
 import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
 import {
@@ -22,7 +22,7 @@ export default function PasskeySetup({ open, onOpenChange, onDone }) {
     setError('');
     setBusy(true);
     try {
-      const startRes = await base44.functions.invoke('passkeyRegisterStart', {});
+      const startRes = await api.functions.invoke('passkeyRegisterStart', {});
       const opts = startRes.data;
       const publicKey = {
         ...opts,
@@ -31,7 +31,7 @@ export default function PasskeySetup({ open, onOpenChange, onDone }) {
         excludeCredentials: (opts.excludeCredentials || []).map((c) => ({ ...c, id: b64uDecode(c.id) })),
       };
       const cred = await navigator.credentials.create({ publicKey });
-      await base44.functions.invoke('passkeyRegisterFinish', {
+      await api.functions.invoke('passkeyRegisterFinish', {
         credentialId: b64uEncode(cred.rawId),
         attestationObject: b64uEncode(cred.response.attestationObject),
         clientDataJSON: b64uEncode(cred.response.clientDataJSON),
@@ -48,7 +48,7 @@ export default function PasskeySetup({ open, onOpenChange, onDone }) {
 
   useEffect(() => {
     if (open) register();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [open]);
 
   return (

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { base44 } from '@/api/base44Client';
+import { api } from '@/api/client';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -23,7 +23,7 @@ export default function BlackboardConnection({ connected, instanceUrl, onChanged
     }
     setBusy(true);
     try {
-      const res = await base44.functions.invoke('blackboardAuthUrl', { instanceUrl: trimmed });
+      const res = await api.functions.invoke('blackboardAuthUrl', { instanceUrl: trimmed });
       window.location.href = res.data.authUrl;
     } catch (e) {
       setError(e.message || 'Failed to start connection');
@@ -34,7 +34,7 @@ export default function BlackboardConnection({ connected, instanceUrl, onChanged
   const disconnect = async () => {
     setBusy(true);
     try {
-      await base44.functions.invoke('disconnectBlackboard', {});
+      await api.functions.invoke('disconnectBlackboard', {});
       await onChanged?.();
     } catch (e) {
       setError(e.message || 'Failed to disconnect');

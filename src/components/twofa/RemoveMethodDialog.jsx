@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
+import { api } from '@/api/client';
 import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -34,7 +34,7 @@ export default function RemoveMethodDialog({ open, onOpenChange, method, onDone 
     setBusy(true);
     setError('');
     try {
-      await base44.functions.invoke('email2faSend', {});
+      await api.functions.invoke('email2faSend', {});
       setSent(true);
     } catch (e) {
       setError(e.response?.data?.error || e.message || 'Failed to send code');
@@ -45,11 +45,11 @@ export default function RemoveMethodDialog({ open, onOpenChange, method, onDone 
 
   useEffect(() => {
     if (open && method === 'email') sendEmail();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [open, method]);
 
   const passkeyVerify = async () => {
-    const startRes = await base44.functions.invoke('passkeyLoginStart', {});
+    const startRes = await api.functions.invoke('passkeyLoginStart', {});
     const opts = startRes.data;
     const assertion = await navigator.credentials.get({
       publicKey: {
@@ -60,7 +60,7 @@ export default function RemoveMethodDialog({ open, onOpenChange, method, onDone 
         timeout: 60000,
       },
     });
-    await base44.functions.invoke('passkeyLoginFinish', {
+    await api.functions.invoke('passkeyLoginFinish', {
       credentialId: b64uEncode(assertion.rawId),
       authenticatorData: b64uEncode(assertion.response.authenticatorData),
       clientDataJSON: b64uEncode(assertion.response.clientDataJSON),
@@ -73,13 +73,13 @@ export default function RemoveMethodDialog({ open, onOpenChange, method, onDone 
     setBusy(true);
     try {
       if (method === 'totp') {
-        await base44.functions.invoke('verify2fa', { code });
+        await api.functions.invoke('verify2fa', { code });
       } else if (method === 'email') {
-        await base44.functions.invoke('email2faVerify', { code });
+        await api.functions.invoke('email2faVerify', { code });
       } else if (method === 'passkey') {
         await passkeyVerify();
       }
-      await base44.functions.invoke('remove2faMethod', { method });
+      await api.functions.invoke('remove2faMethod', { method });
       toast({ title: `${METHOD_LABEL[method] || 'Method'} removed` });
       await onDone();
     } catch (e) {

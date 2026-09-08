@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
+import { api } from '@/api/client';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
 } from '@/components/ui/dialog';
@@ -7,7 +7,7 @@ import { Slider } from '@/components/ui/slider';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Pencil, Trash2, AlertTriangle, CalendarClock, CheckCircle2, Plus, X } from 'lucide-react';
+import { Pencil, Trash2, AlertTriangle, CalendarClock, Plus, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, parseISO, isPast } from 'date-fns';
 import { letterGrade } from '@/lib/grading';
@@ -60,7 +60,7 @@ export default function AssignmentDetail({
     if (value === (assignment.notes ?? '')) return;
     setSaving(true);
     try {
-      await base44.entities.Assignment.update(assignment.id, { notes: value });
+      await api.entities.Assignment.update(assignment.id, { notes: value });
       onUpdated?.({ ...assignment, notes: value });
     } finally {
       setSaving(false);
@@ -72,7 +72,7 @@ export default function AssignmentDetail({
     if (raw !== '' && Number.isNaN(value)) return;
     setSaving(true);
     try {
-      await base44.entities.Assignment.update(assignment.id, { score: value });
+      await api.entities.Assignment.update(assignment.id, { score: value });
       onUpdated?.({ ...assignment, score: value });
     } finally {
       setSaving(false);
@@ -82,7 +82,7 @@ export default function AssignmentDetail({
   const persistProgress = async (value) => {
     setSaving(true);
     try {
-      await base44.entities.Assignment.update(assignment.id, { progress: value });
+      await api.entities.Assignment.update(assignment.id, { progress: value });
       onUpdated?.({ ...assignment, progress: value });
     } finally {
       setSaving(false);
@@ -97,7 +97,7 @@ export default function AssignmentDetail({
     setProgress(nextProgress);
     setSaving(true);
     try {
-      await base44.entities.Assignment.update(assignment.id, { subtasks: list, progress: nextProgress });
+      await api.entities.Assignment.update(assignment.id, { subtasks: list, progress: nextProgress });
       onUpdated?.({ ...assignment, subtasks: list, progress: nextProgress });
     } finally {
       setSaving(false);
@@ -141,7 +141,7 @@ export default function AssignmentDetail({
       : { completed, progress: nextProgress };
     setSaving(true);
     try {
-      await base44.entities.Assignment.update(assignment.id, next);
+      await api.entities.Assignment.update(assignment.id, next);
       onUpdated?.({ ...assignment, ...next });
       setProgress(nextProgress);
     } finally {

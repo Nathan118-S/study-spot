@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { base44 } from '@/api/base44Client';
+import { api } from '@/api/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -23,7 +23,7 @@ export default function NotificationSender({ users }) {
     }
     setSending(true);
     try {
-      const res = await base44.functions.invoke('adminSendNotification', {
+      const res = await api.functions.invoke('adminSendNotification', {
         userId: recipient,
         title,
         content,

@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import SheetSelect from '@/components/SheetSelect';
-import { base44 } from '@/api/base44Client';
+import { api } from '@/api/client';
 
 const PRIORITIES = ['low', 'medium', 'high'];
 const TYPES = ['homework', 'project', 'quiz', 'test', 'reading', 'other'];
@@ -43,9 +43,9 @@ export default function TemplateForm({ open, onOpenChange, template, onSaved }) 
         notes: form.notes,
       };
       if (template) {
-        await base44.entities.AssignmentTemplate.update(template.id, payload);
+        await api.entities.AssignmentTemplate.update(template.id, payload);
       } else {
-        await base44.entities.AssignmentTemplate.create(payload);
+        await api.entities.AssignmentTemplate.create(payload);
       }
       onSaved?.();
       onOpenChange(false);

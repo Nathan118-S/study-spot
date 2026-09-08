@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
+import { api } from '@/api/client';
 import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -26,7 +26,7 @@ export default function TotpSetup({ open, onOpenChange, onDone }) {
     setCode('');
     setBusy(true);
     try {
-      const res = await base44.functions.invoke('setup2fa', {});
+      const res = await api.functions.invoke('setup2fa', {});
       setSecret(res.data.secret);
     } catch (e) {
       toast({ title: 'Failed to start setup', description: e.message, variant: 'destructive' });
@@ -38,7 +38,7 @@ export default function TotpSetup({ open, onOpenChange, onDone }) {
 
   useEffect(() => {
     if (open) start();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [open]);
 
   const copy = async () => {
@@ -53,7 +53,7 @@ export default function TotpSetup({ open, onOpenChange, onDone }) {
     setError('');
     setBusy(true);
     try {
-      await base44.functions.invoke('enable2fa', { code, secret });
+      await api.functions.invoke('enable2fa', { code, secret });
       sessionStorage.setItem('cf-2fa-verified', '1');
       toast({ title: 'Authenticator app enabled' });
       await onDone();

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { base44 } from '@/api/base44Client';
+import { api } from '@/api/client';
 import { useAuth } from '@/lib/AuthContext';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
@@ -38,7 +38,7 @@ export default function ReminderSettings() {
   const persist = async (changes) => {
     setSaving(true);
     try {
-      await base44.auth.updateMe(changes);
+      await api.auth.updateMe(changes);
     } catch {
       // local state already updated; best-effort persistence
     } finally {

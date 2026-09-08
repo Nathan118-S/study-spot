@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { base44 } from '@/api/base44Client';
+import { api } from '@/api/client';
 import { useAuth } from '@/lib/AuthContext';
 import { Loader2, TrendingUp, CheckCircle2, CalendarCheck, Award, Activity } from 'lucide-react';
 import {
@@ -44,7 +44,7 @@ export default function Insights() {
         if (isDemoUser(user)) {
           setAssignments(getDemoAssignments());
         } else {
-          const items = await base44.entities.Assignment.list('-updated_date', 500);
+          const items = await api.entities.Assignment.list('-updated_date', 500);
           setAssignments(items || []);
         }
       } catch {

@@ -2,33 +2,32 @@
 
 ## Project Context
 
-This is a Base44 app repository. Treat it as user-owned application code, keep changes focused on the user's request, and preserve existing project conventions.
+Study Spot is a plain React + Vite frontend backed by its own Express +
+PostgreSQL API. Treat it as user-owned application code, keep changes
+focused on the user's request, and preserve existing project conventions.
 
-Start with `README.md` for local setup, environment variables, and publish workflow.
-
-## Base44 References
-
-- CLI overview: https://docs.base44.com/developers/references/cli/get-started/overview.md
-- Agent skills: https://docs.base44.com/developers/backend/overview/skills.md
-
-If your agent supports Agent Skills, install or update Base44 skills before Base44-specific work:
-
-```bash
-npx skills add base44/skills
-```
+Start with `README.md` for local setup and environment variables.
 
 ## Key Files
 
-- `src/`: frontend application source.
-- `src/api/base44Client.js`: frontend Base44 SDK client.
-- `vite.config.js`: Vite config and Base44 Vite plugin setup.
-- `.env.local`: local-only environment values; never commit secrets.
+- `src/` — frontend application source.
+- `src/api/client.js` — the frontend's API client (talks to `server/`).
+- `server/` — the backend: Express routes, PostgreSQL schema (`server/schema.sql`),
+  auth, two-factor auth, admin tools, and the Google/Blackboard integrations.
+- `vite.config.js` — Vite config, including the `@` path alias and the dev
+  proxy to the backend.
+- `server/.env` — local-only environment values; never commit secrets.
 
 ## Working Notes
 
-- Use `base44 dev` as the default local development command when you need the local Base44 backend. It can run the backend and frontend together.
-- When docs or code mention the frontend being started automatically, that usually means the Base44 project config includes `site.serveCommand`, for example `"serveCommand": "npm run dev"` in `base44/config.jsonc`.
-- Use `npm run dev` only for frontend-only work against the hosted Base44 backend.
-- Prefer the existing Base44 CLI workflow over adding new npm scripts for Base44-specific tasks.
-- Reuse the existing SDK client and Vite plugin patterns before adding new Base44 integration paths.
-- Run the relevant checks from `package.json` before finishing code changes.
+- Run the backend with `cd server && npm run dev`, and the frontend with
+  `npm run dev` from the project root. The frontend dev server proxies
+  `/api` requests to the backend.
+- Entity tables (classes, assignments, templates, study sessions,
+  notifications) are defined in `server/schema.sql` and exposed via the
+  generic CRUD router in `server/src/routes/entities.js`.
+- Backend "functions" (2FA, admin tools, leaderboard, Blackboard/Google
+  sync) are dispatched by name through `server/src/routes/functions.js` and
+  called from the frontend via `api.functions.invoke(name, payload)`.
+- Run the relevant checks from `package.json` (frontend) before finishing
+  code changes.

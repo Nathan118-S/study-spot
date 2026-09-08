@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
+import { api } from '@/api/client';
 import { useAuth } from '@/lib/AuthContext';
 import { Loader2, Trophy, Flame } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -23,7 +23,7 @@ export default function Leaderboard() {
         return;
       }
       try {
-        const res = await base44.functions.invoke('getLeaderboard', {});
+        const res = await api.functions.invoke('getLeaderboard', {});
         setEntries(res.data.entries || []);
         setCurrentUserId(res.data.currentUserId);
       } catch {

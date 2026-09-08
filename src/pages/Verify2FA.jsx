@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
-import { base44 } from '@/api/base44Client';
+import { api } from '@/api/client';
 import { useAuth } from '@/lib/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -35,7 +35,7 @@ export default function Verify2FA() {
     setError('');
     setLoading(true);
     try {
-      await base44.functions.invoke('email2faSend', {});
+      await api.functions.invoke('email2faSend', {});
       setEmailSent(true);
     } catch (e) {
       setError(e.response?.data?.error || e.message || 'Failed to send code');
@@ -49,7 +49,7 @@ export default function Verify2FA() {
     setError('');
     setLoading(true);
     try {
-      await base44.functions.invoke('verify2fa', { code });
+      await api.functions.invoke('verify2fa', { code });
       finish();
     } catch (err) {
       setError(err.response?.data?.error || err.message || 'Invalid code');
@@ -63,7 +63,7 @@ export default function Verify2FA() {
     setError('');
     setLoading(true);
     try {
-      await base44.functions.invoke('email2faVerify', { code });
+      await api.functions.invoke('email2faVerify', { code });
       finish();
     } catch (err) {
       setError(err.response?.data?.error || err.message || 'Invalid code');
@@ -76,7 +76,7 @@ export default function Verify2FA() {
     setError('');
     setLoading(true);
     try {
-      const startRes = await base44.functions.invoke('passkeyLoginStart', {});
+      const startRes = await api.functions.invoke('passkeyLoginStart', {});
       const opts = startRes.data;
       const assertion = await navigator.credentials.get({
         publicKey: {
@@ -87,7 +87,7 @@ export default function Verify2FA() {
           timeout: 60000,
         },
       });
-      await base44.functions.invoke('passkeyLoginFinish', {
+      await api.functions.invoke('passkeyLoginFinish', {
         credentialId: b64uEncode(assertion.rawId),
         authenticatorData: b64uEncode(assertion.response.authenticatorData),
         clientDataJSON: b64uEncode(assertion.response.clientDataJSON),
@@ -106,7 +106,7 @@ export default function Verify2FA() {
     setError('');
     setEmailSent(false);
     if (method === 'email' && !emailSent) sendEmail();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [method]);
 
   if (user && methods.length === 0) return <Navigate to="/" replace />;

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { base44 } from '@/api/base44Client';
+import { api } from '@/api/client';
 import { useAuth } from '@/lib/AuthContext';
 import { Switch } from '@/components/ui/switch';
 import { Trophy } from 'lucide-react';
@@ -22,7 +22,7 @@ export default function LeaderboardStep() {
     setEnabled(v);
     setSaving(true);
     try {
-      await base44.auth.updateMe({ leaderboard_enabled: v });
+      await api.auth.updateMe({ leaderboard_enabled: v });
     } catch {
       setEnabled(!v);
     } finally {

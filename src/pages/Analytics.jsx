@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { base44 } from '@/api/base44Client';
+import { api } from '@/api/client';
 import { Button } from '@/components/ui/button';
 import { Loader2, Flame, AlertTriangle, ShieldAlert, ShieldCheck, Trophy, GraduationCap, X } from 'lucide-react';
 import { buildStreaks, streakSummary } from '@/lib/streaks';
@@ -24,9 +24,9 @@ export default function Analytics() {
       return;
     }
     const [c, a, conn] = await Promise.all([
-      base44.entities.Class.list(),
-      base44.entities.Assignment.list('-due_date', 500),
-      base44.functions.invoke('checkGoogleConnections', {}).catch(() => null),
+      api.entities.Class.list(),
+      api.entities.Assignment.list('-due_date', 500),
+      api.functions.invoke('checkGoogleConnections', {}).catch(() => null),
     ]);
     setClasses(c);
     setAssignments(a);

@@ -103,8 +103,7 @@ export default function PrivacyPolicy() {
 
         <Section title="Contact">
           <p className="text-muted-foreground">
-            Questions about this policy or your data? Contact Base44 support from the app, or reach out to the workspace
-            administrator for your organization.
+            Questions about this policy or your data? Reach out to your workspace administrator for your organization.
           </p>
         </Section>
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
+import { api } from '@/api/client';
 import { Loader2, FileText, Link as LinkIcon, Youtube, ClipboardList, Paperclip, ExternalLink } from 'lucide-react';
 
 const KIND_ICON = { drive: FileText, link: LinkIcon, video: Youtube, form: ClipboardList };
@@ -21,7 +21,7 @@ export default function ClassroomAttachments({ assignment }) {
     setLoading(true);
     setError('');
     setAttachments(null);
-    base44.functions
+    api.functions
       .invoke('getClassroomAttachments', { assignment_id: assignment.id })
       .then((res) => {
         if (!cancelled) setAttachments(res.data?.attachments || []);

@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { base44 } from '@/api/base44Client';
+import { api } from '@/api/client';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInterval,
-  format, isSameMonth, isSameDay, parseISO, isToday,
+  format, isSameMonth, parseISO, isToday,
 } from 'date-fns';
 import { useAuth } from '@/lib/AuthContext';
 import { isDemoUser, getDemoAssignments, getDemoClasses } from '@/lib/demoData';
@@ -28,8 +28,8 @@ export default function CalendarView() {
       return;
     }
     const [a, c] = await Promise.all([
-      base44.entities.Assignment.list('-due_date', 500),
-      base44.entities.Class.list(),
+      api.entities.Assignment.list('-due_date', 500),
+      api.entities.Class.list(),
     ]);
     setAssignments(a);
     setClasses(c);
@@ -65,7 +65,7 @@ export default function CalendarView() {
     const due_date = next.toISOString();
     setAssignments((prev) => prev.map((x) => (x.id === id ? { ...x, due_date } : x)));
     if (isDemoUser(user)) return;
-    await base44.entities.Assignment.update(id, { due_date });
+    await api.entities.Assignment.update(id, { due_date });
   };
 
   const days = useMemo(() => {

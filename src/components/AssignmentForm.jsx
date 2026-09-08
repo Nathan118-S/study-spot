@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import SheetSelect from '@/components/SheetSelect';
-import { base44 } from '@/api/base44Client';
+import { api } from '@/api/client';
 import TemplateManager from '@/components/TemplateManager';
 import { Settings2 } from 'lucide-react';
 
@@ -34,7 +34,7 @@ export default function AssignmentForm({ open, onOpenChange, assignment, classes
   const [mgrOpen, setMgrOpen] = useState(false);
 
   const loadTemplates = () => {
-    base44.entities.AssignmentTemplate.list('-updated_date', 100).then(setTemplates).catch(() => {});
+    api.entities.AssignmentTemplate.list('-updated_date', 100).then(setTemplates).catch(() => {});
   };
 
   useEffect(() => { loadTemplates(); }, []);
@@ -92,9 +92,9 @@ export default function AssignmentForm({ open, onOpenChange, assignment, classes
         notes: form.notes,
       };
       if (assignment) {
-        await base44.entities.Assignment.update(assignment.id, payload);
+        await api.entities.Assignment.update(assignment.id, payload);
       } else {
-        await base44.entities.Assignment.create({ ...payload, source: 'manual', completed: false });
+        await api.entities.Assignment.create({ ...payload, source: 'manual', completed: false });
       }
       onSaved?.();
       onOpenChange(false);
