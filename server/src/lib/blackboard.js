@@ -1,8 +1,11 @@
 // Blackboard Learn 3-legged OAuth helpers.
+import { resolveSecret } from './secrets.js';
 
-function basicHeader() {
-  const id = process.env.BLACKBOARD_CLIENT_ID;
-  const secret = process.env.BLACKBOARD_CLIENT_SECRET;
+async function basicHeader() {
+  const [id, secret] = await Promise.all([
+    resolveSecret('BLACKBOARD_CLIENT_ID'),
+    resolveSecret('BLACKBOARD_CLIENT_SECRET'),
+  ]);
   if (!id || !secret) throw new Error('Blackboard credentials not configured');
   return 'Basic ' + Buffer.from(`${id}:${secret}`).toString('base64');
 }
@@ -57,7 +60,7 @@ export async function exchangeCode(instanceUrl, code, redirectUri) {
   const res = await fetch(url, {
     method: 'POST',
     headers: {
-      Authorization: basicHeader(),
+      Authorization: await basicHeader(),
       'Content-Type': 'application/x-www-form-urlencoded',
     },
     body: 'grant_type=authorization_code',
@@ -72,7 +75,7 @@ export async function refreshAccessToken(instanceUrl, refreshToken, redirectUri)
   const res = await fetch(url, {
     method: 'POST',
     headers: {
-      Authorization: basicHeader(),
+      Authorization: await basicHeader(),
       'Content-Type': 'application/x-www-form-urlencoded',
     },
     body: 'grant_type=refresh_token',

@@ -155,3 +155,17 @@ CREATE TABLE IF NOT EXISTS oauth_states (
   return_to TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+-- Encrypted, write-once integration secrets (SMTP, Google, Blackboard
+-- credentials). Values are AES-256-GCM encrypted at rest and are never
+-- readable through the API once set — only whether a key is set. An admin
+-- can delete a row to allow re-entering it.
+CREATE TABLE IF NOT EXISTS app_secrets (
+  key TEXT PRIMARY KEY,
+  iv BYTEA NOT NULL,
+  ciphertext BYTEA NOT NULL,
+  auth_tag BYTEA NOT NULL,
+  set_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+

@@ -3,6 +3,7 @@ import crypto from 'node:crypto';
 import { pool } from '../db.js';
 import { getUserByEmail, signSession } from '../lib/users.js';
 import { requireAuth } from '../middleware/auth.js';
+import { resolveSecret } from '../lib/secrets.js';
 
 const router = Router();
 
@@ -17,9 +18,13 @@ router.get('/auth/google/start', async (req, res) => {
     'INSERT INTO oauth_states (state, purpose, return_to) VALUES ($1, $2, $3)',
     [state, 'login', returnTo]
   );
+  const [clientId, redirectUri] = await Promise.all([
+    resolveSecret('GOOGLE_CLIENT_ID'),
+    resolveSecret('GOOGLE_LOGIN_REDIRECT_URI'),
+  ]);
   const params = new URLSearchParams({
-    client_id: process.env.GOOGLE_CLIENT_ID,
-    redirect_uri: process.env.GOOGLE_LOGIN_REDIRECT_URI,
+    client_id: clientId,
+    redirect_uri: redirectUri,
     response_type: 'code',
     scope: 'openid email profile',
     state,
@@ -36,14 +41,19 @@ router.get('/auth/google/callback', async (req, res) => {
     if (!stateRow) return res.status(400).send('Invalid or expired login link.');
     await pool.query('DELETE FROM oauth_states WHERE state = $1', [state]);
 
+    const [clientId, clientSecret, redirectUri] = await Promise.all([
+      resolveSecret('GOOGLE_CLIENT_ID'),
+      resolveSecret('GOOGLE_CLIENT_SECRET'),
+      resolveSecret('GOOGLE_LOGIN_REDIRECT_URI'),
+    ]);
     const tokenRes = await fetch(GOOGLE_TOKEN_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({
         code,
-        client_id: process.env.GOOGLE_CLIENT_ID,
-        client_secret: process.env.GOOGLE_CLIENT_SECRET,
-        redirect_uri: process.env.GOOGLE_LOGIN_REDIRECT_URI,
+        client_id: clientId,
+        client_secret: clientSecret,
+        redirect_uri: redirectUri,
         grant_type: 'authorization_code',
       }),
     });
@@ -94,9 +104,13 @@ router.get('/connectors/google/start', requireAuth, async (req, res) => {
     'INSERT INTO oauth_states (state, purpose, user_id, return_to) VALUES ($1, $2, $3, $4)',
     [state, connector, req.user.id, null]
   );
+  const [clientId, redirectUri] = await Promise.all([
+    resolveSecret('GOOGLE_CLIENT_ID'),
+    resolveSecret('GOOGLE_CONNECT_REDIRECT_URI'),
+  ]);
   const params = new URLSearchParams({
-    client_id: process.env.GOOGLE_CLIENT_ID,
-    redirect_uri: process.env.GOOGLE_CONNECT_REDIRECT_URI,
+    client_id: clientId,
+    redirect_uri: redirectUri,
     response_type: 'code',
     access_type: 'offline',
     prompt: 'consent',
@@ -116,14 +130,19 @@ router.get('/connectors/google/callback', async (req, res) => {
     }
     await pool.query('DELETE FROM oauth_states WHERE state = $1', [state]);
 
+    const [clientId, clientSecret, redirectUri] = await Promise.all([
+      resolveSecret('GOOGLE_CLIENT_ID'),
+      resolveSecret('GOOGLE_CLIENT_SECRET'),
+      resolveSecret('GOOGLE_CONNECT_REDIRECT_URI'),
+    ]);
     const tokenRes = await fetch(GOOGLE_TOKEN_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({
         code,
-        client_id: process.env.GOOGLE_CLIENT_ID,
-        client_secret: process.env.GOOGLE_CLIENT_SECRET,
-        redirect_uri: process.env.GOOGLE_CONNECT_REDIRECT_URI,
+        client_id: clientId,
+        client_secret: clientSecret,
+        redirect_uri: redirectUri,
         grant_type: 'authorization_code',
       }),
     });
@@ -170,13 +189,17 @@ export async function getValidGoogleToken(userId, connector) {
   const expiresAt = row.expires_at ? new Date(row.expires_at).getTime() : 0;
   if (expiresAt - Date.now() > 60000 || !row.refresh_token) return row.access_token;
 
+  const [clientId, clientSecret] = await Promise.all([
+    resolveSecret('GOOGLE_CLIENT_ID'),
+    resolveSecret('GOOGLE_CLIENT_SECRET'),
+  ]);
   const tokenRes = await fetch(GOOGLE_TOKEN_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({
       refresh_token: row.refresh_token,
-      client_id: process.env.GOOGLE_CLIENT_ID,
-      client_secret: process.env.GOOGLE_CLIENT_SECRET,
+      client_id: clientId,
+      client_secret: clientSecret,
       grant_type: 'refresh_token',
     }),
   });

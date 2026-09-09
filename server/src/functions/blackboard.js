@@ -4,6 +4,7 @@ import { updateUser } from '../lib/users.js';
 import { HttpError } from '../lib/httpError.js';
 import { buildAuthUrl, exchangeCode, refreshAccessToken, validateInstanceUrl } from '../lib/blackboard.js';
 import { guessPriority, guessType } from '../lib/sync.js';
+import { resolveSecret } from '../lib/secrets.js';
 
 export async function blackboardAuthUrl(user, body) {
   const raw = (body?.instanceUrl || '').trim();
@@ -15,8 +16,10 @@ export async function blackboardAuthUrl(user, body) {
     throw new HttpError(400, e.message);
   }
 
-  const clientId = process.env.BLACKBOARD_CLIENT_ID;
-  const redirectUri = process.env.BLACKBOARD_REDIRECT_URI;
+  const [clientId, redirectUri] = await Promise.all([
+    resolveSecret('BLACKBOARD_CLIENT_ID'),
+    resolveSecret('BLACKBOARD_REDIRECT_URI'),
+  ]);
   if (!clientId || !redirectUri) {
     throw new HttpError(500, 'Blackboard is not configured. Set BLACKBOARD_CLIENT_ID and BLACKBOARD_REDIRECT_URI.');
   }
@@ -34,7 +37,7 @@ export async function blackboardCallback(user, body) {
   const instanceUrl = user.data?.blackboard_instance_url;
   if (!instanceUrl) throw new HttpError(400, 'missing instance URL');
 
-  const redirectUri = process.env.BLACKBOARD_REDIRECT_URI;
+  const redirectUri = await resolveSecret('BLACKBOARD_REDIRECT_URI');
   const tokens = await exchangeCode(instanceUrl, code, redirectUri);
   const expiresAt = new Date(Date.now() + (tokens.expires_in || 3600) * 1000).toISOString();
 
@@ -66,7 +69,7 @@ async function getValidToken(user) {
   const expiresAt = d.blackboard_expires_at ? new Date(d.blackboard_expires_at).getTime() : 0;
   if (expiresAt - Date.now() < 60000 && d.blackboard_refresh_token) {
     try {
-      const redirectUri = process.env.BLACKBOARD_REDIRECT_URI;
+      const redirectUri = await resolveSecret('BLACKBOARD_REDIRECT_URI');
       const tokens = await refreshAccessToken(d.blackboard_instance_url, d.blackboard_refresh_token, redirectUri);
       accessToken = tokens.access_token;
       const newExpires = new Date(Date.now() + (tokens.expires_in || 3600) * 1000).toISOString();

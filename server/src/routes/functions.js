@@ -6,6 +6,8 @@ import * as admin from '../functions/admin.js';
 import * as blackboard from '../functions/blackboard.js';
 import * as google from '../functions/google.js';
 import { getLeaderboard } from '../functions/leaderboard.js';
+import * as secrets from '../functions/secrets.js';
+import * as deploy from '../functions/deploy.js';
 import { sendOtpEmailFor } from './authHelpers.js';
 
 const router = Router();
@@ -49,6 +51,14 @@ const HANDLERS = {
   adminSendNotification: { handler: admin.adminSendNotification, admin: true },
   adminSendTestNotification: { handler: admin.adminSendTestNotification, admin: true },
   adminMergeAccounts: { handler: admin.adminMergeAccounts, admin: true },
+
+  adminListSecrets: { handler: secrets.adminListSecrets, admin: true },
+  adminSetSecrets: { handler: secrets.adminSetSecrets, admin: true },
+  adminClearSecret: { handler: secrets.adminClearSecret, admin: true },
+  adminSendTestEmail: { handler: secrets.adminSendTestEmail, admin: true },
+
+  adminDeployLatest: { handler: deploy.adminDeployLatest, admin: true },
+  adminDeployStatus: { handler: deploy.adminDeployStatus, admin: true },
 };
 
 router.post('/:name', async (req, res) => {

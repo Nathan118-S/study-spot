@@ -23,6 +23,8 @@ const Insights = lazy(() => import('@/pages/Insights'));
 const Settings = lazy(() => import('@/pages/Settings'));
 const Admin = lazy(() => import('@/pages/Admin'));
 const AdminPeople = lazy(() => import('@/pages/AdminPeople'));
+const AdminSecrets = lazy(() => import('@/pages/AdminSecrets'));
+const AdminDeploy = lazy(() => import('@/pages/AdminDeploy'));
 const Verify2FA = lazy(() => import('@/pages/Verify2FA'));
 const BlackboardCallback = lazy(() => import('@/pages/BlackboardCallback'));
 import Landing from '@/pages/Landing';
@@ -81,6 +83,8 @@ const AuthenticatedApp = () => {
             <Route path="/settings" element={<Suspense fallback={<PageLoader />}><Settings /></Suspense>} />
             <Route path="/admin" element={<Suspense fallback={<PageLoader />}><Admin /></Suspense>} />
             <Route path="/admin/people" element={<Suspense fallback={<PageLoader />}><AdminPeople /></Suspense>} />
+            <Route path="/admin/secrets" element={<Suspense fallback={<PageLoader />}><AdminSecrets /></Suspense>} />
+            <Route path="/admin/deploy" element={<Suspense fallback={<PageLoader />}><AdminDeploy /></Suspense>} />
           </Route>
         </Route>
       </Route>
