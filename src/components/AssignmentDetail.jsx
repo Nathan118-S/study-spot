@@ -68,8 +68,9 @@ export default function AssignmentDetail({
   };
 
   const persistScore = async (raw) => {
-    const value = raw === '' ? undefined : Number(raw);
+    const value = raw === '' ? null : Number(raw);
     if (raw !== '' && Number.isNaN(value)) return;
+    if (value === (assignment.score ?? null)) return;
     setSaving(true);
     try {
       await api.entities.Assignment.update(assignment.id, { score: value });

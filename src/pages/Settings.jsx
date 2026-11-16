@@ -433,18 +433,16 @@ export default function Settings() {
         <p className="text-muted-foreground text-sm">Manage your Google connections and account.</p>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="ios-list">
         {CARDS.map((c) => (
           <button
             key={c.value}
             onClick={() => setOpenSection(c.value)}
-            className={`w-full text-left rounded-lg border bg-card p-4 hover:bg-accent transition-colors flex items-center justify-between gap-3 ${
-              c.danger ? 'border-destructive/40' : ''
-            }`}
+            className="w-full text-left px-4 py-2.5 hover:bg-accent/60 transition-colors flex items-center justify-between gap-3"
           >
             <div className="flex items-center gap-3 min-w-0">
               <div
-                className={`h-10 w-10 rounded-full flex items-center justify-center shrink-0 ${
+                className={`h-9 w-9 rounded-full flex items-center justify-center shrink-0 ${
                   c.danger ? 'bg-destructive/10 text-destructive' : 'bg-primary/10 text-primary'
                 }`}
               >
@@ -452,10 +450,10 @@ export default function Settings() {
               </div>
               <div className="min-w-0">
                 <p className={`font-medium ${c.danger ? 'text-destructive' : ''}`}>{c.label}</p>
-                <p className="text-sm text-muted-foreground truncate">{c.desc}</p>
+                <p className="text-[13px] text-muted-foreground truncate">{c.desc}</p>
               </div>
             </div>
-            <ChevronRight className="h-5 w-5 text-muted-foreground shrink-0" />
+            <ChevronRight className="h-4 w-4 text-muted-foreground/60 shrink-0" />
           </button>
         ))}
       </div>

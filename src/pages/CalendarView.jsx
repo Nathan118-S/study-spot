@@ -80,19 +80,19 @@ export default function CalendarView() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="font-heading text-2xl md:text-3xl font-bold">Calendar</h1>
           <p className="text-muted-foreground text-sm">Assignments plotted on their due dates — drag any item to another day to reschedule it.</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="icon" onClick={() => setCursor(new Date())} title="Today">
-            <span className="text-xs font-medium">Today</span>
+          <Button variant="outline" size="sm" className="h-10" onClick={() => setCursor(new Date())}>
+            Today
           </Button>
           <Button variant="outline" size="icon" onClick={() => setCursor((d) => new Date(d.getFullYear(), d.getMonth() - 1, 1))}>
             <ChevronLeft className="h-4 w-4" />
           </Button>
-          <span className="font-semibold w-36 text-center">{format(cursor, 'MMMM yyyy')}</span>
+          <span className="font-semibold flex-1 sm:flex-none sm:w-36 text-center">{format(cursor, 'MMMM yyyy')}</span>
           <Button variant="outline" size="icon" onClick={() => setCursor((d) => new Date(d.getFullYear(), d.getMonth() + 1, 1))}>
             <ChevronRight className="h-4 w-4" />
           </Button>

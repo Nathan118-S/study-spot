@@ -2,7 +2,10 @@ import React, { useState, useRef } from 'react';
 import { Outlet, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/lib/AuthContext';
-import { Calendar, LayoutDashboard, BookOpen, Settings as SettingsIcon, LogOut, GraduationCap, Flame, ArrowLeft, ShieldCheck, PanelLeftClose, TrendingUp } from 'lucide-react';
+import {
+  Calendar, LayoutGrid, BookOpen, Settings as SettingsIcon, LogOut, GraduationCap, Flame,
+  ChevronLeft, ShieldCheck, PanelLeftClose, TrendingUp, CircleUserRound, X,
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import NotificationCenter from '@/components/NotificationCenter';
@@ -11,188 +14,182 @@ import { isDemoUser } from '@/lib/demoData';
 import { useTheme } from '@/lib/theme';
 import { useIsMobile } from '@/hooks/use-mobile';
 
+// Same tabs, in the same order, as the iOS app.
 const navItems = [
-  { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
+  { to: '/', label: 'Dashboard', icon: LayoutGrid, end: true },
   { to: '/classes', label: 'Classes', icon: BookOpen, end: false },
-  { to: '/calendar', label: 'Calendar View', icon: Calendar, end: false },
+  { to: '/calendar', label: 'Calendar', icon: Calendar, end: false },
   { to: '/analytics', label: 'Streaks', icon: Flame, end: false },
   { to: '/insights', label: 'Insights', icon: TrendingUp, end: false },
 ];
+
+const primaryRoots = ['/', '/classes', '/calendar', '/analytics', '/insights', '/settings', '/admin'];
+
+function SidebarLink({ to, end, icon: Icon, label, collapsed, danger, onClick }) {
+  return (
+    <NavLink
+      to={to}
+      end={end}
+      onClick={onClick}
+      title={collapsed ? label : undefined}
+      className={({ isActive }) =>
+        cn(
+          'flex h-11 items-center gap-3 rounded-[10px] px-3 text-[17px] transition-colors',
+          collapsed && 'md:justify-center md:px-0',
+          isActive
+            ? danger
+              ? 'bg-destructive text-destructive-foreground'
+              : 'bg-primary text-primary-foreground'
+            : 'text-foreground hover:bg-sidebar-accent'
+        )
+      }
+    >
+      {({ isActive }) => (
+        <>
+          <Icon className={cn('h-[22px] w-[22px] shrink-0', !isActive && (danger ? 'text-destructive' : 'text-primary'))} />
+          <span className={cn('truncate', collapsed && 'md:hidden')}>{label}</span>
+        </>
+      )}
+    </NavLink>
+  );
+}
 
 export default function Layout() {
   const { user, logout } = useAuth();
   useTheme();
   const isMobile = useIsMobile();
-  const [mobileOpen, setMobileOpen] = useState(false);
+  const [accountOpen, setAccountOpen] = useState(false);
   const [desktopOpen, setDesktopOpen] = useState(true);
   const location = useLocation();
   const navigate = useNavigate();
   const mainRef = useRef(null);
-  const primaryRoots = ['/', '/classes', '/calendar', '/analytics', '/insights', '/settings', '/admin'];
   const showBack = !primaryRoots.includes(location.pathname);
-  const bottomNav = navItems.filter((i) => i.to !== '/calendar');
+  const collapsed = !desktopOpen;
 
-  const scrollToMainTop = () => {
+  const scrollToTop = () => {
     const el = mainRef.current;
-    if (el && el.scrollHeight > el.clientHeight) {
-      el.scrollTo({ top: 0, behavior: 'smooth' });
-    } else {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
+    if (el && el.scrollHeight > el.clientHeight) el.scrollTo({ top: 0, behavior: 'smooth' });
+    else window.scrollTo({ top: 0, behavior: 'smooth' });
   };
-  const items = navItems;
   const isAdmin = user?.role === 'admin';
   const onboardingDone = (user?.onboarding_completed ?? user?.data?.onboarding_completed) === true;
   const showOnboarding = !!user && !isDemoUser(user) && !onboardingDone;
+  const closeAccount = () => setAccountOpen(false);
+  const displayName = user?.name || user?.full_name || user?.email || 'User';
 
   return (
     <div className="min-h-screen bg-background text-foreground flex">
       {showOnboarding && <Onboarding />}
+
+      {/* Sidebar: iPadOS style on desktop; the account sheet on phones. */}
       <aside
         className={cn(
-          'fixed inset-y-0 left-0 z-40 w-64 bg-sidebar border-r border-sidebar-border flex flex-col transition-all duration-200',
-          mobileOpen ? 'translate-x-0' : '-translate-x-full',
-          'md:translate-x-0',
-          desktopOpen ? 'md:w-64' : 'md:w-16'
+          'fixed z-50 flex flex-col bg-sidebar transition-all duration-300',
+          // Phones: a sheet from the bottom with account actions.
+          'inset-x-0 bottom-0 max-h-[85dvh] rounded-t-[14px] shadow-2xl',
+          accountOpen ? 'translate-y-0' : 'translate-y-full',
+          // Desktop: a full-height sidebar.
+          'md:inset-y-0 md:left-0 md:right-auto md:max-h-none md:translate-y-0 md:rounded-none md:shadow-none md:border-r md:border-sidebar-border',
+          desktopOpen ? 'md:w-72' : 'md:w-[72px]'
         )}
+        style={isMobile ? { paddingBottom: 'calc(env(safe-area-inset-bottom) + 12px)' } : undefined}
       >
-        <div className={cn('h-16 flex items-center gap-2 px-6 border-b border-sidebar-border', desktopOpen ? 'md:flex' : 'md:hidden')}>
-          <GraduationCap className="h-7 w-7 text-primary shrink-0" />
-          <span className="font-heading font-bold text-lg flex-1">Study Spot</span>
+        <div className="mx-auto mt-2 h-[5px] w-9 rounded-full bg-muted-foreground/30 md:hidden" />
+        <div className={cn('flex items-center gap-2 px-5 pt-4 pb-2 md:pt-6', collapsed && 'md:justify-center md:px-0')}>
+          <button
+            type="button"
+            onClick={() => collapsed && setDesktopOpen(true)}
+            className={cn('flex items-center gap-2 min-w-0', !collapsed && 'cursor-default')}
+            aria-label={collapsed ? 'Expand sidebar' : undefined}
+          >
+            <GraduationCap className="h-7 w-7 shrink-0 text-primary" />
+            <span className={cn('font-heading text-[22px] font-bold truncate', collapsed && 'md:hidden')}>Study Spot</span>
+          </button>
           <Button
             variant="ghost"
             size="icon"
-            className="hidden md:flex h-8 w-8"
+            className={cn('ml-auto hidden md:flex', collapsed && 'md:hidden')}
             onClick={() => setDesktopOpen(false)}
             aria-label="Collapse sidebar"
             title="Collapse sidebar"
           >
-            <PanelLeftClose className="h-5 w-5" />
+            <PanelLeftClose />
+          </Button>
+          <Button variant="ghost" size="icon" className="ml-auto md:hidden" onClick={closeAccount} aria-label="Close">
+            <X />
           </Button>
         </div>
-        <button
-          type="button"
-          onClick={() => setDesktopOpen(true)}
-          className={cn('h-16 hidden w-full items-center justify-center border-b border-sidebar-border', desktopOpen ? 'md:hidden' : 'md:flex')}
-          aria-label="Expand sidebar"
-          title="Expand sidebar"
-        >
-          <GraduationCap className="h-7 w-7 text-primary" />
-        </button>
-        <nav className={cn('flex-1 p-4 space-y-1', !desktopOpen && 'md:px-2')}>
-          {items.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              end={item.end}
-              onClick={() => setMobileOpen(false)}
-              title={!desktopOpen ? item.label : undefined}
-              className={({ isActive }) =>
-                cn(
-                  'flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors',
-                  !desktopOpen && 'md:justify-center md:px-0',
-                  isActive
-                    ? 'bg-sidebar-accent text-sidebar-accent-foreground'
-                    : 'text-sidebar-foreground hover:bg-sidebar-accent/60'
-                )
-              }
-            >
-              <item.icon className="h-5 w-5 shrink-0" />
-              <span className={cn(!desktopOpen && 'md:hidden')}>{item.label}</span>
-            </NavLink>
+
+        <nav className={cn('hidden md:block flex-1 space-y-1 px-3 py-2', collapsed && 'md:px-2')}>
+          {navItems.map((item) => (
+            <SidebarLink key={item.to} {...item} collapsed={collapsed} />
           ))}
         </nav>
-        <div className={cn('p-4 border-t border-sidebar-border space-y-3', !desktopOpen && 'md:p-2')}>
+
+        <div className={cn('space-y-1 px-3 py-3 overflow-y-auto', collapsed && 'md:px-2')}>
           {isDemoUser(user) && (
-            <div className={cn('rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-sm font-medium text-emerald-700 dark:text-emerald-300', !desktopOpen && 'md:hidden')}>
+            <div className={cn('rounded-[10px] bg-success/15 px-3 py-2 text-sm font-medium text-success', collapsed && 'md:hidden')}>
               Demo account
             </div>
           )}
           {isAdmin && (
-            <NavLink
-              to="/admin"
-              onClick={() => setMobileOpen(false)}
-              title={!desktopOpen ? 'Admin' : undefined}
-              className={({ isActive }) =>
-                cn(
-                  'flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors',
-                  !desktopOpen && 'md:justify-center md:px-0',
-                  isActive
-                    ? 'bg-destructive/10 text-destructive'
-                    : 'text-destructive hover:bg-destructive/10'
-                )
-              }
-            >
-              <ShieldCheck className="h-5 w-5 shrink-0" />
-              <span className={cn(!desktopOpen && 'md:hidden')}>Admin</span>
-            </NavLink>
+            <SidebarLink to="/admin" icon={ShieldCheck} label="Admin" collapsed={collapsed} danger onClick={closeAccount} />
           )}
-          <NotificationCenter fullWidth={isMobile || desktopOpen} />
-          <NavLink
-            to="/settings"
-            onClick={() => setMobileOpen(false)}
-            title={!desktopOpen ? 'Settings' : undefined}
-            className={({ isActive }) =>
-              cn(
-                'flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors',
-                !desktopOpen && 'md:justify-center md:px-0',
-                isActive
-                  ? 'bg-sidebar-accent text-sidebar-accent-foreground'
-                  : 'text-sidebar-foreground hover:bg-sidebar-accent/60'
-              )
-            }
-          >
-            <SettingsIcon className="h-5 w-5 shrink-0" />
-            <span className={cn(!desktopOpen && 'md:hidden')}>Settings</span>
-          </NavLink>
-          <div className={cn('flex items-center gap-2 px-2', !desktopOpen && 'md:justify-center md:px-0')}>
-            <div className={cn('flex-1 min-w-0', !desktopOpen && 'md:hidden')}>
-              <p className="text-sm font-medium truncate">{user?.name || user?.full_name || user?.email || 'User'}</p>
-              <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+          <div className="hidden md:block">
+            <NotificationCenter fullWidth={!collapsed} />
+          </div>
+          <SidebarLink to="/settings" icon={SettingsIcon} label="Settings" collapsed={collapsed} onClick={closeAccount} />
+          <div className={cn('mt-2 flex items-center gap-3 rounded-[10px] bg-card px-3 py-2.5', collapsed && 'md:justify-center md:bg-transparent md:px-0')}>
+            <CircleUserRound className={cn('h-8 w-8 shrink-0 text-muted-foreground', collapsed && 'md:hidden')} />
+            <div className={cn('flex-1 min-w-0', collapsed && 'md:hidden')}>
+              <p className="text-[15px] font-medium truncate">{displayName}</p>
+              <p className="text-[13px] text-muted-foreground truncate">{user?.email}</p>
             </div>
-            <Button variant="ghost" size="icon" onClick={() => logout()} title="Sign out">
-              <LogOut className="h-4 w-4" />
+            <Button variant="ghost" size="icon" onClick={() => logout()} title="Sign out" aria-label="Sign out">
+              <LogOut />
             </Button>
           </div>
         </div>
       </aside>
 
-      {mobileOpen && (
-        <div className="fixed inset-0 z-30 bg-black/40 md:hidden" onClick={() => setMobileOpen(false)} />
-      )}
+      {accountOpen && <div className="fixed inset-0 z-40 bg-black/40 md:hidden" onClick={closeAccount} />}
 
-      <div className={cn('flex-1 flex flex-col min-w-0', desktopOpen ? 'md:ml-64' : 'md:ml-16')}>
+      <div className={cn('flex-1 flex flex-col min-w-0', desktopOpen ? 'md:ml-72' : 'md:ml-[72px]')}>
+        {/* Phones: translucent navigation bar. */}
         <header
-          className="md:hidden sticky top-0 z-20 bg-background border-b border-border"
+          className="md:hidden sticky top-0 z-30 ios-bar border-b border-border/60"
           style={{ paddingTop: 'env(safe-area-inset-top)' }}
         >
-          <div className="h-16 flex items-center px-2 gap-1">
+          <div className="h-11 flex items-center px-2">
             {showBack ? (
-              <Button variant="ghost" size="icon" onClick={() => navigate(-1)} aria-label="Go back">
-                <ArrowLeft className="h-5 w-5" />
-              </Button>
+              <button
+                type="button"
+                onClick={() => navigate(-1)}
+                className="flex items-center text-primary text-[17px] pr-2"
+                aria-label="Go back"
+              >
+                <ChevronLeft className="h-7 w-7 -mr-0.5" strokeWidth={2.2} />
+                Back
+              </button>
             ) : (
-              <Button variant="ghost" size="icon" onClick={() => setMobileOpen(true)} aria-label="Open menu">
-                <span className="space-y-1 block">
-                  <span className="block w-5 h-0.5 bg-current" />
-                  <span className="block w-5 h-0.5 bg-current" />
-                  <span className="block w-5 h-0.5 bg-current" />
-                </span>
-              </Button>
+              <span className="pl-2 font-heading text-[17px] font-semibold">Study Spot</span>
             )}
-            <span className="font-heading font-bold text-lg ml-1">Study Spot</span>
-            <div className="ml-auto">
+            <div className="ml-auto flex items-center">
               <NotificationCenter />
+              <Button variant="ghost" size="icon" onClick={() => setAccountOpen(true)} aria-label="Account">
+                <CircleUserRound className="!size-6" />
+              </Button>
             </div>
           </div>
         </header>
-        <main ref={mainRef} className="flex-1 p-4 pb-24 md:p-8 md:pb-8 max-w-7xl w-full mx-auto overscroll-none">
+
+        <main ref={mainRef} className="flex-1 w-full max-w-5xl mx-auto px-4 pt-3 pb-28 md:px-8 md:pt-8 md:pb-10 overscroll-none">
           <AnimatePresence mode="wait">
             <motion.div
               key={location.pathname}
-              initial={{ opacity: 0, y: 10 }}
+              initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
+              exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.2, ease: 'easeOut' }}
             >
               <Outlet />
@@ -200,30 +197,28 @@ export default function Layout() {
           </AnimatePresence>
         </main>
 
+        {/* Phones: translucent tab bar. */}
         <nav
-          className={cn(
-            'md:hidden fixed bottom-0 left-0 right-0 z-40 bg-sidebar border-t border-sidebar-border',
-            mobileOpen && 'hidden'
-          )}
+          className="md:hidden fixed bottom-0 left-0 right-0 z-30 ios-bar border-t border-border/60"
           style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
         >
-          <div className="flex">
-            {bottomNav.map((item) => (
+          <div className="flex h-[50px] pt-1">
+            {navItems.map((item) => (
               <NavLink
                 key={item.to}
                 to={item.to}
                 end={item.end}
                 onClick={() => {
-                  if (location.pathname === item.to) scrollToMainTop();
+                  if (location.pathname === item.to) scrollToTop();
                 }}
                 className={({ isActive }) =>
                   cn(
-                    'flex-1 flex flex-col items-center gap-1 py-2 text-xs',
+                    'flex-1 flex flex-col items-center gap-0.5 text-[10px] font-medium',
                     isActive ? 'text-primary' : 'text-muted-foreground'
                   )
                 }
               >
-                <item.icon className="h-5 w-5" />
+                <item.icon className="h-6 w-6" />
                 {item.label}
               </NavLink>
             ))}

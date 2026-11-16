@@ -52,7 +52,7 @@ export default function Classes() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="font-heading text-2xl md:text-3xl font-bold">Classes</h1>
           <p className="text-muted-foreground text-sm">Manage your courses. Google Classroom classes are imported automatically.</p>

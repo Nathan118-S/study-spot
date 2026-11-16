@@ -53,6 +53,23 @@ async function request(path, { method = 'GET', body, headers } = {}) {
   return data;
 }
 
+// PostgreSQL NUMERIC columns arrive as strings ("45"); convert them so the UI
+// can rely on typeof === 'number'. A null score stays null (= not graded).
+const NUMERIC_FIELDS = ['progress', 'points', 'score', 'duration_minutes', 'best_streak'];
+
+function normalizeRow(row) {
+  if (!row || typeof row !== 'object') return row;
+  const out = { ...row };
+  for (const f of NUMERIC_FIELDS) {
+    if (typeof out[f] === 'string' && out[f].trim() !== '' && Number.isFinite(Number(out[f]))) {
+      out[f] = Number(out[f]);
+    }
+  }
+  return out;
+}
+
+const normalize = (data) => (Array.isArray(data) ? data.map(normalizeRow) : normalizeRow(data));
+
 function entity(name) {
   return {
     list: (sort, limit) => {
@@ -60,11 +77,46 @@ function entity(name) {
       if (sort) params.set('sort', sort);
       if (limit) params.set('limit', String(limit));
       const qs = params.toString();
-      return request(`/entities/${name}${qs ? `?${qs}` : ''}`);
+      return request(`/entities/${name}${qs ? `?${qs}` : ''}`).then(normalize);
     },
-    create: (data) => request(`/entities/${name}`, { method: 'POST', body: data }),
-    update: (id, data) => request(`/entities/${name}/${id}`, { method: 'PATCH', body: data }),
+    create: (data) => request(`/entities/${name}`, { method: 'POST', body: data }).then(normalize),
+    update: (id, data) => request(`/entities/${name}/${id}`, { method: 'PATCH', body: data }).then(normalize),
     delete: (id) => request(`/entities/${name}/${id}`, { method: 'DELETE' }),
+
+    // Applies [{ id, ...patch }] updates. The API has no bulk endpoint, so this
+    // sends them in parallel and fails if any one fails.
+    async bulkUpdate(updates) {
+      return Promise.all(
+        (updates || []).map(({ id, ...patch }) =>
+          request(`/entities/${name}/${id}`, { method: 'PATCH', body: patch })
+        )
+      );
+    },
+
+    // Deletes every record of this entity the current user owns. Only an
+    // empty filter ({}) is supported.
+    async deleteMany(filter = {}) {
+      if (filter && Object.keys(filter).length) throw new Error('deleteMany only supports an empty filter');
+      const items = await request(`/entities/${name}?limit=5000`);
+      await Promise.all(items.map((it) => request(`/entities/${name}/${it.id}`, { method: 'DELETE' })));
+      return { deleted: items.length };
+    },
+
+    // Lightweight change feed: polls every 30s and whenever the tab regains
+    // focus. Returns an unsubscribe function.
+    subscribe(callback) {
+      const tick = () => {
+        if (document.visibilityState === 'visible') callback();
+      };
+      const timer = setInterval(tick, 30000);
+      window.addEventListener('focus', tick);
+      document.addEventListener('visibilitychange', tick);
+      return () => {
+        clearInterval(timer);
+        window.removeEventListener('focus', tick);
+        document.removeEventListener('visibilitychange', tick);
+      };
+    },
   };
 }
 

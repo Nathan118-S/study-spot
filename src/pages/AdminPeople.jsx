@@ -225,12 +225,12 @@ export default function AdminPeople() {
       ) : users.length === 0 ? (
         <p className="text-muted-foreground">No users found.</p>
       ) : (
-        <div className="space-y-2">
+        <div className="ios-list">
           {users.map((u) => (
             <button
               key={u.id}
               onClick={() => setSelectedId(u.id)}
-              className="w-full text-left rounded-lg border bg-card p-4 hover:bg-accent transition-colors flex items-center justify-between gap-3"
+              className="w-full text-left px-4 py-3 hover:bg-accent/60 transition-colors flex items-center justify-between gap-3"
             >
               <div className="min-w-0">
                 <p className="font-medium truncate">{u.name || u.full_name || u.email}</p>

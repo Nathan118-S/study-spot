@@ -316,20 +316,20 @@ export default function Dashboard() {
           <Button
             variant={showTimer ? 'default' : 'outline'}
             size="icon"
-            className="h-11 w-11 md:h-9 md:w-9"
+            className="h-11 w-11 md:h-10 md:w-10"
             onClick={() => setShowTimer((s) => !s)}
             title="Study timer"
           >
             <Timer className="h-4 w-4" />
           </Button>
           {(connections.calendar || connections.classroom || connections.blackboard) && (
-            <Button variant="outline" className="h-11 md:h-9" onClick={() => runSync(false)} disabled={syncing}>
+            <Button variant="outline" className="h-11 md:h-10" onClick={() => runSync(false)} disabled={syncing}>
               {syncing ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
               Sync Now
             </Button>
           )}
           <Button
-            className="h-11 md:h-9"
+            className="h-11 md:h-10"
             onClick={() => {
               setEditing(null);
               setShowForm(true);
@@ -363,7 +363,7 @@ export default function Dashboard() {
         <GradedList assignments={assignments} gradingScale={gradingScale} onSelect={setDetail} />
       ) : (
       <div className="space-y-4 mt-4">
-      <div className="hidden md:flex flex-wrap gap-2 items-center">
+      <div className="-mx-4 px-4 flex gap-2 items-center overflow-x-auto pb-1 md:mx-0 md:px-0 md:flex-wrap md:overflow-visible [&>*]:shrink-0">
         <SheetSelect
           value={filters.class}
           onValueChange={(v) => setFilters({ ...filters, class: v })}
@@ -402,7 +402,7 @@ export default function Dashboard() {
           triggerClassName="w-[150px]"
           options={[{ value: 'all', label: 'All types' }, ...Object.keys(TYPE_LABEL).map((t) => ({ value: t, label: TYPE_LABEL[t] }))]}
         />
-        <div className="ml-auto flex items-center gap-2">
+        <div className="md:ml-auto flex items-center gap-2">
           <Button
             variant={selectMode ? 'default' : 'outline'}
             size="sm"
@@ -425,7 +425,7 @@ export default function Dashboard() {
       </div>
 
       {selectMode && selectedCount > 0 && (
-        <div className="sticky top-2 z-10 flex flex-wrap items-center gap-2 rounded-lg border bg-card p-3 shadow-sm">
+        <div className="sticky top-14 md:top-2 z-10 flex flex-wrap items-center gap-2 rounded-xl ios-bar p-3 shadow-lg">
           <span className="text-sm font-medium">{selectedCount} selected</span>
           <SheetSelect
             onValueChange={(v) => bulkApply({ priority: v })}
@@ -444,7 +444,7 @@ export default function Dashboard() {
       )}
 
       {selectMode && filtered.length > 0 && !loading && (
-        <div className="flex items-center gap-3 px-3 py-2 rounded-lg border bg-muted/40">
+        <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-card">
           <Checkbox checked={allSelected} onCheckedChange={toggleSelectAll} />
           <span className="text-sm text-muted-foreground">
             {allSelected ? 'All selected' : 'Select all on this tab'}
@@ -461,15 +461,15 @@ export default function Dashboard() {
           <p className="text-muted-foreground">No assignments match your filters.</p>
         </div>
       ) : (
-        <div className="space-y-2">
+        <div className="ios-list">
           {filtered.map((a, index) => {
             const overdue = a.due_date && isPast(parseISO(a.due_date)) && !a.completed;
             return (
               <div
                 key={a.id}
                 className={cn(
-                  'flex items-stretch rounded-lg border bg-card overflow-hidden animate-fade-up transition-colors hover:border-primary/40',
-                  overdue && 'border-red-500/60 bg-red-500/5'
+                  'flex items-stretch animate-fade-up transition-colors hover:bg-accent/40',
+                  overdue && 'bg-destructive/5'
                 )}
                 style={{ animationDelay: `${Math.min(index, 10) * 30}ms` }}
               >
@@ -478,7 +478,7 @@ export default function Dashboard() {
                     <Checkbox checked={!!selected[a.id]} onCheckedChange={() => toggleSelect(a.id)} />
                   </div>
                 )}
-                <div className="w-1.5 shrink-0" style={{ background: classColor(a.class_id) }} />
+                <div className="w-1 my-2 ml-3 shrink-0 rounded-full" style={{ background: classColor(a.class_id) }} />
                 <div className="flex items-center justify-center w-11 h-11 shrink-0">
                   <Checkbox checked={!!a.completed} onCheckedChange={() => toggleComplete(a)} />
                 </div>
@@ -520,7 +520,7 @@ export default function Dashboard() {
                     )}
                   </div>
                 </button>
-                <div className="flex items-center pr-2 gap-1">
+                <div className="hidden md:flex items-center pr-2 gap-1">
                   <Button variant="ghost" size="icon" className="h-11 w-11" onClick={() => { setEditing(a); setShowForm(true); }} title="Edit">
                     <Pencil className="h-4 w-4" />
                   </Button>

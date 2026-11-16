@@ -51,71 +51,73 @@ export default function Admin() {
         <p className="text-muted-foreground text-sm">Manage users and send notifications.</p>
       </div>
 
-      <button
-        onClick={() => navigate('/admin/people')}
-        className="w-full text-left rounded-lg border bg-card p-4 hover:bg-accent transition-colors flex items-center justify-between gap-3"
-      >
-        <div className="flex items-center gap-3 min-w-0">
-          <div className="h-10 w-10 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0">
-            <Users className="h-5 w-5" />
+      <div className="ios-list">
+        <button
+          onClick={() => navigate('/admin/people')}
+          className="w-full text-left bg-card px-4 py-3 hover:bg-accent/60 transition-colors flex items-center justify-between gap-3"
+        >
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="h-10 w-10 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0">
+              <Users className="h-5 w-5" />
+            </div>
+            <div className="min-w-0">
+              <p className="font-medium">People</p>
+              <p className="text-sm text-muted-foreground truncate">
+                {loading ? 'Loading…' : `${users.length} user${users.length === 1 ? '' : 's'}`}
+              </p>
+            </div>
           </div>
-          <div className="min-w-0">
-            <p className="font-medium">People</p>
-            <p className="text-sm text-muted-foreground truncate">
-              {loading ? 'Loading…' : `${users.length} user${users.length === 1 ? '' : 's'}`}
-            </p>
-          </div>
-        </div>
-        <ChevronRight className="h-5 w-5 text-muted-foreground shrink-0" />
-      </button>
+          <ChevronRight className="h-5 w-5 text-muted-foreground shrink-0" />
+        </button>
 
-      <button
-        onClick={() => setNotifOpen(true)}
-        className="w-full text-left rounded-lg border bg-card p-4 hover:bg-accent transition-colors flex items-center justify-between gap-3"
-      >
-        <div className="flex items-center gap-3 min-w-0">
-          <div className="h-10 w-10 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0">
-            <Bell className="h-5 w-5" />
+        <button
+          onClick={() => setNotifOpen(true)}
+          className="w-full text-left bg-card px-4 py-3 hover:bg-accent/60 transition-colors flex items-center justify-between gap-3"
+        >
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="h-10 w-10 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0">
+              <Bell className="h-5 w-5" />
+            </div>
+            <div className="min-w-0">
+              <p className="font-medium">Send Notification</p>
+              <p className="text-sm text-muted-foreground truncate">Send a custom in-app notification to a user or everyone.</p>
+            </div>
           </div>
-          <div className="min-w-0">
-            <p className="font-medium">Send Notification</p>
-            <p className="text-sm text-muted-foreground truncate">Send a custom in-app notification to a user or everyone.</p>
-          </div>
-        </div>
-        <ChevronRight className="h-5 w-5 text-muted-foreground shrink-0" />
-      </button>
+          <ChevronRight className="h-5 w-5 text-muted-foreground shrink-0" />
+        </button>
 
-      <button
-        onClick={() => navigate('/admin/secrets')}
-        className="w-full text-left rounded-lg border bg-card p-4 hover:bg-accent transition-colors flex items-center justify-between gap-3"
-      >
-        <div className="flex items-center gap-3 min-w-0">
-          <div className="h-10 w-10 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0">
-            <KeyRound className="h-5 w-5" />
+        <button
+          onClick={() => navigate('/admin/secrets')}
+          className="w-full text-left bg-card px-4 py-3 hover:bg-accent/60 transition-colors flex items-center justify-between gap-3"
+        >
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="h-10 w-10 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0">
+              <KeyRound className="h-5 w-5" />
+            </div>
+            <div className="min-w-0">
+              <p className="font-medium">Integration Secrets</p>
+              <p className="text-sm text-muted-foreground truncate">Paste SMTP, Google, and Blackboard credentials — write-once, encrypted.</p>
+            </div>
           </div>
-          <div className="min-w-0">
-            <p className="font-medium">Integration Secrets</p>
-            <p className="text-sm text-muted-foreground truncate">Paste SMTP, Google, and Blackboard credentials — write-once, encrypted.</p>
-          </div>
-        </div>
-        <ChevronRight className="h-5 w-5 text-muted-foreground shrink-0" />
-      </button>
+          <ChevronRight className="h-5 w-5 text-muted-foreground shrink-0" />
+        </button>
 
-      <button
-        onClick={() => navigate('/admin/deploy')}
-        className="w-full text-left rounded-lg border bg-card p-4 hover:bg-accent transition-colors flex items-center justify-between gap-3"
-      >
-        <div className="flex items-center gap-3 min-w-0">
-          <div className="h-10 w-10 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0">
-            <GitBranch className="h-5 w-5" />
+        <button
+          onClick={() => navigate('/admin/deploy')}
+          className="w-full text-left bg-card px-4 py-3 hover:bg-accent/60 transition-colors flex items-center justify-between gap-3"
+        >
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="h-10 w-10 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0">
+              <GitBranch className="h-5 w-5" />
+            </div>
+            <div className="min-w-0">
+              <p className="font-medium">Deploy</p>
+              <p className="text-sm text-muted-foreground truncate">Pull the latest commit from GitHub and restart the app.</p>
+            </div>
           </div>
-          <div className="min-w-0">
-            <p className="font-medium">Deploy</p>
-            <p className="text-sm text-muted-foreground truncate">Pull the latest commit from GitHub and restart the app.</p>
-          </div>
-        </div>
-        <ChevronRight className="h-5 w-5 text-muted-foreground shrink-0" />
-      </button>
+          <ChevronRight className="h-5 w-5 text-muted-foreground shrink-0" />
+        </button>
+      </div>
 
       <Dialog open={notifOpen} onOpenChange={setNotifOpen}>
         <DialogContent className="sm:max-w-md">

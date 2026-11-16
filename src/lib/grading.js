@@ -13,7 +13,9 @@ export function normalizeScale(scale) {
 }
 
 export function letterGrade(score, points, scale) {
-  if (typeof score !== 'number' || !points || points <= 0) return null;
+  score = toNumber(score);
+  points = toNumber(points);
+  if (score === null || !points || points <= 0) return null;
   const pct = (score / points) * 100;
   const sorted = normalizeScale(scale);
   for (const entry of sorted) {
@@ -22,6 +24,13 @@ export function letterGrade(score, points, scale) {
   return sorted[sorted.length - 1]?.letter || null;
 }
 
+// A score of null/undefined/'' means "not graded yet"; 0 is a real grade.
+export function toNumber(v) {
+  if (v === null || v === undefined || v === '') return null;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
+}
+
 export function isGraded(a) {
-  return typeof a?.score === 'number' && a?.points > 0;
+  return toNumber(a?.score) !== null && (toNumber(a?.points) || 0) > 0;
 }
