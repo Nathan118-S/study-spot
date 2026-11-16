@@ -143,6 +143,8 @@ export const api = {
 
     setToken,
 
+    hasToken: () => !!getToken(),
+
     async updateMe(patch) {
       return request('/auth/me', { method: 'PATCH', body: patch });
     },

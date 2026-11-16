@@ -18,6 +18,14 @@ export const AuthProvider = ({ children }) => {
     try {
       setIsLoadingAuth(true);
       setAuthError(null);
+      if (!api.auth.hasToken()) {
+        // Not signed in: nothing to check.
+        setUser(null);
+        setIsAuthenticated(false);
+        setIsLoadingAuth(false);
+        setAuthChecked(true);
+        return;
+      }
       const currentUser = await api.auth.me();
       if (currentUser?.role === 'disabled') {
         sessionStorage.setItem('cf-disabled-reason', currentUser.disabled_reason || '');
@@ -25,7 +33,8 @@ export const AuthProvider = ({ children }) => {
         setIsAuthenticated(false);
         setAuthChecked(true);
         setAuthError({ type: 'auth_required', message: 'Authentication required' });
-        api.auth.logout();
+        // Token is cleared first, so this lands on /login (which shows the reason) once.
+        api.auth.logout('/login');
         return;
       }
       setUser(currentUser);
@@ -46,6 +55,7 @@ export const AuthProvider = ({ children }) => {
       setIsAuthenticated(false);
       setAuthChecked(true);
       if (error.status === 401 || error.status === 403) {
+        api.auth.setToken(null); // expired or revoked; start signed out
         setAuthError({ type: 'auth_required', message: 'Authentication required' });
       }
     }
