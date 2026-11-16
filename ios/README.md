@@ -12,6 +12,19 @@ data are shared between web and iPhone/iPad.
   the Dynamic Island needs iPhone 14 Pro or newer)
 - A running Study Spot server (see the root `README.md`)
 
+## Quick setup
+
+```bash
+cd ios
+python3 scripts/configure.py --bundle-id com.yourname.studyspot \
+    --server http://<your-mac-ip>:8787 --web http://<your-mac-ip>:5173
+```
+
+This sets your own bundle ID (they must be unique per Apple account), the
+matching App Group for the widgets, and the default server and website
+addresses, then regenerates the Xcode project. Add `--team <TEAMID>` to
+preset your signing team. You can re-run it any time.
+
 ## Run it
 
 1. Open `ios/StudySpot.xcodeproj` in Xcode.
