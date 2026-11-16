@@ -6,6 +6,17 @@ enum AccentChoice: String, CaseIterable, Identifiable {
     var id: String { rawValue }
     var label: String { rawValue.capitalized }
 
+    /// Hex equivalent, shared with widgets and Live Activities.
+    var hex: String {
+        switch self {
+        case .orange: "#f19d37"
+        case .blue: "#2463eb"
+        case .purple: "#7c3bed"
+        case .green: "#21c45d"
+        case .rose: "#e5345a"
+        }
+    }
+
     /// HSL values shared with the web app's accent palette.
     var color: Color {
         switch self {
@@ -54,17 +65,5 @@ extension Color {
         let v = l + s * min(l, 1 - l)
         let sv = v == 0 ? 0 : 2 * (1 - l / v)
         self.init(hue: hue, saturation: sv, brightness: v)
-    }
-
-    /// "#rrggbb" → Color (falls back to slate gray).
-    init(hex: String) {
-        var s = hex.trimmingCharacters(in: .whitespaces)
-        if s.hasPrefix("#") { s.removeFirst() }
-        if s.count == 3 { s = s.map { "\($0)\($0)" }.joined() }
-        guard s.count == 6, let v = UInt32(s, radix: 16) else {
-            self = Color(red: 0.58, green: 0.64, blue: 0.72)
-            return
-        }
-        self.init(red: Double((v >> 16) & 0xff) / 255, green: Double((v >> 8) & 0xff) / 255, blue: Double(v & 0xff) / 255)
     }
 }

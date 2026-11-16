@@ -3,6 +3,8 @@ import SwiftUI
 struct RootView: View {
     @Environment(AuthStore.self) private var auth
     @Environment(DataStore.self) private var data
+    @Environment(ThemeStore.self) private var theme
+    @Environment(StudyTimerModel.self) private var timer
 
     var body: some View {
         ZStack {
@@ -24,7 +26,11 @@ struct RootView: View {
         }
         .task { await auth.check() }
         .onChange(of: auth.phase) { _, phase in
-            if phase == .signedOut { data.reset() }
+            if phase == .signedOut {
+                data.reset()
+                timer.reset()
+                WidgetBridge.publish(user: nil, data: data, accent: theme.accent)
+            }
         }
     }
 }
@@ -66,6 +72,7 @@ struct MainTabView: View {
     @Environment(Router.self) private var router
     @Environment(ToastCenter.self) private var toasts
     @Environment(StudyTimerModel.self) private var timer
+    @Environment(ThemeStore.self) private var theme
     @Environment(\.scenePhase) private var scenePhase
     @State private var showWelcome = false
 
@@ -96,6 +103,7 @@ struct MainTabView: View {
         .task {
             guard let user = auth.user else { return }
             await data.load(for: user)
+            publishWidgets()
             await data.loadNotifications()
             maybeGreet()
             await data.autoSyncIfStale(user: user, auth: auth)
@@ -107,10 +115,19 @@ struct MainTabView: View {
                 try? await Task.sleep(for: .milliseconds(250))
             }
         }
+        // Keep Home/Lock Screen widgets in step with the app's data.
+        .onChange(of: data.assignments) { _, _ in publishWidgets() }
+        .onChange(of: data.classes) { _, _ in publishWidgets() }
+        .onChange(of: data.connections) { _, _ in publishWidgets() }
+        .onChange(of: theme.accent) { _, _ in publishWidgets() }
         .onChange(of: auth.needsOnboarding) { _, needs in if !needs { maybeGreet() } }
         .onChange(of: scenePhase) { _, phase in
             if phase == .active { Task { await data.loadNotifications() } }
         }
+    }
+
+    private func publishWidgets() {
+        WidgetBridge.publish(user: auth.user, data: data, accent: theme.accent)
     }
 
     private func maybeGreet() {

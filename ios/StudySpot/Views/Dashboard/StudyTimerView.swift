@@ -51,11 +51,12 @@ final class StudyTimerModel {
         }
     }
 
-    func toggle() {
+    func toggle(assignments: [Assignment]) {
         if running {
             if let endsAt { secondsLeft = max(0, endsAt.timeIntervalSinceNow) }
             endsAt = nil
             LocalNotifier.cancelTimer()
+            updateLiveActivity(assignments: assignments)
         } else {
             let end = Date().addingTimeInterval(secondsLeft)
             endsAt = end
@@ -65,18 +66,31 @@ final class StudyTimerModel {
                 title: phase == .focus ? "Focus session complete" : "Break over",
                 body: phase == .focus ? "Nice work! Time for a break." : "Ready for the next focus session?"
             )
+            updateLiveActivity(assignments: assignments)
         }
+    }
+
+    /// Mirrors the timer onto the Lock Screen / Dynamic Island.
+    func updateLiveActivity(assignments: [Assignment]) {
+        let a = assignments.first { $0.id == assignmentId }
+        LiveActivityManager.sync(
+            phase: phase.rawValue, phaseLabel: phase.label, endsAt: endsAt,
+            remaining: secondsLeft, total: total,
+            assignmentTitle: a?.title, className: a?.className
+        )
     }
 
     func reset() {
         endsAt = nil
         LocalNotifier.cancelTimer()
+        LiveActivityManager.end()
         secondsLeft = total
     }
 
     func switchPhase(_ p: TimerPhase) {
         endsAt = nil
         LocalNotifier.cancelTimer()
+        LiveActivityManager.end()
         phase = p
         secondsLeft = Double(minutes(for: p) * 60)
     }
@@ -90,6 +104,7 @@ final class StudyTimerModel {
         let finished = phase
         let mins = minutes(for: finished)
         let next: TimerPhase = finished == .focus ? (cycles % 4 == 3 ? .long : .short) : .focus
+        LiveActivityManager.end(finalLabel: finished == .focus ? "Focus complete" : "Break over")
         if finished == .focus {
             let a = assignments.first { $0.id == assignmentId }
             if !isDemo {
@@ -199,7 +214,7 @@ struct StudyTimerView: View {
 
             HStack {
                 Button {
-                    model.toggle()
+                    model.toggle(assignments: assignments)
                 } label: {
                     Label(model.running ? "Pause" : "Start", systemImage: model.running ? "pause.fill" : "play.fill")
                         .frame(maxWidth: .infinity)

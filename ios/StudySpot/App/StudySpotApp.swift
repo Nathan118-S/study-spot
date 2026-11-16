@@ -50,6 +50,21 @@ struct StudySpotApp: App {
             }
         case "connected":
             await data.refreshConnections()
+        // Widget / Live Activity deep links.
+        case "assignment":
+            router.tab = .dashboard
+            router.pendingAssignmentId = url.lastPathComponent
+        case "timer":
+            router.tab = .dashboard
+            router.showTimer = true
+        case "tab":
+            switch url.lastPathComponent {
+            case "streaks": router.tab = .streaks
+            case "calendar": router.tab = .calendar
+            case "classes": router.tab = .classes
+            case "insights": router.tab = .insights
+            default: router.tab = .dashboard
+            }
         default:
             break
         }
@@ -67,6 +82,9 @@ final class Router {
     var showSettings = false
     var showAdmin = false
     var showNotifications = false
+    /// Set by deep links; the dashboard opens it and clears it.
+    var pendingAssignmentId: String?
+    var showTimer = false
 
     /// Maps a web-style path (notification action_url) onto native navigation.
     func open(path: String) {

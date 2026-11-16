@@ -18,6 +18,7 @@ enum SortOrder: String, CaseIterable, Identifiable {
 struct DashboardView: View {
     @Environment(AuthStore.self) private var auth
     @Environment(DataStore.self) private var data
+    @Environment(Router.self) private var router
 
     @State private var tab: DashboardTab = .unfinished
     @State private var classFilter: String = "all"
@@ -167,6 +168,26 @@ struct DashboardView: View {
         }
         .safeAreaInset(edge: .bottom) {
             if selectMode && !selected.isEmpty { bulkBar }
+        }
+        // Deep links from widgets and the Live Activity.
+        .task(id: router.pendingAssignmentId) {
+            guard let id = router.pendingAssignmentId else { return }
+            if let a = data.assignments.first(where: { $0.id == id }) {
+                detail = a
+                router.pendingAssignmentId = nil
+            }
+        }
+        .onChange(of: data.assignments) { _, list in
+            if let id = router.pendingAssignmentId, let a = list.first(where: { $0.id == id }) {
+                detail = a
+                router.pendingAssignmentId = nil
+            }
+        }
+        .task(id: router.showTimer) {
+            if router.showTimer {
+                withAnimation { showTimer = true }
+                router.showTimer = false
+            }
         }
         .sheet(isPresented: $creating) { AssignmentFormView(assignment: nil) }
         .sheet(item: $editing) { AssignmentFormView(assignment: $0) }
