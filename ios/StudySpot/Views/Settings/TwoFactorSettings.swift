@@ -73,7 +73,6 @@ struct TwoFactorSettings: View {
 
     private func done() {
         sheet = nil
-        auth.markTwoFactorVerified()
         Task { await auth.refreshUser() }
     }
 }

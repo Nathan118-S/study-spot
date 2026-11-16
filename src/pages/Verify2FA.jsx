@@ -12,7 +12,7 @@ import { cn } from '@/lib/utils';
 const METHOD_ICON = { totp: Smartphone, email: Mail, passkey: Fingerprint };
 
 export default function Verify2FA() {
-  const { user, logout } = useAuth();
+  const { user, logout, checkUserAuth } = useAuth();
   const navigate = useNavigate();
   const methods = getMethods(user);
   const [selected, setSelected] = useState(() => {
@@ -26,8 +26,12 @@ export default function Verify2FA() {
 
   const method = methods.length > 1 ? selected : methods[0];
 
-  const finish = () => {
+  // Verification returns a full session token that replaces the pending one.
+  const finish = async (res) => {
+    const token = res?.data?.access_token;
+    if (token) api.auth.setToken(token);
     sessionStorage.setItem('cf-2fa-verified', '1');
+    await checkUserAuth();
     navigate('/', { replace: true });
   };
 
@@ -49,8 +53,7 @@ export default function Verify2FA() {
     setError('');
     setLoading(true);
     try {
-      await api.functions.invoke('verify2fa', { code });
-      finish();
+      await finish(await api.functions.invoke('verify2fa', { code }));
     } catch (err) {
       setError(err.response?.data?.error || err.message || 'Invalid code');
     } finally {
@@ -63,8 +66,7 @@ export default function Verify2FA() {
     setError('');
     setLoading(true);
     try {
-      await api.functions.invoke('email2faVerify', { code });
-      finish();
+      await finish(await api.functions.invoke('email2faVerify', { code }));
     } catch (err) {
       setError(err.response?.data?.error || err.message || 'Invalid code');
     } finally {
@@ -87,13 +89,13 @@ export default function Verify2FA() {
           timeout: 60000,
         },
       });
-      await api.functions.invoke('passkeyLoginFinish', {
+      const finishRes = await api.functions.invoke('passkeyLoginFinish', {
         credentialId: b64uEncode(assertion.rawId),
         authenticatorData: b64uEncode(assertion.response.authenticatorData),
         clientDataJSON: b64uEncode(assertion.response.clientDataJSON),
         signature: b64uEncode(assertion.response.signature),
       });
-      finish();
+      await finish(finishRes);
     } catch (err) {
       setError(err.response?.data?.error || err.message || 'Passkey verification failed');
     } finally {

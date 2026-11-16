@@ -2,7 +2,7 @@ import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import crypto from 'node:crypto';
 import { pool } from '../db.js';
-import { getUserByEmail, signSession, toPublicUser, updateUser } from '../lib/users.js';
+import { getUserByEmail, needsSecondFactor, pickSelfEditable, signSession, toPublicUser, updateUser } from '../lib/users.js';
 import { requireAuth } from '../middleware/auth.js';
 import { sendEmail } from '../lib/mailer.js';
 import { sendOtpEmailFor } from './authHelpers.js';
@@ -92,7 +92,8 @@ router.post('/login', async (req, res) => {
     if (user.role === 'disabled') return res.status(403).json({ error: 'This account has been disabled' });
     if (!user.is_verified) return res.status(403).json({ error: 'Please verify your email before logging in' });
 
-    res.json({ access_token: signSession(user.id) });
+    const mfaPending = needsSecondFactor(user);
+    res.json({ access_token: signSession(user.id, { mfaPending }), mfa_required: mfaPending });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -148,12 +149,14 @@ router.post('/reset-password', async (req, res) => {
 });
 
 router.get('/me', requireAuth, (req, res) => {
-  res.json(toPublicUser(req.user));
+  res.json({ ...toPublicUser(req.user), mfa_pending: !!req.mfaPending });
 });
 
 router.patch('/me', requireAuth, async (req, res) => {
   try {
-    const updated = await updateUser(req.user.id, req.body || {});
+    const patch = pickSelfEditable(req.body);
+    if (!Object.keys(patch).length) return res.json(toPublicUser(req.user));
+    const updated = await updateUser(req.user.id, patch);
     res.json(toPublicUser(updated));
   } catch (error) {
     res.status(500).json({ error: error.message });

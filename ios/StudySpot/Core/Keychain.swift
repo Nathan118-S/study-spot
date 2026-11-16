@@ -4,7 +4,6 @@ import Security
 /// Minimal Keychain wrapper for the session token.
 enum Keychain {
     static let tokenKey = "ss_access_token"
-    static let twoFactorVerifiedKey = "ss_2fa_verified_token"
     private static let service = "com.studyspot.app"
 
     static func set(_ value: String, for key: String) {

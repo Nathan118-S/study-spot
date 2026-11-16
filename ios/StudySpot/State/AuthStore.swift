@@ -20,14 +20,11 @@ final class AuthStore {
 
     private let api = APIClient.shared
 
-    var isTwoFactorVerified: Bool {
-        guard let token = api.token else { return false }
-        return Keychain.get(Keychain.twoFactorVerifiedKey) == token
-    }
-
+    /// The server marks a sign-in as pending until the second factor is
+    /// verified; nothing else works until then.
     var needsTwoFactor: Bool {
         guard let user else { return false }
-        return user.twofaEnabled && !user.enabledTwoFactorMethods.isEmpty && !isTwoFactorVerified
+        return user.mfaPending && !user.enabledTwoFactorMethods.isEmpty
     }
 
     var needsOnboarding: Bool {
@@ -73,17 +70,17 @@ final class AuthStore {
         await check()
     }
 
-    func markTwoFactorVerified() {
-        if let token = api.token { Keychain.set(token, for: Keychain.twoFactorVerifiedKey) }
-        // Trigger observation so the gate re-evaluates.
-        let u = user
-        user = u
-        phase = .signedIn
+    /// Verification endpoints return a full session token that replaces the
+    /// pending one.
+    func completeTwoFactor(_ response: JSONValue) async {
+        if let token = response["access_token"]?.stringValue, !token.isEmpty {
+            api.setToken(token)
+        }
+        await refreshUser()
     }
 
     func signOut() {
         api.setToken(nil)
-        Keychain.delete(Keychain.twoFactorVerifiedKey)
         user = nil
         phase = .signedOut
     }

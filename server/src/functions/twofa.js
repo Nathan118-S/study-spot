@@ -1,5 +1,5 @@
 import { pool } from '../db.js';
-import { updateUser } from '../lib/users.js';
+import { signSession, updateUser } from '../lib/users.js';
 import { verifyTotp, generateSecret } from '../lib/totp.js';
 import { getMethods, withMethod, withoutMethod, displayName } from '../lib/twofa.js';
 import { sendEmail } from '../lib/mailer.js';
@@ -43,7 +43,8 @@ export async function verify2fa(user, body) {
   if (!secret) throw new HttpError(400, '2FA not configured');
   const ok = await verifyTotp(secret, code);
   if (!ok) throw new HttpError(400, 'Invalid code');
-  return { ok: true };
+  // Second factor passed: upgrade a pending sign-in to a full session.
+  return { ok: true, access_token: signSession(user.id) };
 }
 
 export async function email2faSend(user) {
@@ -74,7 +75,7 @@ export async function email2faVerify(user, body) {
     update.twofa_methods = methods;
   }
   await updateUser(user.id, update);
-  return { ok: true };
+  return { ok: true, access_token: signSession(user.id) };
 }
 
 export async function remove2faMethod(user, body) {
@@ -203,5 +204,5 @@ export async function passkeyLoginFinish(user, body) {
   if (!ok) throw new HttpError(400, 'Signature verification failed');
 
   await updateUser(user.id, { webauthn_challenge: '', passkey_counter: parsed.signCount });
-  return { ok: true };
+  return { ok: true, access_token: signSession(user.id) };
 }

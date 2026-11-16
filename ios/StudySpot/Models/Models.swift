@@ -44,6 +44,9 @@ struct User: Decodable, Equatable, Sendable {
     var twofaEnabled: Bool
     var twofaMethod: String?
     var twofaMethods: [String]
+    /// True while this session still needs its second factor verified (the
+    /// server refuses other requests until then).
+    var mfaPending: Bool
     var data: [String: JSONValue]
 
     enum CodingKeys: String, CodingKey {
@@ -54,6 +57,7 @@ struct User: Decodable, Equatable, Sendable {
         case twofaEnabled = "twofa_enabled"
         case twofaMethod = "twofa_method"
         case twofaMethods = "twofa_methods"
+        case mfaPending = "mfa_pending"
     }
 
     init(from decoder: Decoder) throws {
@@ -68,6 +72,7 @@ struct User: Decodable, Equatable, Sendable {
         twofaEnabled = c.flexBool(.twofaEnabled) ?? false
         twofaMethod = c.flexString(.twofaMethod)
         twofaMethods = (try? c.decodeIfPresent([String].self, forKey: .twofaMethods)) ?? []
+        mfaPending = c.flexBool(.mfaPending) ?? false
         data = (try? c.decodeIfPresent([String: JSONValue].self, forKey: .data)) ?? [:]
     }
 

@@ -13,25 +13,49 @@ export async function attachUser(req, res, next) {
   try {
     const token = extractToken(req);
     if (!token) return next();
-    const userId = verifySession(token);
-    if (!userId) return next();
-    const user = await getUserById(userId);
-    if (user) req.user = user;
+    const session = verifySession(token);
+    if (!session) return next();
+    const user = await getUserById(session.userId);
+    if (!user) return next();
+    // "Log out of all devices" invalidates every token issued before it.
+    const invalidatedAt = Date.parse(user.data?.sessions_invalidated_at || '');
+    if (Number.isFinite(invalidatedAt) && session.issuedAt * 1000 < invalidatedAt) return next();
+    req.user = user;
+    req.mfaPending = session.mfaPending;
     next();
   } catch (err) {
     next(err);
   }
 }
 
+// Reachable with a pending (pre-2FA) session or by a disabled account: just
+// enough to show who is signed in and to complete the second factor.
+const PENDING_ALLOWED = new Set([
+  'GET /api/auth/me',
+  'POST /api/functions/verify2fa',
+  'POST /api/functions/email2faSend',
+  'POST /api/functions/email2faVerify',
+  'POST /api/functions/passkeyLoginStart',
+  'POST /api/functions/passkeyLoginFinish',
+]);
+
 export function requireAuth(req, res, next) {
   if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
+  const route = `${req.method} ${req.baseUrl}${req.path}`.replace(/\/$/, '');
+  if (req.user.role === 'disabled' && route !== 'GET /api/auth/me') {
+    return res.status(403).json({ error: 'This account has been disabled' });
+  }
+  if (req.mfaPending && !PENDING_ALLOWED.has(route)) {
+    return res.status(401).json({ error: 'Two-factor verification required', mfaRequired: true });
+  }
   next();
 }
 
 export function requireAdmin(req, res, next) {
-  if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
-  if (req.user.role !== 'admin') return res.status(403).json({ error: 'Forbidden' });
-  next();
+  requireAuth(req, res, () => {
+    if (req.user.role !== 'admin') return res.status(403).json({ error: 'Forbidden' });
+    next();
+  });
 }
 
 export function publicUser(req) {

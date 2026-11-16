@@ -40,7 +40,7 @@ struct Verify2FAView: View {
                     } header: {
                         Text("Enter the 6-digit code from your authenticator app")
                     } footer: { errorText }
-                    submitButton("Verify") { _ = try await APIClient.shared.invoke("verify2fa", ["code": .string(code)]) }
+                    submitButton("Verify") { try await APIClient.shared.invoke("verify2fa", ["code": .string(code)]) }
                         .disabled(code.count != 6)
                 case .email:
                     Section {
@@ -49,7 +49,7 @@ struct Verify2FAView: View {
                     } header: {
                         Text("Enter the code we emailed you")
                     } footer: { errorText }
-                    submitButton("Verify") { _ = try await APIClient.shared.invoke("email2faVerify", ["code": .string(code)]) }
+                    submitButton("Verify") { try await APIClient.shared.invoke("email2faVerify", ["code": .string(code)]) }
                         .disabled(code.count != 6)
                 case .passkey:
                     Section {
@@ -80,15 +80,15 @@ struct Verify2FAView: View {
         if !error.isEmpty { Text(error).foregroundStyle(.red) }
     }
 
-    private func submitButton(_ title: String, action: @escaping () async throws -> Void) -> some View {
+    private func submitButton(_ title: String, action: @escaping () async throws -> JSONValue) -> some View {
         Button {
             Task {
                 error = ""
                 loading = true
                 defer { loading = false }
                 do {
-                    try await action()
-                    auth.markTwoFactorVerified()
+                    let response = try await action()
+                    await auth.completeTwoFactor(response)
                 } catch {
                     self.error = error.localizedDescription
                 }

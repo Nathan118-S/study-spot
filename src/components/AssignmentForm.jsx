@@ -83,7 +83,7 @@ export default function AssignmentForm({ open, onOpenChange, assignment, classes
       const cls = classes.find((c) => c.id === form.class_id);
       const payload = {
         title: form.title.trim(),
-        class_id: form.class_id || '',
+        class_id: form.class_id || null, // class_id is a UUID column; '' is rejected
         class_name: cls?.name || 'Uncategorized',
         due_date: form.due_date ? new Date(form.due_date).toISOString() : null,
         priority: form.priority,

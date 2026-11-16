@@ -46,9 +46,11 @@ final class PasskeyService: NSObject, ASAuthorizationControllerDelegate, ASAutho
         ])
     }
 
-    /// passkeyLoginStart → assertion → passkeyLoginFinish.
+    /// passkeyLoginStart → assertion → passkeyLoginFinish. Returns the
+    /// server's response (which carries a full session token).
     @MainActor
-    func verify() async throws {
+    @discardableResult
+    func verify() async throws -> JSONValue {
         let opts = try await api.invoke("passkeyLoginStart")
         guard let challenge = opts["challenge"]?.stringValue.flatMap(Base64URL.decode) else {
             throw APIError(status: 0, message: "Invalid passkey options from server")
@@ -62,7 +64,7 @@ final class PasskeyService: NSObject, ASAuthorizationControllerDelegate, ASAutho
         guard let cred = auth.credential as? ASAuthorizationPlatformPublicKeyCredentialAssertion else {
             throw APIError(status: 0, message: "Passkey verification failed")
         }
-        try await api.invoke("passkeyLoginFinish", [
+        return try await api.invoke("passkeyLoginFinish", [
             "credentialId": .string(Base64URL.encode(cred.credentialID)),
             "authenticatorData": .string(Base64URL.encode(cred.rawAuthenticatorData)),
             "clientDataJSON": .string(Base64URL.encode(cred.rawClientDataJSON)),

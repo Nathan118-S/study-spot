@@ -22,17 +22,60 @@ const KNOWN_COLUMNS = new Set([
   'passkey_counter',
 ]);
 
-export function signSession(userId) {
-  return jwt.sign({ sub: userId }, process.env.SESSION_SECRET, { expiresIn: '30d' });
+// A session issued at password/Google sign-in for a user with 2FA enabled is
+// "pending" until a second factor is verified; it can only reach the 2FA
+// endpoints (see middleware/auth.js). Verification issues a full session.
+export function signSession(userId, { mfaPending = false } = {}) {
+  const claims = mfaPending ? { sub: userId, mfa: 'pending' } : { sub: userId };
+  return jwt.sign(claims, process.env.SESSION_SECRET, { expiresIn: '30d' });
 }
 
+// Returns { userId, mfaPending, issuedAt } or null.
 export function verifySession(token) {
   try {
     const payload = jwt.verify(token, process.env.SESSION_SECRET);
-    return payload.sub;
+    return { userId: payload.sub, mfaPending: payload.mfa === 'pending', issuedAt: payload.iat };
   } catch {
     return null;
   }
+}
+
+export function needsSecondFactor(user) {
+  if (!user?.twofa_enabled) return false;
+  const methods = Array.isArray(user.twofa_methods) && user.twofa_methods.length
+    ? user.twofa_methods
+    : user.twofa_method ? [user.twofa_method] : ['totp'];
+  return methods.length > 0;
+}
+
+// Server-only fields that must never be sent to the client.
+const PRIVATE_COLUMNS = ['password_hash', 'totp_secret', 'webauthn_challenge', 'passkey_pub_key'];
+const PRIVATE_DATA_KEYS = [
+  'email_2fa_code', 'email_2fa_expires',
+  'blackboard_access_token', 'blackboard_refresh_token', 'blackboard_state',
+  'blackboard_expires_at', 'blackboard_user_id',
+];
+
+// The only fields a user may change about themselves through PATCH /auth/me.
+// Everything else (role, verification, 2FA state, integration tokens) is
+// changed only by the server's own flows.
+const SELF_EDITABLE_COLUMNS = new Set(['name', 'full_name']);
+const SELF_EDITABLE_DATA_KEYS = new Set([
+  'onboarding_completed', 'welcome_style', 'leaderboard_enabled',
+  'reminders_enabled', 'reminder_lead_hours', 'dnd_enabled', 'dnd_start', 'dnd_end',
+  'sync_completion_to_classroom', 'grading_scale', 'last_sync', 'sessions_invalidated_at',
+]);
+
+export function pickSelfEditable(patch) {
+  const out = {};
+  for (const [key, value] of Object.entries(patch || {})) {
+    if (SELF_EDITABLE_COLUMNS.has(key)) {
+      out[key] = typeof value === 'string' ? value.trim().slice(0, 80) : null;
+    } else if (SELF_EDITABLE_DATA_KEYS.has(key)) {
+      out[key] = value;
+    }
+  }
+  return out;
 }
 
 export async function getUserById(id) {
@@ -49,9 +92,14 @@ export async function getUserByEmail(email) {
 // top level, everything else under `data`.
 export function toPublicUser(row) {
   if (!row) return null;
-  const { password_hash, ...rest } = row;
+  const rest = { ...row };
+  for (const col of PRIVATE_COLUMNS) delete rest[col];
+  const data = { ...(row.data || {}) };
+  for (const key of PRIVATE_DATA_KEYS) delete data[key];
   return {
     ...rest,
+    data,
+    has_passkey: !!row.passkey_cred_id,
     created_date: row.created_at,
     updated_date: row.updated_at,
   };

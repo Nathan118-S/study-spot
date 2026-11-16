@@ -2,10 +2,11 @@ import { pool } from '../db.js';
 
 // Returns the top study-streak students across the app. A student's best
 // streak is the highest Class.best_streak among their classes (maintained by
-// the checkStreakRecords cron job). Disabled and demo accounts are excluded.
+// the checkStreakRecords cron job). Only students who turned the leaderboard
+// on in Settings are listed; disabled and demo accounts are excluded.
 export async function getLeaderboard(user) {
   const [usersRes, classesRes] = await Promise.all([
-    pool.query('SELECT id, email, name, full_name, role FROM users ORDER BY created_at DESC LIMIT 5000'),
+    pool.query("SELECT id, email, name, full_name, role FROM users WHERE (data->>'leaderboard_enabled') = 'true' ORDER BY created_at DESC LIMIT 5000"),
     pool.query('SELECT created_by_id, best_streak FROM classes ORDER BY created_at DESC LIMIT 5000'),
   ]);
 

@@ -147,7 +147,7 @@ export default function Settings() {
     try {
       await api.entities.Assignment.deleteMany({});
       await api.entities.Class.deleteMany({});
-      await api.auth.logout();
+      logout();
     } catch {
       setDeleting(false);
     }

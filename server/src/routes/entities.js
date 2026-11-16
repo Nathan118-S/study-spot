@@ -42,7 +42,8 @@ const ENTITIES = {
   Notification: {
     table: 'notifications',
     ownerColumn: 'user_id',
-    columns: ['user_id', 'title', 'content', 'type', 'read', 'action_label', 'action_url'],
+    // user_id is set from the session on create and can't be changed.
+    columns: ['title', 'content', 'type', 'read', 'action_label', 'action_url'],
     defaults: { type: 'info', read: false },
   },
 };

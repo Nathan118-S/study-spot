@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import crypto from 'node:crypto';
 import { pool } from '../db.js';
-import { getUserByEmail, signSession } from '../lib/users.js';
+import { getUserByEmail, needsSecondFactor, signSession } from '../lib/users.js';
 import { requireAuth } from '../middleware/auth.js';
 import { resolveSecret } from '../lib/secrets.js';
 
@@ -88,7 +88,7 @@ router.get('/auth/google/callback', async (req, res) => {
       await pool.query('UPDATE users SET is_verified = true WHERE id = $1', [user.id]);
     }
 
-    const token = signSession(user.id);
+    const token = signSession(user.id, { mfaPending: needsSecondFactor(user) });
     if (stateRow.return_to === IOS_RETURN_MARKER) {
       return res.redirect(`${IOS_SCHEME}://oauth/callback#token=${token}`);
     }
