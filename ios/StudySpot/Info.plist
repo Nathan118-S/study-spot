@@ -5,6 +5,9 @@
 	<!-- Default Study Spot server. Users can change it on the sign-in screen. -->
 	<key>StudySpotServerURL</key>
 	<string>$(STUDYSPOT_SERVER_URL)</string>
+	<!-- Website users sign in on (Log in / Create account open it). -->
+	<key>StudySpotWebURL</key>
+	<string>$(STUDYSPOT_WEB_URL)</string>
 	<!-- App URL scheme: OAuth sign-in, Google connectors and Blackboard return here. -->
 	<key>CFBundleURLTypes</key>
 	<array>

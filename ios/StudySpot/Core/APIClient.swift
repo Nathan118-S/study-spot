@@ -82,27 +82,6 @@ final class APIClient: @unchecked Sendable {
 
     func me() async throws -> User { try await request("/auth/me") }
 
-    func register(email: String, password: String) async throws {
-        try await send("/auth/register", body: ["email": .string(email), "password": .string(password)])
-    }
-
-    func verifyOtp(email: String, code: String) async throws {
-        let res = try await send("/auth/verify-otp", body: ["email": .string(email), "otpCode": .string(code)])
-        if let t = res["access_token"]?.stringValue { setToken(t) }
-    }
-
-    func resendOtp(email: String) async throws {
-        try await send("/auth/resend-otp", body: ["email": .string(email)])
-    }
-
-    func login(email: String, password: String) async throws {
-        let res = try await send("/auth/login", body: ["email": .string(email), "password": .string(password)])
-        guard let t = res["access_token"]?.stringValue else {
-            throw APIError(status: 0, message: "Login failed")
-        }
-        setToken(t)
-    }
-
     @discardableResult
     func updateMe(_ patch: [String: JSONValue]) async throws -> User {
         try await request("/auth/me", method: "PATCH", body: .object(patch))
@@ -110,15 +89,6 @@ final class APIClient: @unchecked Sendable {
 
     func forgotPassword(email: String) async throws {
         try await send("/auth/forgot-password", body: ["email": .string(email)])
-    }
-
-    func resetPassword(token: String, newPassword: String) async throws {
-        try await send("/auth/reset-password", body: ["resetToken": .string(token), "newPassword": .string(newPassword)])
-    }
-
-    /// URL that starts "Sign in with Google" and returns to the app's URL scheme.
-    var googleLoginURL: URL? {
-        URL(string: AppConfig.apiBaseURL + "/auth/google/start?client=ios")
     }
 
     // MARK: Entities

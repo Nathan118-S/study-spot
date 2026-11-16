@@ -9,7 +9,11 @@
 // //evil.com when assigned to location.href — an open redirect. So require the
 // resolved path to be exactly one leading slash (no "//" prefix, no backslash).
 export function safeReturnTo() {
-  const raw = new URLSearchParams(window.location.search).get("returnTo");
+  return safePath(new URLSearchParams(window.location.search).get("returnTo"));
+}
+
+// Validates an arbitrary returnTo value (e.g. one carried in a URL fragment).
+export function safePath(raw) {
   if (!raw) return "/";
   try {
     const url = new URL(raw, window.location.origin);

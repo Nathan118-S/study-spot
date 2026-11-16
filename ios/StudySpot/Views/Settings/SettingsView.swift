@@ -779,7 +779,8 @@ struct ServerInfoView: View {
     var body: some View {
         Form {
             Section {
-                LabeledContent("Address", value: AppConfig.serverURL)
+                LabeledContent("Server", value: AppConfig.serverURL)
+                LabeledContent("Website", value: AppConfig.webURL)
                 LabeledContent("Passkey domain", value: AppConfig.passkeyRelyingParty)
                 Button("Change server…") { showEditor = true }
             } footer: {

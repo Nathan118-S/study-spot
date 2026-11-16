@@ -27,6 +27,16 @@ simulator with `cd server && npm run dev`. To change the server:
   and enter your server's address, or
 - per build: set the `STUDYSPOT_SERVER_URL` build setting on the target.
 
+**Signing in happens on the website.** *Log in* and *Create your account* open
+the Study Spot website (`/login?client=ios` or `/register?client=ios`) in a
+private in-app browser session. When any sign-in method succeeds there (email
+and password, a new account with its email code, or Google), the website
+hands the session to the app and closes the browser. Two-factor verification
+then happens in the app. The website address defaults to the
+`STUDYSPOT_WEB_URL` build setting (`http://localhost:5173` for development).
+It can be changed under *Server settings*, and if it's empty the server
+address is used.
+
 Use `https://` for anything other than local development. App Transport
 Security only allows plain `http://` for localhost/LAN addresses.
 
@@ -34,9 +44,10 @@ Security only allows plain `http://` for localhost/LAN addresses.
 
 Everything in the web app is available natively:
 
-- **Sign in:** email/password, email verification code at sign-up, forgot or
-  reset password, Sign in with Google, a disabled-account notice, and the
-  two-factor prompt (authenticator code, emailed code, or passkey)
+- **Sign in:** on the website (email/password, sign-up with email code,
+  password reset, Google), then back in the app. The app shows a
+  disabled-account notice and its own two-factor prompt (authenticator code,
+  emailed code, or passkey)
 - **Dashboard:** stats, the Unfinished / Completed / Graded tabs, filters and
   sort, multi-select bulk edits, swipe to complete/edit/delete, pull to sync,
   and the welcome greeting
@@ -92,7 +103,7 @@ both `.entitlements` files and in `SharedStore.appGroup`
 These flows open in a secure in-app browser (`ASWebAuthenticationSession`) and
 return to the app through the `studyspot://` URL scheme:
 
-- Google sign-in and the Google connectors call the server with
+- The Google connectors call the server with
   `?client=ios`, and the server redirects to `studyspot://…` instead of the
   web frontend. No extra Google Cloud configuration is needed, because the
   redirect URIs registered with Google stay the same.

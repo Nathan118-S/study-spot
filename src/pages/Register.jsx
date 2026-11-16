@@ -10,6 +10,7 @@ import AuthLayout from "@/components/AuthLayout";
 import GoogleIcon from "@/components/GoogleIcon";
 import { toast } from "@/components/ui/use-toast";
 import { safeReturnTo } from "@/lib/authReturnTo";
+import { completeIosHandoff } from "@/lib/iosHandoff";
 
 export default function Register() {
   const [name, setName] = useState("");
@@ -51,6 +52,7 @@ export default function Register() {
             await api.auth.updateMe({ name: name.trim() });
           } catch {}
         }
+        if (completeIosHandoff(result.access_token)) return;
       }
       window.location.href = safeReturnTo();
     } catch (err) {

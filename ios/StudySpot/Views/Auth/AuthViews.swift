@@ -1,6 +1,38 @@
 import SwiftUI
 
-// MARK: - Landing
+// Users sign in on the Study Spot website: "Log in" and "Create account" open
+// it in a private in-app browser session, and the site hands the session back
+// to the app (studyspot://oauth/callback#token=…) once any sign-in method
+// succeeds: email and password, a new account, or Google. Two-factor
+// verification then happens natively in Verify2FAView.
+
+@MainActor
+enum WebSignIn {
+    enum Page: String { case login, register }
+
+    static func url(_ page: Page) -> URL? {
+        URL(string: "\(AppConfig.webURL)/\(page.rawValue)?client=ios")
+    }
+
+    /// Returns false if the user cancelled.
+    static func run(_ page: Page, auth: AuthStore) async throws -> Bool {
+        guard let url = url(page) else {
+            throw APIError(status: 0, message: "Invalid website address. Check it in Server settings.")
+        }
+        do {
+            // Ephemeral, so nothing stays signed in inside the browser session.
+            let callback = try await WebAuthSession.shared.start(url, ephemeral: true)
+            guard let token = callback.param("token"), !token.isEmpty else {
+                throw APIError(status: 0, message: "Sign-in didn't finish. Please try again.")
+            }
+            APIClient.shared.setToken(token)
+            await auth.didSignIn()
+            return true
+        } catch is WebAuthSession.Cancelled {
+            return false
+        }
+    }
+}
 
 struct AuthFlowView: View {
     var body: some View {
@@ -9,24 +41,34 @@ struct AuthFlowView: View {
 }
 
 struct LandingView: View {
+    @Environment(AuthStore.self) private var auth
     @State private var showServer = false
+    @State private var busy: WebSignIn.Page?
+    @State private var error = ""
 
-    private let features: [(String, String, String)] = [
-        ("calendar", "Google Calendar Sync", "Assignments auto-import from your Google Calendar events using smart keyword matching."),
-        ("book", "Google Classroom", "Pull coursework, due dates, and attachments straight from Classroom — and mark work done on both sides."),
-        ("building.columns", "Blackboard Learn", "Connect your school's Blackboard instance to import courses and gradebook due-dated items."),
-        ("bell", "Smart Reminders", "Set custom reminder times before each due date and a do-not-disturb window for quiet hours."),
-        ("timer", "Study Timer", "A built-in Pomodoro timer tracks focus and break sessions against your assignments."),
-        ("flame", "Streak Tracking", "Stay motivated with completion streaks per class, with alerts when you break a record."),
-        ("checkmark.circle", "Grading & Progress", "Track scores, subtasks, and per-assignment progress with a custom grading scale."),
-        ("square.stack.3d.up", "Templates & Analytics", "Reuse assignment templates and visualize your workload and grades over time."),
-        ("checkmark.shield", "Secure & Private", "Per-user data isolation plus optional two-factor auth (TOTP, email, or passkeys)."),
+    private let features: [Feature] = [
+        Feature(symbol: "calendar", title: "Google Calendar Sync", text: "Assignments auto-import from your Google Calendar events using smart keyword matching."),
+        Feature(symbol: "book", title: "Google Classroom", text: "Pull coursework, due dates, and attachments straight from Classroom — and mark work done on both sides."),
+        Feature(symbol: "building.columns", title: "Blackboard Learn", text: "Connect your school's Blackboard instance to import courses and gradebook due-dated items."),
+        Feature(symbol: "bell", title: "Smart Reminders", text: "Set custom reminder times before each due date and a do-not-disturb window for quiet hours."),
+        Feature(symbol: "timer", title: "Study Timer", text: "A built-in Pomodoro timer tracks focus and break sessions, right on your Lock Screen."),
+        Feature(symbol: "flame", title: "Streak Tracking", text: "Stay motivated with completion streaks per class, with alerts when you break a record."),
+        Feature(symbol: "checkmark.circle", title: "Grading & Progress", text: "Track scores, subtasks, and per-assignment progress with a custom grading scale."),
+        Feature(symbol: "square.stack.3d.up", title: "Templates & Widgets", text: "Reuse assignment templates and see what's next from your Home and Lock Screen."),
+        Feature(symbol: "checkmark.shield", title: "Secure & Private", text: "Per-user data isolation plus optional two-factor auth (TOTP, email, or passkeys)."),
     ]
+
+    struct Feature: Identifiable {
+        var symbol: String
+        var title: String
+        var text: String
+        var id: String { title }
+    }
 
     var body: some View {
         ScrollView {
             VStack(spacing: 28) {
-                VStack(spacing: 14) {
+                VStack(spacing: 12) {
                     Image(systemName: "graduationcap.fill").font(.system(size: 54)).foregroundStyle(.tint)
                     Text("Built for students who juggle everything")
                         .font(.footnote.weight(.semibold)).foregroundStyle(.tint)
@@ -37,337 +79,96 @@ struct LandingView: View {
                 }
                 .padding(.top, 24)
 
-                VStack(spacing: 10) {
-                    NavigationLink { RegisterView() } label: {
-                        Text("Create your account").frame(maxWidth: .infinity)
+                VStack(spacing: 12) {
+                    if let reason = auth.disabledReason {
+                        Label {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Your account has been disabled.").font(.subheadline.weight(.semibold))
+                                if !reason.isEmpty { Text(reason).font(.footnote) }
+                            }
+                        } icon: { Image(systemName: "nosign") }
+                        .foregroundStyle(.red)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(12)
+                        .background(Color.red.opacity(0.1), in: RoundedRectangle(cornerRadius: 12))
                     }
-                    .buttonStyle(.borderedProminent).controlSize(.large)
-                    NavigationLink { LoginView() } label: {
-                        Text("I already have an account").frame(maxWidth: .infinity)
+                    signInButton(.register, title: "Create your account", prominent: true)
+                    signInButton(.login, title: "Log in", prominent: false)
+                    if !error.isEmpty {
+                        Text(error).font(.footnote).foregroundStyle(.red).multilineTextAlignment(.center)
                     }
-                    .buttonStyle(.bordered).controlSize(.large)
+                    Text("You'll sign in on the Study Spot website, then return here automatically.")
+                        .font(.footnote).foregroundStyle(.secondary).multilineTextAlignment(.center)
                 }
 
                 VStack(spacing: 12) {
-                    ForEach(features, id: \.1) { f in
+                    ForEach(features) { f in
                         HStack(alignment: .top, spacing: 14) {
-                            Image(systemName: f.0).font(.title3).foregroundStyle(.tint).frame(width: 32)
+                            Image(systemName: f.symbol).font(.title3).foregroundStyle(.tint).frame(width: 28)
                             VStack(alignment: .leading, spacing: 3) {
-                                Text(f.1).font(.headline)
-                                Text(f.2).font(.subheadline).foregroundStyle(.secondary)
+                                Text(f.title).font(.headline)
+                                Text(f.text).font(.subheadline).foregroundStyle(.secondary)
                             }
                             Spacer(minLength: 0)
                         }
-                        .padding(14)
+                        .padding(16)
                         .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 12))
                     }
                 }
 
-                HStack(spacing: 16) {
+                HStack(spacing: 20) {
                     NavigationLink("Privacy Policy") { PrivacyPolicyView() }
-                    Button("Server: \(URL(string: AppConfig.serverURL)?.host ?? AppConfig.serverURL)") { showServer = true }
+                    Button("Server settings") { showServer = true }
                 }
                 .font(.footnote)
-                .padding(.bottom)
+                .padding(.bottom, 8)
             }
             .padding(.horizontal, 20)
         }
-        .sheet(isPresented: $showServer) { ServerSettingsView() }
-    }
-}
-
-// MARK: - Login
-
-struct LoginView: View {
-    @Environment(AuthStore.self) private var auth
-    @State private var email = ""
-    @State private var password = ""
-    @State private var error = ""
-    @State private var loading = false
-    @State private var showServer = false
-
-    var body: some View {
-        Form {
-            if let reason = auth.disabledReason {
-                Section {
-                    Label("Your account has been disabled.", systemImage: "nosign").foregroundStyle(.red)
-                    if !reason.isEmpty { Text(reason).font(.footnote) }
-                }
-            }
-            Section {
-                TextField("Email", text: $email)
-                    .textContentType(.username).keyboardType(.emailAddress)
-                    .textInputAutocapitalization(.never).autocorrectionDisabled()
-                SecureField("Password", text: $password).textContentType(.password)
-            } footer: {
-                if !error.isEmpty { Text(error).foregroundStyle(.red) }
-            }
-            Section {
-                Button {
-                    Task { await submit() }
-                } label: {
-                    HStack { Spacer(); if loading { ProgressView() } else { Text("Log in").bold() }; Spacer() }
-                }
-                .disabled(loading || email.isEmpty || password.isEmpty)
-                GoogleSignInButton(error: $error)
-            }
-            Section {
-                NavigationLink("Forgot password?") { ForgotPasswordView() }
-                NavigationLink("Have a reset link?") { ResetPasswordView() }
-                NavigationLink("Create an account") { RegisterView() }
-                Button("Server settings") { showServer = true }
-            }
-        }
-        .navigationTitle("Welcome back")
+        .scrollBounceBehavior(.basedOnSize)
         .sheet(isPresented: $showServer) { ServerSettingsView() }
     }
 
-    private func submit() async {
-        error = ""
-        loading = true
-        defer { loading = false }
-        do {
-            try await APIClient.shared.login(email: email.trimmingCharacters(in: .whitespaces), password: password)
-            await auth.didSignIn()
-        } catch {
-            self.error = error.localizedDescription
-        }
-    }
-}
-
-struct GoogleSignInButton: View {
-    @Environment(AuthStore.self) private var auth
-    @Binding var error: String
-    @State private var busy = false
-
-    var body: some View {
-        Button {
-            Task { await signIn() }
+    @ViewBuilder
+    private func signInButton(_ page: WebSignIn.Page, title: String, prominent: Bool) -> some View {
+        let button = Button {
+            Task { await signIn(page) }
         } label: {
-            HStack {
-                Spacer()
-                if busy { ProgressView() } else {
-                    Image(systemName: "g.circle.fill")
-                    Text("Continue with Google")
-                }
-                Spacer()
+            HStack(spacing: 8) {
+                if busy == page { ProgressView() }
+                Text(title).fontWeight(.semibold)
             }
+            .frame(maxWidth: .infinity)
         }
-        .disabled(busy)
-    }
+        .controlSize(.large)
+        .disabled(busy != nil)
 
-    private func signIn() async {
-        guard let url = APIClient.shared.googleLoginURL else { return }
-        busy = true
-        defer { busy = false }
-        do {
-            let callback = try await WebAuthSession.shared.start(url)
-            guard let token = callback.param("token") else {
-                error = "Google sign-in failed."
-                return
-            }
-            APIClient.shared.setToken(token)
-            await auth.didSignIn()
-        } catch is WebAuthSession.Cancelled {
-        } catch {
-            self.error = error.localizedDescription
+        if prominent {
+            button.buttonStyle(.borderedProminent)
+        } else {
+            button.buttonStyle(.bordered)
         }
     }
-}
 
-// MARK: - Register
-
-struct RegisterView: View {
-    @Environment(AuthStore.self) private var auth
-    @Environment(ToastCenter.self) private var toasts
-    @State private var name = ""
-    @State private var email = ""
-    @State private var password = ""
-    @State private var confirm = ""
-    @State private var error = ""
-    @State private var loading = false
-    @State private var showOtp = false
-    @State private var otp = ""
-
-    var body: some View {
-        Form {
-            if showOtp {
-                Section {
-                    Text("We sent a code to \(email). Enter it below to verify your email.")
-                        .font(.subheadline).foregroundStyle(.secondary)
-                    CodeField(code: $otp)
-                } footer: {
-                    if !error.isEmpty { Text(error).foregroundStyle(.red) }
-                }
-                Section {
-                    Button { Task { await verify() } } label: {
-                        HStack { Spacer(); if loading { ProgressView() } else { Text("Verify").bold() }; Spacer() }
-                    }
-                    .disabled(loading || otp.count != 6)
-                    Button("Resend code") { Task { await resend() } }
-                    Button("Use a different email") { showOtp = false; otp = "" }
-                }
-            } else {
-                Section {
-                    TextField("Name (optional)", text: $name).textContentType(.name)
-                    TextField("Email", text: $email)
-                        .textContentType(.username).keyboardType(.emailAddress)
-                        .textInputAutocapitalization(.never).autocorrectionDisabled()
-                    SecureField("Password (8+ characters)", text: $password).textContentType(.newPassword)
-                    SecureField("Confirm password", text: $confirm).textContentType(.newPassword)
-                } footer: {
-                    if !error.isEmpty { Text(error).foregroundStyle(.red) }
-                }
-                Section {
-                    Button { Task { await submit() } } label: {
-                        HStack { Spacer(); if loading { ProgressView() } else { Text("Create account").bold() }; Spacer() }
-                    }
-                    .disabled(loading || email.isEmpty || password.isEmpty)
-                    GoogleSignInButton(error: $error)
-                }
-            }
-        }
-        .navigationTitle(showOtp ? "Verify your email" : "Create your account")
-    }
-
-    private func submit() async {
+    private func signIn(_ page: WebSignIn.Page) async {
         error = ""
-        guard password == confirm else { error = "Passwords do not match"; return }
-        guard password.count >= 8 else { error = "Password must be at least 8 characters"; return }
-        loading = true
-        defer { loading = false }
+        busy = page
+        defer { busy = nil }
         do {
-            try await APIClient.shared.register(email: email.trimmingCharacters(in: .whitespaces), password: password)
-            showOtp = true
-        } catch {
-            self.error = error.localizedDescription
-        }
-    }
-
-    private func verify() async {
-        error = ""
-        loading = true
-        defer { loading = false }
-        do {
-            try await APIClient.shared.verifyOtp(email: email.trimmingCharacters(in: .whitespaces), code: otp)
-            let trimmed = name.trimmingCharacters(in: .whitespaces)
-            if !trimmed.isEmpty { _ = try? await APIClient.shared.updateMe(["name": .string(trimmed)]) }
-            await auth.didSignIn()
-        } catch {
-            self.error = error.localizedDescription
-        }
-    }
-
-    private func resend() async {
-        do {
-            try await APIClient.shared.resendOtp(email: email.trimmingCharacters(in: .whitespaces))
-            toasts.show("Code sent", "Check your email for the new code.")
+            _ = try await WebSignIn.run(page, auth: auth)
         } catch {
             self.error = error.localizedDescription
         }
     }
 }
 
-// MARK: - Password reset
-
-struct ForgotPasswordView: View {
-    @State private var email = ""
-    @State private var sent = false
-    @State private var loading = false
-    @State private var error = ""
-
-    var body: some View {
-        Form {
-            if sent {
-                Section {
-                    Label("If an account exists for \(email), a reset link is on its way.", systemImage: "envelope.badge")
-                    NavigationLink("I have the reset link") { ResetPasswordView() }
-                }
-            } else {
-                Section {
-                    TextField("Email", text: $email)
-                        .keyboardType(.emailAddress).textInputAutocapitalization(.never).autocorrectionDisabled()
-                } footer: {
-                    if !error.isEmpty { Text(error).foregroundStyle(.red) } else {
-                        Text("We'll email you a link to reset your password.")
-                    }
-                }
-                Button {
-                    Task {
-                        loading = true
-                        defer { loading = false }
-                        do { try await APIClient.shared.forgotPassword(email: email); sent = true }
-                        catch { self.error = error.localizedDescription }
-                    }
-                } label: {
-                    HStack { Spacer(); if loading { ProgressView() } else { Text("Send reset link").bold() }; Spacer() }
-                }
-                .disabled(email.isEmpty || loading)
-            }
-        }
-        .navigationTitle("Forgot password")
-    }
-}
-
-struct ResetPasswordView: View {
-    @Environment(\.dismiss) private var dismiss
-    @Environment(ToastCenter.self) private var toasts
-    @State private var link = ""
-    @State private var password = ""
-    @State private var confirm = ""
-    @State private var loading = false
-    @State private var error = ""
-
-    /// Accepts the full emailed link or just the token.
-    private var token: String {
-        let t = link.trimmingCharacters(in: .whitespacesAndNewlines)
-        return URL(string: t)?.param("token") ?? t
-    }
-
-    var body: some View {
-        Form {
-            Section {
-                TextField("Paste the reset link from your email", text: $link, axis: .vertical)
-                    .textInputAutocapitalization(.never).autocorrectionDisabled()
-            }
-            Section {
-                SecureField("New password", text: $password).textContentType(.newPassword)
-                SecureField("Confirm new password", text: $confirm).textContentType(.newPassword)
-            } footer: {
-                if !error.isEmpty { Text(error).foregroundStyle(.red) }
-            }
-            Button {
-                Task { await submit() }
-            } label: {
-                HStack { Spacer(); if loading { ProgressView() } else { Text("Reset password").bold() }; Spacer() }
-            }
-            .disabled(loading || token.isEmpty || password.isEmpty)
-        }
-        .navigationTitle("Reset password")
-    }
-
-    private func submit() async {
-        error = ""
-        guard password == confirm else { error = "Passwords do not match"; return }
-        guard password.count >= 8 else { error = "Password must be at least 8 characters"; return }
-        loading = true
-        defer { loading = false }
-        do {
-            try await APIClient.shared.resetPassword(token: token, newPassword: password)
-            toasts.show("Password updated", "You can now log in with your new password.")
-            dismiss()
-        } catch {
-            self.error = error.localizedDescription
-        }
-    }
-}
-
-// MARK: - Server address
+// MARK: - Server & website address
 
 struct ServerSettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(AuthStore.self) private var auth
     @State private var url = AppConfig.serverURL
+    @State private var web = AppConfig.webURL
     @State private var status = ""
     @State private var checking = false
 
@@ -380,16 +181,31 @@ struct ServerSettingsView: View {
                 } header: {
                     Text("Server address")
                 } footer: {
-                    Text("The address of your Study Spot server. The app talks to its /api endpoints.")
+                    Text("The Study Spot server. The app talks to its /api endpoints.")
+                }
+                Section {
+                    TextField("https://studyspot.example.com", text: $web)
+                        .keyboardType(.URL).textInputAutocapitalization(.never).autocorrectionDisabled()
+                } header: {
+                    Text("Website address")
+                } footer: {
+                    Text("Where you log in. Usually the same as the server address.")
                 }
                 Section {
                     Button {
                         Task { await test() }
                     } label: {
-                        HStack { Text("Test connection"); Spacer(); if checking { ProgressView() } }
+                        HStack {
+                            Text("Test connection")
+                            Spacer()
+                            if checking { ProgressView() }
+                        }
                     }
                     if !status.isEmpty { Text(status).font(.footnote) }
-                    Button("Reset to default") { url = AppConfig.defaultServerURL }
+                    Button("Reset to defaults") {
+                        url = AppConfig.defaultServerURL
+                        web = ""
+                    }
                 }
             }
             .navigationTitle("Server")
@@ -400,9 +216,11 @@ struct ServerSettingsView: View {
                     Button("Save") {
                         let changed = AppConfig.normalize(url) != AppConfig.serverURL
                         AppConfig.serverURL = url
-                        if changed { auth.signOut() }
+                        AppConfig.webURL = web
+                        if changed && auth.user != nil { auth.signOut() }
                         dismiss()
                     }
+                    .fontWeight(.semibold)
                 }
             }
         }
@@ -418,9 +236,9 @@ struct ServerSettingsView: View {
         }
         do {
             let (_, res) = try await URLSession.shared.data(from: u)
-            status = (res as? HTTPURLResponse)?.statusCode == 200 ? "✅ Connected" : "Server responded, but /api/health failed"
+            status = (res as? HTTPURLResponse)?.statusCode == 200 ? "Connected" : "The server responded, but /api/health failed."
         } catch {
-            status = "❌ \(error.localizedDescription)"
+            status = error.localizedDescription
         }
     }
 }

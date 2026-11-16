@@ -21,6 +21,28 @@ enum AppConfig {
         set { UserDefaults.standard.set(normalize(newValue), forKey: serverURLKey) }
     }
 
+    static let webURLKey = "ss_web_url"
+
+    /// The Study Spot website, where users sign in. Defaults to the
+    /// `StudySpotWebURL` Info.plist value, else the server address (the usual
+    /// setup serves the website and API from one domain).
+    static var defaultWebURL: String {
+        let configured = (Bundle.main.object(forInfoDictionaryKey: "StudySpotWebURL") as? String) ?? ""
+        return configured.isEmpty || configured.hasPrefix("$(") ? serverURL : configured
+    }
+
+    static var webURL: String {
+        get {
+            let stored = UserDefaults.standard.string(forKey: webURLKey) ?? ""
+            return normalize(stored.isEmpty ? defaultWebURL : stored)
+        }
+        set {
+            let n = normalize(newValue)
+            if n.isEmpty || n == normalize(defaultWebURL) { UserDefaults.standard.removeObject(forKey: webURLKey) }
+            else { UserDefaults.standard.set(n, forKey: webURLKey) }
+        }
+    }
+
     /// The API lives under /api on the server.
     static var apiBaseURL: String {
         let base = serverURL

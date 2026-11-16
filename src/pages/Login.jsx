@@ -8,6 +8,7 @@ import { LogIn, Mail, Lock, Loader2 } from "lucide-react";
 import AuthLayout from "@/components/AuthLayout";
 import GoogleIcon from "@/components/GoogleIcon";
 import { safeReturnTo } from "@/lib/authReturnTo";
+import { completeIosHandoff, isIosHandoff } from "@/lib/iosHandoff";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -33,7 +34,8 @@ export default function Login() {
     setDisabledReason("");
     setLoading(true);
     try {
-      await api.auth.loginViaEmailPassword(email, password);
+      const result = await api.auth.loginViaEmailPassword(email, password);
+      if (completeIosHandoff(result?.access_token)) return;
       window.location.href = returnTo;
     } catch (err) {
       setError(err.message || "Invalid email or password");
@@ -50,7 +52,7 @@ export default function Login() {
     <AuthLayout
       icon={LogIn}
       title="Welcome back"
-      subtitle="Log in to your account"
+      subtitle={isIosHandoff() ? "Log in to continue in the Study Spot app" : "Log in to your account"}
       footer={
         <>
           Don't have an account?{" "}
