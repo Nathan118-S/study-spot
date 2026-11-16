@@ -25,6 +25,41 @@ final class ToastCenter {
     }
 }
 
+/// Toasts live in their own pass-through window above everything (sheets and
+/// full-screen covers included), so they're visible wherever they're raised.
+@MainActor
+enum ToastWindow {
+    private static var window: UIWindow?
+
+    static func install(toasts: ToastCenter, theme: ThemeStore) {
+        guard window == nil,
+              let scene = UIApplication.shared.connectedScenes
+                .compactMap({ $0 as? UIWindowScene })
+                .first(where: { $0.activationState == .foregroundActive }) ??
+                UIApplication.shared.connectedScenes.compactMap({ $0 as? UIWindowScene }).first
+        else { return }
+        let host = UIHostingController(rootView: ToastOverlay().environment(toasts).tint(theme.accent.color))
+        host.view.backgroundColor = .clear
+        let w = PassThroughWindow(windowScene: scene)
+        w.rootViewController = host
+        w.windowLevel = .alert + 1
+        w.isHidden = false
+        window = w
+    }
+
+    static func setStyle(_ scheme: ColorScheme?) {
+        window?.overrideUserInterfaceStyle = scheme == .dark ? .dark : (scheme == .light ? .light : .unspecified)
+    }
+}
+
+/// Lets touches through everywhere except on the toast itself.
+private final class PassThroughWindow: UIWindow {
+    override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
+        let hit = super.hitTest(point, with: event)
+        return hit === rootViewController?.view ? nil : hit
+    }
+}
+
 struct ToastOverlay: View {
     @Environment(ToastCenter.self) private var toasts
 

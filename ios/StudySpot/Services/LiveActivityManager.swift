@@ -4,8 +4,23 @@ import Foundation
 /// Starts, updates and ends the study-timer Live Activity.
 @MainActor
 enum LiveActivityManager {
+    /// The activity this app instance started (others may still be ending).
+    private static var currentId: String?
+
     private static var current: Activity<StudyTimerAttributes>? {
-        Activity<StudyTimerAttributes>.activities.first { $0.activityState == .active || $0.activityState == .stale }
+        guard let currentId else { return nil }
+        return Activity<StudyTimerAttributes>.activities.first {
+            $0.id == currentId && ($0.activityState == .active || $0.activityState == .stale)
+        }
+    }
+
+    /// Ends activities left over from a previous launch (the timer itself
+    /// isn't persisted, so nothing would ever end them).
+    static func endOrphans() {
+        guard currentId == nil else { return }
+        let leftovers = Activity<StudyTimerAttributes>.activities
+        guard !leftovers.isEmpty else { return }
+        Task { for a in leftovers { await a.end(nil, dismissalPolicy: .immediate) } }
     }
 
     static func sync(phase: String, phaseLabel: String, endsAt: Date?, remaining: Double, total: Double,
@@ -26,9 +41,11 @@ enum LiveActivityManager {
         let accent = SharedStore.load()?.accentHex ?? "#f19d37"
         let attributes = StudyTimerAttributes(assignmentTitle: assignmentTitle, className: className, accentHex: accent)
         let old = Activity<StudyTimerAttributes>.activities
+        // Request synchronously so a quick second sync updates this activity
+        // instead of requesting another one.
+        currentId = (try? Activity.request(attributes: attributes, content: content, pushType: nil))?.id
         Task {
             for a in old { await a.end(nil, dismissalPolicy: .immediate) }
-            _ = try? Activity.request(attributes: attributes, content: content, pushType: nil)
         }
     }
 
@@ -36,6 +53,7 @@ enum LiveActivityManager {
     /// on the Lock Screen ("Focus complete") before it's dismissed.
     static func end(finalLabel: String? = nil) {
         let activities = Activity<StudyTimerAttributes>.activities
+        currentId = nil
         guard !activities.isEmpty else { return }
         Task {
             for a in activities {

@@ -80,6 +80,7 @@ struct DashboardView: View {
 
                 if !data.syncMessage.isEmpty {
                     Text(data.syncMessage).font(.footnote).foregroundStyle(.secondary)
+                        .listRowInsets(EdgeInsets(top: 4, leading: 4, bottom: 0, trailing: 4))
                         .listRowBackground(Color.clear)
                 }
             }

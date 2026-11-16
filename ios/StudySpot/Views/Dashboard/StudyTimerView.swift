@@ -175,32 +175,38 @@ struct StudyTimerView: View {
                         ForEach(TimerPhase.allCases) { Text($0 == .focus ? "Focus" : ($0 == .short ? "Short" : "Long")).tag($0) }
                     }
                     .pickerStyle(.segmented)
+                    if model.phase == .focus && !StudyTimerModel.presets.contains(model.focusMinutes) && !customOpen {
+                        Text("Custom: \(model.focusMinutes) min").font(.caption).foregroundStyle(.secondary)
+                    }
+                }
+            }
 
-                    if model.phase == .focus {
-                        HStack(spacing: 6) {
-                            ForEach(StudyTimerModel.presets, id: \.self) { m in
-                                Button("\(m)m") { model.setFocus(m); customOpen = false }
-                                    .buttonStyle(.bordered)
-                                    .tint(model.focusMinutes == m ? .accentColor : .secondary)
-                            }
-                            Button("Other") { customOpen.toggle() }
-                                .buttonStyle(.bordered)
-                                .tint(StudyTimerModel.presets.contains(model.focusMinutes) ? .secondary : .accentColor)
+            if model.phase == .focus {
+                // Lengths get their own row so they fit on narrow phones.
+                HStack(spacing: 8) {
+                    ForEach(StudyTimerModel.presets, id: \.self) { m in
+                        Button("\(m)m") { model.setFocus(m); customOpen = false }
+                            .tint(model.focusMinutes == m ? .accentColor : .secondary)
+                    }
+                    Button("Other") { customOpen.toggle() }
+                        .tint(StudyTimerModel.presets.contains(model.focusMinutes) ? .secondary : .accentColor)
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+                .frame(maxWidth: .infinity)
+                .disabled(model.running)
+
+                if customOpen {
+                    HStack {
+                        TextField("Minutes (1–180)", text: $customText)
+                            .keyboardType(.numberPad)
+                            .textFieldStyle(.roundedBorder)
+                        Button("Set") {
+                            model.setFocus(Int(customText) ?? 25)
+                            customOpen = false
                         }
-                        .controlSize(.mini)
-                        if customOpen {
-                            HStack {
-                                TextField("min", text: $customText).keyboardType(.numberPad).frame(width: 60)
-                                    .textFieldStyle(.roundedBorder)
-                                Button("Set") {
-                                    model.setFocus(Int(customText) ?? 25)
-                                    customOpen = false
-                                }
-                                .buttonStyle(.borderedProminent).controlSize(.small)
-                            }
-                        } else if !StudyTimerModel.presets.contains(model.focusMinutes) {
-                            Text("Custom: \(model.focusMinutes) min").font(.caption).foregroundStyle(.secondary)
-                        }
+                        .buttonStyle(.borderedProminent)
+                        .controlSize(.small)
                     }
                 }
             }
@@ -227,5 +233,8 @@ struct StudyTimerView: View {
             }
         }
         .padding(.vertical, 6)
+        .onChange(of: model.assignmentId) { _, _ in
+            if model.running { model.updateLiveActivity(assignments: assignments) }
+        }
     }
 }

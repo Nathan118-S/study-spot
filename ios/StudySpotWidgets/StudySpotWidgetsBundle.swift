@@ -23,7 +23,7 @@ struct SnapshotProvider: TimelineProvider {
     }
 
     func getSnapshot(in context: Context, completion: @escaping (SnapshotEntry) -> Void) {
-        let snap = context.isPreview ? .preview : (SharedStore.load() ?? .preview)
+        let snap: WidgetSnapshot = context.isPreview ? .preview : (SharedStore.load() ?? .preview)
         completion(SnapshotEntry(date: Date(), snapshot: snap))
     }
 

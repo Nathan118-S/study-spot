@@ -13,10 +13,13 @@ struct StreaksView: View {
 
         List {
             Section {
-                Text("Complete every assignment in a class to keep its streak alive. One overdue assignment breaks it. Streaks from synced Google Classroom and Blackboard classes are verified; manual classes are unverified.")
-                    .font(.subheadline).foregroundStyle(.secondary)
-                    .listRowBackground(Color.clear)
                 statusBox
+            } header: {
+                Text("Complete every assignment in a class to keep its streak alive. One overdue assignment breaks it. Streaks from synced Google Classroom and Blackboard classes are verified; manual classes are unverified.")
+                    .font(.subheadline)
+                    .textCase(nil)
+                    .foregroundStyle(.secondary)
+                    .padding(.bottom, 6)
             }
 
             Section {

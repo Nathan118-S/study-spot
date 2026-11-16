@@ -168,7 +168,8 @@ struct ServerSettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(AuthStore.self) private var auth
     @State private var url = AppConfig.serverURL
-    @State private var web = AppConfig.webURL
+    /// Only an explicit override; empty means "same as the server address".
+    @State private var web = UserDefaults.standard.string(forKey: AppConfig.webURLKey) ?? ""
     @State private var status = ""
     @State private var checking = false
 
@@ -184,12 +185,12 @@ struct ServerSettingsView: View {
                     Text("The Study Spot server. The app talks to its /api endpoints.")
                 }
                 Section {
-                    TextField("https://studyspot.example.com", text: $web)
+                    TextField("Same as server address", text: $web)
                         .keyboardType(.URL).textInputAutocapitalization(.never).autocorrectionDisabled()
                 } header: {
                     Text("Website address")
                 } footer: {
-                    Text("Where you log in. Usually the same as the server address.")
+                    Text("Where you log in. Leave empty if the website is served from the server address.")
                 }
                 Section {
                     Button {

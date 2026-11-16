@@ -94,9 +94,17 @@ final class Router {
         case "/calendar": tab = .calendar
         case "/analytics": tab = .streaks
         case "/insights": tab = .insights
-        case "/settings": showSettings = true
-        case let p where p.hasPrefix("/admin"): showAdmin = true
+        case "/settings": presentAfterDismiss { $0.showSettings = true }
+        case let p where p.hasPrefix("/admin"): presentAfterDismiss { $0.showAdmin = true }
         default: tab = .dashboard
+        }
+    }
+
+    /// SwiftUI can't present a sheet while another is still dismissing.
+    func presentAfterDismiss(_ change: @escaping (Router) -> Void) {
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(450))
+            change(self)
         }
     }
 }

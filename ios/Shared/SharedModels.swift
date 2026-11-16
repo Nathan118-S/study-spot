@@ -67,8 +67,11 @@ struct WidgetSnapshot: Codable, Equatable {
         )
     }
 
+    /// Still due later today (anything already past due counts as overdue).
     func dueToday(at date: Date) -> [WidgetAssignment] {
-        upcoming.filter { a in a.dueDate.map { Calendar.current.isDate($0, inSameDayAs: date) } ?? false }
+        upcoming.filter { a in
+            !a.isOverdue(at: date) && (a.dueDate.map { Calendar.current.isDate($0, inSameDayAs: date) } ?? false)
+        }
     }
 
     func overdue(at date: Date) -> [WidgetAssignment] {

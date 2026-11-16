@@ -3,6 +3,7 @@ import SwiftUI
 struct RootView: View {
     @Environment(AuthStore.self) private var auth
     @Environment(DataStore.self) private var data
+    @Environment(ToastCenter.self) private var toasts
     @Environment(ThemeStore.self) private var theme
     @Environment(StudyTimerModel.self) private var timer
 
@@ -22,9 +23,13 @@ struct RootView: View {
                     MainTabView()
                 }
             }
-            ToastOverlay()
         }
-        .task { await auth.check() }
+        .task {
+            ToastWindow.install(toasts: toasts, theme: theme)
+            ToastWindow.setStyle(theme.colorScheme)
+            await auth.check()
+        }
+        .onChange(of: theme.colorScheme) { _, scheme in ToastWindow.setStyle(scheme) }
         .onChange(of: auth.phase) { _, phase in
             if phase == .signedOut {
                 data.reset()
@@ -101,6 +106,7 @@ struct MainTabView: View {
         .fullScreenCover(isPresented: .constant(auth.needsOnboarding)) { OnboardingView() }
         .overlay { if showWelcome { WelcomeOverlay(isPresented: $showWelcome) } }
         .task {
+            if !timer.running { LiveActivityManager.endOrphans() }
             guard let user = auth.user else { return }
             await data.load(for: user)
             publishWidgets()

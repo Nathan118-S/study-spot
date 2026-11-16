@@ -38,7 +38,7 @@ enum AppConfig {
         }
         set {
             let n = normalize(newValue)
-            if n.isEmpty || n == normalize(defaultWebURL) { UserDefaults.standard.removeObject(forKey: webURLKey) }
+            if n.isEmpty { UserDefaults.standard.removeObject(forKey: webURLKey) }
             else { UserDefaults.standard.set(n, forKey: webURLKey) }
         }
     }

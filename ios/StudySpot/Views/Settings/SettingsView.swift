@@ -442,6 +442,7 @@ struct LeaderboardSetting: View {
 
 struct OnboardingRestart: View {
     @Environment(AuthStore.self) private var auth
+    @Environment(Router.self) private var router
     @State private var busy = false
 
     var body: some View {
@@ -452,6 +453,10 @@ struct OnboardingRestart: View {
                 Task {
                     busy = true
                     defer { busy = false }
+                    // Close Settings first; the wizard is a full-screen cover
+                    // that can't appear over an open sheet.
+                    router.showSettings = false
+                    try? await Task.sleep(for: .milliseconds(450))
                     try? await auth.update(["onboarding_completed": false])
                 }
             } label: {

@@ -73,7 +73,6 @@ struct Verify2FAView: View {
             code = ""; error = ""
             if m == .email && !emailSent { Task { await sendEmail() } }
         }
-        .task { if selected == .email && !emailSent { await sendEmail() } }
     }
 
     @ViewBuilder private var errorText: some View {
