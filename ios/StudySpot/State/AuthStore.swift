@@ -47,6 +47,11 @@ final class AuthStore {
             }
             user = me
             phase = .signedIn
+            // Reminders and do-not-disturb are scheduled in the user's time zone.
+            let tz = TimeZone.current.identifier
+            if !me.mfaPending, me.data["timezone"]?.stringValue != tz {
+                Task { try? await update(["timezone": .string(tz)]) }
+            }
         } catch let e as APIError where e.isAuthError {
             signOut()
         } catch {

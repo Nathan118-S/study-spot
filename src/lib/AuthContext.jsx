@@ -30,6 +30,15 @@ export const AuthProvider = ({ children }) => {
       }
       setUser(currentUser);
       setIsAuthenticated(true);
+      // Reminders and do-not-disturb are scheduled in the user's own time zone.
+      try {
+        const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        if (tz && !currentUser.mfa_pending && currentUser.data?.timezone !== tz) {
+          api.auth.updateMe({ timezone: tz }).catch(() => {});
+        }
+      } catch {
+        // Time zone unavailable; the server falls back to its default.
+      }
       setIsLoadingAuth(false);
       setAuthChecked(true);
     } catch (error) {

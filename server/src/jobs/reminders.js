@@ -2,8 +2,22 @@ import { pool } from '../db.js';
 import { sendEmail } from '../lib/mailer.js';
 import { displayName } from '../lib/twofa.js';
 
-const FETCH_HORIZON_HOURS = 72; // wide enough to cover the max lead-time option (48h)
-const REMINDER_TZ = 'America/New_York';
+// Users can pick custom lead times, so look well ahead; per-lead checks below
+// decide what is actually due a reminder.
+const FETCH_HORIZON_HOURS = 24 * 14;
+const DEFAULT_TZ = 'America/New_York';
+
+// The user's IANA time zone (saved by the apps), validated.
+function userTimeZone(settings) {
+  const tz = settings?.timezone;
+  if (typeof tz !== 'string' || !tz) return DEFAULT_TZ;
+  try {
+    new Intl.DateTimeFormat('en-US', { timeZone: tz });
+    return tz;
+  } catch {
+    return DEFAULT_TZ;
+  }
+}
 
 function toMinutes(hhmm) {
   if (!hhmm || typeof hhmm !== 'string') return null;
@@ -19,11 +33,11 @@ function nowMinutesInTZ(now, tz) {
   return h * 60 + m;
 }
 
-function inDndWindow(now, start, end) {
+function inDndWindow(now, start, end, tz) {
   const s = toMinutes(start);
   const e = toMinutes(end);
   if (s === null || e === null || s === e) return false;
-  const cur = nowMinutesInTZ(now, REMINDER_TZ);
+  const cur = nowMinutesInTZ(now, tz);
   if (s < e) return cur >= s && cur < e;
   return cur >= s || cur < e;
 }
@@ -77,8 +91,8 @@ export async function sendAssignmentReminders() {
     const pendingLeads = leads.filter((l) => hoursUntilDue <= l && !sentHours.includes(l)).sort((x, y) => y - x);
     if (pendingLeads.length === 0) { skipped++; continue; }
 
-    if (settings.dnd_enabled !== false && settings.dnd_start && settings.dnd_end) {
-      if (inDndWindow(now, settings.dnd_start, settings.dnd_end)) { skipped++; continue; }
+    if (settings.dnd_enabled === true && settings.dnd_start && settings.dnd_end) {
+      if (inDndWindow(now, settings.dnd_start, settings.dnd_end, userTimeZone(settings))) { skipped++; continue; }
     }
 
     const lead = pendingLeads[0];

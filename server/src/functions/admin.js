@@ -155,8 +155,8 @@ export async function adminSendTestNotification(caller, body) {
   return { ok: true, sent: 'email' };
 }
 
-async function reassignOwner(table, sourceId, targetId) {
-  await pool.query(`UPDATE ${table} SET created_by_id = $1 WHERE created_by_id = $2`, [targetId, sourceId]);
+async function reassignOwner(table, sourceId, targetId, column = 'created_by_id') {
+  await pool.query(`UPDATE ${table} SET ${column} = $1 WHERE ${column} = $2`, [targetId, sourceId]);
 }
 
 export async function adminMergeAccounts(caller, body) {
@@ -170,8 +170,16 @@ export async function adminMergeAccounts(caller, body) {
     pool.query('SELECT id FROM classes WHERE created_by_id = $1', [sourceId]),
   ]);
 
+  const target = await pool.query('SELECT id FROM users WHERE id = $1', [targetId]);
+  if (!target.rows[0]) throw new HttpError(404, 'Target account not found');
+
+  // Move everything the source owns before deleting it — the foreign keys
+  // cascade, so anything left behind would be deleted with the account.
   if (assignments.rows.length) await reassignOwner('assignments', sourceId, targetId);
   if (classes.rows.length) await reassignOwner('classes', sourceId, targetId);
+  await reassignOwner('assignment_templates', sourceId, targetId);
+  await reassignOwner('study_sessions', sourceId, targetId);
+  await reassignOwner('notifications', sourceId, targetId, 'user_id');
   await pool.query('DELETE FROM users WHERE id = $1', [sourceId]);
 
   return { ok: true, movedAssignments: assignments.rows.length, movedClasses: classes.rows.length };
