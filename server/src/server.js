@@ -18,6 +18,16 @@ app.use(attachUser);
 
 app.get('/api/health', (req, res) => res.json({ ok: true }));
 
+// Apple App Site Association, so the native iOS app can create and use
+// passkeys for this domain (associated domain "webcredentials:<host>").
+// Set IOS_APP_ID to "<TEAM_ID>.<bundle id>", e.g. "ABCDE12345.com.studyspot.app".
+// Serve it from the domain users sign in on (proxy /.well-known/ to the API).
+app.get('/.well-known/apple-app-site-association', (req, res) => {
+  const appId = process.env.IOS_APP_ID;
+  if (!appId) return res.status(404).json({ error: 'Not configured' });
+  res.json({ webcredentials: { apps: [appId] } });
+});
+
 app.use('/api/auth', authRoutes);
 app.use('/api', googleAuthRoutes);
 app.use('/api/entities', entityRoutes);
@@ -33,8 +43,7 @@ app.listen(port, () => {
   console.log(`Study Spot API listening on :${port}`);
 });
 
-// Replaces the Base44 "Assignment Reminders" and "Streak Record Alerts"
-// scheduled workflows.
+// Recurring jobs: assignment due-date reminders and streak record alerts.
 cron.schedule('*/15 * * * *', () => {
   sendAssignmentReminders().catch((err) => console.error('sendAssignmentReminders failed', err));
 });

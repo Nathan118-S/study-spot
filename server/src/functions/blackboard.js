@@ -24,7 +24,9 @@ export async function blackboardAuthUrl(user, body) {
     throw new HttpError(500, 'Blackboard is not configured. Set BLACKBOARD_CLIENT_ID and BLACKBOARD_REDIRECT_URI.');
   }
 
-  const state = crypto.randomUUID();
+  // The iOS app prefixes its state so the web /blackboard/callback page knows
+  // to hand the code back to the app instead of finishing in the browser.
+  const state = (body?.client === 'ios' ? 'ios.' : '') + crypto.randomUUID();
   await updateUser(user.id, { blackboard_state: state, blackboard_instance_url: instanceUrl });
   return { authUrl: buildAuthUrl(instanceUrl, clientId, redirectUri, state) };
 }

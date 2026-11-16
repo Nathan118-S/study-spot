@@ -10,10 +10,18 @@ const router = Router();
 const GOOGLE_AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth';
 const GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token';
 
+// The native iOS app drives these flows in an ASWebAuthenticationSession and
+// asks (with ?client=ios) to be sent back to its custom URL scheme instead of
+// the web frontend. Only this fixed scheme is ever redirected to.
+const IOS_RETURN_MARKER = '__ios_app__';
+const IOS_SCHEME = process.env.IOS_URL_SCHEME || 'studyspot';
+
 // "Sign in with Google" — issues an app session, no Calendar/Classroom scopes.
 router.get('/auth/google/start', async (req, res) => {
   const state = crypto.randomUUID();
-  const returnTo = typeof req.query.returnTo === 'string' ? req.query.returnTo : '/';
+  const returnTo = req.query.client === 'ios'
+    ? IOS_RETURN_MARKER
+    : typeof req.query.returnTo === 'string' ? req.query.returnTo : '/';
   await pool.query(
     'INSERT INTO oauth_states (state, purpose, return_to) VALUES ($1, $2, $3)',
     [state, 'login', returnTo]
@@ -81,6 +89,9 @@ router.get('/auth/google/callback', async (req, res) => {
     }
 
     const token = signSession(user.id);
+    if (stateRow.return_to === IOS_RETURN_MARKER) {
+      return res.redirect(`${IOS_SCHEME}://oauth/callback#token=${token}`);
+    }
     const returnTo = encodeURIComponent(stateRow.return_to || '/');
     res.redirect(`${process.env.FRONTEND_URL}/oauth/callback#token=${token}&returnTo=${returnTo}`);
   } catch (error) {
@@ -102,7 +113,7 @@ router.get('/connectors/google/start', requireAuth, async (req, res) => {
   const state = crypto.randomUUID();
   await pool.query(
     'INSERT INTO oauth_states (state, purpose, user_id, return_to) VALUES ($1, $2, $3, $4)',
-    [state, connector, req.user.id, null]
+    [state, connector, req.user.id, req.query.client === 'ios' ? IOS_RETURN_MARKER : null]
   );
   const [clientId, redirectUri] = await Promise.all([
     resolveSecret('GOOGLE_CLIENT_ID'),
@@ -162,6 +173,9 @@ router.get('/connectors/google/callback', async (req, res) => {
       [stateRow.user_id, stateRow.purpose, tokens.access_token, tokens.refresh_token || null, expiresAt, tokens.scope || null]
     );
 
+    if (stateRow.return_to === IOS_RETURN_MARKER) {
+      return res.redirect(`${IOS_SCHEME}://connected?connector=${encodeURIComponent(stateRow.purpose)}`);
+    }
     res.send(
       '<html><body><script>window.opener && window.opener.postMessage("google-connected", "*"); window.close();</script>Connected. You can close this window.</body></html>'
     );

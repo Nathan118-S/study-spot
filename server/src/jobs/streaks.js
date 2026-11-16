@@ -18,8 +18,7 @@ function computeClassStreak(assignments, now) {
   return run;
 }
 
-// Mirrors base44/functions/checkStreakRecords — updates each class's
-// best_streak and notifies the owner when they set a new record.
+// Scheduled job: updates each class's best_streak and notifies the owner when they set a new record.
 export async function checkStreakRecords() {
   const now = new Date();
 

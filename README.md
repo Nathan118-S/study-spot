@@ -12,6 +12,8 @@ PostgreSQL API — no third-party app platform required.
 - `server/` — the backend API (Express + PostgreSQL), including auth, data
   storage, two-factor auth, admin tools, and the Google/Blackboard sync
   integrations.
+- `ios/` — the native iOS/iPadOS app (SwiftUI). It uses the same backend; see
+  [`ios/README.md`](ios/README.md).
 
 ## Prerequisites
 

@@ -17,6 +17,9 @@ Start with `README.md` for local setup and environment variables.
 - `vite.config.js` — Vite config, including the `@` path alias and the dev
   proxy to the backend.
 - `server/.env` — local-only environment values; never commit secrets.
+- `ios/` — native SwiftUI iOS app (Xcode 16 project, iOS 17+) that talks to the
+  same backend. `ios/StudySpot/Core/APIClient.swift` mirrors `src/api/client.js`;
+  keep the two in step when the API changes. See `ios/README.md`.
 
 ## Working Notes
 

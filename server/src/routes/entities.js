@@ -6,7 +6,6 @@ const router = Router();
 router.use(requireAuth);
 
 // Entity configs: table name, owner column, and the set of writable columns.
-// Mirrors the base44/entities/*.jsonc schemas.
 const ENTITIES = {
   Assignment: {
     table: 'assignments',

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- Default Study Spot server. Users can change it on the sign-in screen. -->
+	<key>StudySpotServerURL</key>
+	<string>$(STUDYSPOT_SERVER_URL)</string>
+	<!-- App URL scheme: OAuth sign-in, Google connectors and Blackboard return here. -->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>studyspot</string>
+			</array>
+		</dict>
+	</array>
+	<!-- Allows http:// to localhost / LAN servers during development. Use https in production. -->
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
+	</dict>
+</dict>
+</plist>

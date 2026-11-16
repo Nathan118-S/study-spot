@@ -37,8 +37,7 @@ function normalizeLeads(raw) {
   return [24];
 }
 
-// Mirrors base44/functions/sendAssignmentReminders — emails users about
-// assignments due soon, per-lead-time, honoring do-not-disturb windows.
+// Scheduled job: emails users about assignments due soon, per-lead-time, honoring do-not-disturb windows.
 export async function sendAssignmentReminders() {
   const now = new Date();
   const fetchHorizon = new Date(now.getTime() + FETCH_HORIZON_HOURS * 60 * 60 * 1000);

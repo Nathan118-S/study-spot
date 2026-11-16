@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS users (
   passkey_alg INTEGER,
   passkey_counter INTEGER NOT NULL DEFAULT 0,
 
-  -- Free-form app-specific settings/state (mirrors the Base44 "data" bag):
+  -- Free-form app-specific settings/state (stored in the "data" JSONB bag):
   -- onboarding_completed, welcome_style, leaderboard_enabled, reminders_enabled,
   -- reminder_lead_hours, dnd_enabled/start/end, sync_completion_to_classroom,
   -- grading_scale, last_sync, blackboard_*, email_2fa_code/expires, etc.
