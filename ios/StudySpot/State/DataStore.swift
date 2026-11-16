@@ -69,7 +69,7 @@ final class DataStore {
 
     /// Auto-refresh synced data if the last sync was more than 6 hours ago.
     func autoSyncIfStale(user: User, auth: AuthStore) async {
-        guard !user.isDemo else { return }
+        guard !user.isDemo, connections.any else { return }
         if let last = user.lastSync, Date().timeIntervalSince(last) < 6 * 3600 { return }
         await runSync(silent: true, auth: auth)
     }
@@ -80,18 +80,30 @@ final class DataStore {
         if !silent { syncMessage = "Syncing..." }
         defer { isSyncing = false }
 
-        async let cal = try? api.invoke("syncGoogleCalendar")
-        async let cls = try? api.invoke("syncGoogleClassroom")
-        async let bb = try? api.invoke("syncBlackboard")
-        let (calRes, clsRes, bbRes) = await (cal, cls, bb)
+        // Only connected services; the others would just fail.
+        let services: [(label: String, function: String)] = [
+            (connections.calendar, "Calendar", "syncGoogleCalendar"),
+            (connections.classroom, "Classroom", "syncGoogleClassroom"),
+            (connections.blackboard, "Blackboard", "syncBlackboard"),
+        ].filter { $0.0 }.map { ($0.1, $0.2) }
 
-        func part(_ name: String, _ r: JSONValue?) -> String {
-            guard let r else { return "\(name): not connected" }
-            return "\(name): \(Int(r["imported"]?.doubleValue ?? 0)) new"
+        let results: [String] = await withTaskGroup(of: (Int, String).self) { group in
+            for (i, service) in services.enumerated() {
+                group.addTask {
+                    do {
+                        let r = try await APIClient.shared.invoke(service.function)
+                        return (i, "\(service.label): \(Int(r["imported"]?.doubleValue ?? 0)) new")
+                    } catch {
+                        return (i, "\(service.label): \(error.localizedDescription)")
+                    }
+                }
+            }
+            var out = Array(repeating: "", count: services.count)
+            for await (i, text) in group { out[i] = text }
+            return out
         }
-        if !silent {
-            syncMessage = [part("Calendar", calRes), part("Classroom", clsRes), part("Blackboard", bbRes)].joined(separator: " · ")
-        }
+        if !silent { syncMessage = results.joined(separator: " · ") }
+        guard !services.isEmpty else { await reloadData(); return }
         await reloadData()
         try? await auth.update(["last_sync": .string(ISO8601.string(from: Date()))])
     }

@@ -75,54 +75,64 @@ export default function Dashboard() {
     })();
   }, [load]);
 
+  // null until loaded, so auto-sync waits for it.
+  const [connectionsLoaded, setConnectionsLoaded] = useState(false);
+
   useEffect(() => {
     if (isDemoUser(user)) {
       setConnections(demoConnections);
+      setConnectionsLoaded(true);
       return;
     }
     api.functions
       .invoke('checkGoogleConnections', {})
       .then((res) => setConnections(res.data || {}))
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => setConnectionsLoaded(true));
   }, [user]);
 
+  // Only the services that are actually connected are synced; the others
+  // would just fail with "not connected".
   const runSync = useCallback(
     async (silent = false) => {
+      if (isDemoUser(user)) return;
+      const services = [
+        ['calendar', 'Calendar', 'syncGoogleCalendar'],
+        ['classroom', 'Classroom', 'syncGoogleClassroom'],
+        ['blackboard', 'Blackboard', 'syncBlackboard'],
+      ].filter(([key]) => connections[key]);
       setSyncing(true);
-      if (!silent) setSyncMsg('Syncing...');
+      if (!silent) setSyncMsg(services.length ? 'Syncing...' : '');
       try {
-        const [calRes, clsRes, bbRes] = await Promise.allSettled([
-          api.functions.invoke('syncGoogleCalendar', {}),
-          api.functions.invoke('syncGoogleClassroom', {}),
-          api.functions.invoke('syncBlackboard', {}),
-        ]);
-        const parts = [];
-        if (calRes.status === 'fulfilled') parts.push(`Calendar: ${calRes.value.data?.imported ?? 0} new`);
-        else parts.push('Calendar: not connected');
-        if (clsRes.status === 'fulfilled') parts.push(`Classroom: ${clsRes.value.data?.imported ?? 0} new`);
-        else parts.push('Classroom: not connected');
-        if (bbRes.status === 'fulfilled') parts.push(`Blackboard: ${bbRes.value.data?.imported ?? 0} new`);
-        else parts.push('Blackboard: not connected');
-        if (!silent) setSyncMsg(parts.join(' · '));
+        const results = await Promise.allSettled(services.map(([, , fn]) => api.functions.invoke(fn, {})));
+        const parts = results.map((r, i) =>
+          r.status === 'fulfilled'
+            ? `${services[i][1]}: ${r.value.data?.imported ?? 0} new`
+            : `${services[i][1]}: ${r.reason?.message || 'failed'}`
+        );
+        if (!silent && parts.length) setSyncMsg(parts.join(' · '));
         await load();
-        await api.auth.updateMe({ last_sync: new Date().toISOString() });
+        if (services.length) await api.auth.updateMe({ last_sync: new Date().toISOString() });
       } catch (e) {
         if (!silent) setSyncMsg('Sync failed: ' + (e.message || 'error'));
       } finally {
         setSyncing(false);
       }
     },
-    [load]
+    [load, user, connections]
   );
 
-  // Auto-refresh Google data if last sync was more than 6 hours ago.
+  // Auto-refresh synced data if the last sync was more than 6 hours ago.
+  const autoSynced = React.useRef(false);
   useEffect(() => {
-    if (!user || isDemoUser(user)) return;
+    if (!user || isDemoUser(user) || !connectionsLoaded || autoSynced.current) return;
+    if (!connections.calendar && !connections.classroom && !connections.blackboard) return;
     const last = user.data?.last_sync ? new Date(user.data.last_sync) : null;
     if (!last || Date.now() - last.getTime() > 6 * 60 * 60 * 1000) {
+      autoSynced.current = true;
       runSync(true);
     }
-  }, [user, runSync]);
+  }, [user, runSync, connections, connectionsLoaded]);
 
   const welcomeStyle = user?.welcome_style ?? user?.data?.welcome_style ?? 'large';
 

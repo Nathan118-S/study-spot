@@ -2,6 +2,8 @@ import pg from 'pg';
 
 export const pool = new pg.Pool({
   connectionString: process.env.DATABASE_URL,
+  // Optional cap on connections (e.g. 1 for single-connection databases).
+  ...(process.env.PG_POOL_MAX ? { max: Number(process.env.PG_POOL_MAX) } : {}),
 });
 
 export async function query(text, params) {
