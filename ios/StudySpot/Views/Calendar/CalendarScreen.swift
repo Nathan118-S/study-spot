@@ -84,6 +84,7 @@ struct CalendarScreen: View {
             }
             .padding()
         }
+        .background(Color(.systemGroupedBackground))
         .navigationTitle("Calendar")
         .refreshable { await data.reloadData() }
         .toolbar {
