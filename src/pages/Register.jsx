@@ -4,7 +4,7 @@ import { api } from "@/api/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { UserPlus, AtSign, Lock, Loader2, User } from "lucide-react";
+import { AtSign, Lock, Loader2, User } from "lucide-react";
 import AuthLayout from "@/components/AuthLayout";
 import { safeReturnTo } from "@/lib/authReturnTo";
 import { completeIosHandoff } from "@/lib/iosHandoff";
@@ -43,7 +43,6 @@ export default function Register() {
 
   return (
     <AuthLayout
-      icon={UserPlus}
       title="Create your account"
       subtitle="Sign up to get started"
       footer={

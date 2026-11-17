@@ -4,7 +4,7 @@ import { api } from "@/api/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { LogIn, AtSign, Lock, Loader2, KeyRound } from "lucide-react";
+import { AtSign, Lock, Loader2, KeyRound } from "lucide-react";
 import AuthLayout from "@/components/AuthLayout";
 import { safeReturnTo } from "@/lib/authReturnTo";
 import { completeIosHandoff, isIosHandoff } from "@/lib/iosHandoff";
@@ -62,7 +62,6 @@ export default function Login() {
 
   return (
     <AuthLayout
-      icon={LogIn}
       title="Welcome back"
       subtitle={isIosHandoff() ? "Log in to continue in the Study Spot app" : "Log in to your account"}
       footer={
