@@ -134,6 +134,9 @@ certificates. These steps use `studyspot.education`; substitute your own.
 (often left over from before). Delete the A/AAAA records for the hostname
 under **DNS → Records**, then re-save the tunnel's public hostname so
 Cloudflare creates a proxied CNAME to `<tunnel-id>.cfargotunnel.com`.
+**Error 1016** means the CNAME's target doesn't exist (often the tunnel's
+name was used instead of its 36-character ID). Delete the CNAME and re-add
+the public hostname on the *healthy* tunnel so Cloudflare creates it.
 **502 / 1033** means DNS is fine, but the tunnel can't reach the app: check
 the hostname's service URL and `curl http://localhost:8787/api/health`.
 
