@@ -26,7 +26,8 @@ export async function blackboardAuthUrl(user, body) {
 
   // The iOS app prefixes its state so the web /blackboard/callback page knows
   // to hand the code back to the app instead of finishing in the browser.
-  const state = (body?.client === 'ios' ? 'ios.' : '') + crypto.randomUUID();
+  // The iOS and Android apps share the studyspot:// scheme and the "ios." state prefix.
+  const state = (['ios', 'android'].includes(body?.client) ? 'ios.' : '') + crypto.randomUUID();
   await updateUser(user.id, { blackboard_state: state, blackboard_instance_url: instanceUrl });
   return { authUrl: buildAuthUrl(instanceUrl, clientId, redirectUri, state) };
 }

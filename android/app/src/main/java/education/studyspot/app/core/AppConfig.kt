@@ -81,8 +81,17 @@ class AppConfig(context: Context) {
         const val URL_SCHEME = "studyspot"
         /** Where the website hands the session back (see src/lib/iosHandoff.js). */
         const val AUTH_CALLBACK = "studyspot://oauth/callback"
-        /** Sent as `?client=` so the website and server know it's this app. */
+        /** Sent as `?client=` to the website's /login and /register (src/lib/iosHandoff.js). */
         const val CLIENT_ID = "android"
+
+        /**
+         * `client` value for the Google connector (?client=) and Blackboard
+         * (blackboardAuthUrl { client }) flows. The server only recognises "ios"
+         * there (server/src/routes/googleAuth.js, functions/blackboard.js); it
+         * means "return to studyspot://", which is this app's scheme too.
+         * Switch to [CLIENT_ID] once the server accepts "android".
+         */
+        const val CONNECTOR_CLIENT_ID = "android"
 
         private const val PREFS = "app_config"
         private const val KEY_SERVER = "ss_server_url"

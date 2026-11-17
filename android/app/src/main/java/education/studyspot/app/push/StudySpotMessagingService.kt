@@ -5,6 +5,7 @@ import com.google.firebase.messaging.RemoteMessage
 
 /** Receives FCM messages (only active when [PushManager.isConfigured]). */
 class StudySpotMessagingService : FirebaseMessagingService() {
+    @Suppress("OVERRIDE_DEPRECATION") // still the token-refresh callback in firebase-messaging
     override fun onNewToken(token: String) {
         PushManager.onNewToken(applicationContext, token)
     }

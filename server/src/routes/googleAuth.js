@@ -29,7 +29,7 @@ router.get('/connectors/google/start', requireAuth, async (req, res) => {
   const state = crypto.randomUUID();
   await pool.query(
     'INSERT INTO oauth_states (state, purpose, user_id, return_to) VALUES ($1, $2, $3, $4)',
-    [state, connector, req.user.id, req.query.client === 'ios' ? IOS_RETURN_MARKER : null]
+    [state, connector, req.user.id, ['ios', 'android'].includes(req.query.client) ? IOS_RETURN_MARKER : null]
   );
   const [clientId, redirectUri] = await Promise.all([
     resolveSecret('GOOGLE_CLIENT_ID'),

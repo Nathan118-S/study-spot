@@ -226,12 +226,12 @@ class ApiClient(
     // region Connectors
 
     /**
-     * URL that starts a Google Calendar/Classroom connection in the browser.
-     * NOTE: the server currently only returns to the app for `client=ios`
-     * (server/src/routes/googleAuth.js); Android support there is a follow-up.
+     * URL that starts a Google Calendar/Classroom connection ("google_calendar" /
+     * "google_classroom") in a Custom Tab; the server redirects back to
+     * studyspot://connected (see [AppConfig.CONNECTOR_CLIENT_ID]).
      */
     suspend fun googleConnectorUrl(connector: String): String {
-        val res = send("/connectors/google/start?connector=$connector&client=${AppConfig.CLIENT_ID}", method = "GET")
+        val res = send("/connectors/google/start?connector=$connector&client=${AppConfig.CONNECTOR_CLIENT_ID}", method = "GET")
         return res["url"].stringValue ?: throw ApiException(0, "Couldn't start the Google connection.")
     }
 
