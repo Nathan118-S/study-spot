@@ -20,7 +20,7 @@ cd android
 echo "sdk.dir=$HOME/Android/Sdk" > local.properties   # or set ANDROID_HOME
 ./gradlew :app:assembleDebug          # APK in app/build/outputs/apk/debug/
 ./gradlew :app:installDebug           # install on a connected device/emulator
-./gradlew :app:testDebugUnitTest      # JVM unit tests (JSON decoding, config, timer, class schedule, push parsing)
+./gradlew :app:testDebugUnitTest      # JVM unit tests (JSON, config, timer, class schedule, push, export, 2FA, admin)
 ./gradlew :app:lintDebug
 ```
 
@@ -46,6 +46,60 @@ sign-in method succeeds, the website redirects to
 `studyspot://oauth/callback#token=…` (see `src/lib/iosHandoff.js`); the app
 stores the token encrypted with an Android Keystore key and loads
 `/api/auth/me`. Accounts with two-factor authentication then verify natively.
+
+## Passkeys (Digital Asset Links)
+
+Passkeys (2FA at sign-in, Settings → Security, and the admin unlock) use
+Android Credential Manager with the **server's host as the relying party**
+(`AppConfig.passkeyRelyingParty`, shown in Settings → Server). Android only
+lets an app use passkeys for a domain that vouches for it, so the server must
+serve `https://<server host>/.well-known/assetlinks.json` naming this app's
+signing certificate:
+
+1. Get the SHA-256 fingerprint of every key that signs the app you install:
+   `./gradlew signingReport` (debug key) or
+   `keytool -list -v -keystore <your.jks>`; for Play builds also add the
+   **app signing key** from Play Console → Setup → App signing.
+2. On the server set (see `server/.env.example`):
+   ```properties
+   ANDROID_APP_FINGERPRINTS=AB:CD:...:EF,12:34:...:56
+   ANDROID_APP_ID=education.studyspot.app   # the default
+   ```
+   `server/src/server.js` then serves the statement (404 while unset). Behind a
+   proxy, forward `/.well-known/` to the API, as for iOS.
+3. Check it with Google's tester:
+   `https://digitalassetlinks.googleapis.com/v1/statements:list?source.web.site=https://<host>&relation=delegate_permission/common.get_login_creds`.
+
+The device needs Google Play services (or another passkey provider) and a
+screen lock. The server address must be `https://` (passkeys don't work
+against `http://10.0.2.2` emulator backends).
+
+**Server-side origin check:** a native Android passkey reports its origin as
+`android:apk-key-hash:<base64url SHA-256 of the signing cert>` rather than
+`https://<host>`. `server/src/lib/passkeys.js` (`originAllowed`, and the rpId
+taken from the origin) currently accepts only `https:` origins, so it must also
+accept `android:apk-key-hash:` origins whose hash matches one of
+`ANDROID_APP_FINGERPRINTS` (and then compare the rpIdHash with the server's
+own host) before Android passkeys verify.
+
+## Settings, security and admin
+
+- Settings sub-pages live in `ui/settings/<Name>SettingsScreen.kt`; shared
+  building blocks (sections, toggles, busy buttons, confirm dialogs, the code
+  field, time picker) are in `SettingsComponents.kt`.
+- `SchoolAccessNote(service)` (`ui/settings/SchoolAccessNote.kt`) is the
+  "Some schools block…" notice with the *Email my school's IT team* button; the
+  email text is in `SchoolITEmail.kt` (same text as iOS and the website).
+- Data export (`data/ExcelExport.kt`) writes SpreadsheetML (`.xls`) to the
+  cache and shares it through the `FileProvider` declared in the manifest
+  (`res/xml/file_paths.xml`).
+- `auth/PasskeyService.kt` wraps Credential Manager; `auth/OtpAuth.kt` parses
+  the `otpauth://` setup URI (the QR code is drawn with ZXing).
+- Admin (`ui/admin/`) keeps its own back stack inside the single `admin`
+  route. Account management needs the 2FA step-up: `AdminUnlock.run { … }`
+  shows the unlock dialog when needed, stores the token in
+  `ApiClient.adminElevation`, and re-prompts and retries once on
+  `elevationRequired`.
 
 ## Push notifications (optional)
 

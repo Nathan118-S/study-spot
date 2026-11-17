@@ -86,10 +86,10 @@ class AppConfig(context: Context) {
 
         /**
          * `client` value for the Google connector (?client=) and Blackboard
-         * (blackboardAuthUrl { client }) flows. The server only recognises "ios"
-         * there (server/src/routes/googleAuth.js, functions/blackboard.js); it
-         * means "return to studyspot://", which is this app's scheme too.
-         * Switch to [CLIENT_ID] once the server accepts "android".
+         * (blackboardAuthUrl { client }) flows. The server accepts "ios" and
+         * "android" there (server/src/routes/googleAuth.js, functions/blackboard.js);
+         * both mean "return to the studyspot:// scheme" (studyspot://connected
+         * and studyspot://blackboard?code=…, see navigation.DeepLinkHandler).
          */
         const val CONNECTOR_CLIENT_ID = "android"
 

@@ -33,6 +33,27 @@ app.get('/.well-known/apple-app-site-association', (req, res) => {
   res.json({ webcredentials: { apps: [appId] } });
 });
 
+// Digital Asset Links, so the native Android app (android/) can create and use
+// passkeys for this domain through Credential Manager. Set
+// ANDROID_APP_FINGERPRINTS to the app's signing-certificate SHA-256
+// fingerprints, comma-separated ("AB:CD:…" as printed by `keytool -list -v`
+// or `./gradlew signingReport`; include the debug and Play app-signing keys as
+// needed). ANDROID_APP_ID is the application ID (default education.studyspot.app).
+app.get('/.well-known/assetlinks.json', (req, res) => {
+  const fingerprints = String(process.env.ANDROID_APP_FINGERPRINTS || '')
+    .split(',')
+    .map((f) => f.trim().toUpperCase())
+    .filter(Boolean);
+  if (!fingerprints.length) return res.status(404).json({ error: 'Not configured' });
+  const packageName = (process.env.ANDROID_APP_ID || '').trim() || 'education.studyspot.app';
+  res.json([
+    {
+      relation: ['delegate_permission/common.handle_all_urls', 'delegate_permission/common.get_login_creds'],
+      target: { namespace: 'android_app', package_name: packageName, sha256_cert_fingerprints: fingerprints },
+    },
+  ]);
+});
+
 app.use('/api/auth', authRoutes);
 app.use('/api', googleAuthRoutes);
 app.use('/api/entities', entityRoutes);

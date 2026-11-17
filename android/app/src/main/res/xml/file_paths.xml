@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Files the app shares through its FileProvider (see AndroidManifest.xml). -->
+<paths>
+    <!-- Settings > Data: study-spot-export.xls -->
+    <cache-path name="exports" path="exports/" />
+</paths>
