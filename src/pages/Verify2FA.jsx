@@ -114,7 +114,7 @@ export default function Verify2FA() {
   if (user && methods.length === 0) return <Navigate to="/" replace />;
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-background">
+    <div className="min-h-screen flex items-center justify-center p-4">
       <div className="w-full max-w-sm space-y-6">
         <div className="text-center space-y-3">
           <div className="mx-auto h-14 w-14 rounded-full bg-primary/10 flex items-center justify-center">

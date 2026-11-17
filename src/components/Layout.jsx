@@ -78,13 +78,13 @@ export default function Layout() {
   const displayName = user?.name || user?.full_name || user?.email || 'User';
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex">
+    <div className="min-h-screen text-foreground flex">
       {showOnboarding && <Onboarding />}
 
       {/* Sidebar: iPadOS style on desktop; the account sheet on phones. */}
       <aside
         className={cn(
-          'fixed z-50 flex flex-col bg-sidebar transition-all duration-300',
+          'fixed z-50 flex flex-col bg-sidebar transition-all duration-300 md:bg-sidebar/55 md:backdrop-blur-2xl md:backdrop-saturate-150',
           // Phones: a sheet from the bottom with account actions.
           'inset-x-0 bottom-0 max-h-[85dvh] rounded-t-[14px] shadow-2xl',
           accountOpen ? 'translate-y-0' : 'translate-y-full',

@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 export default function PrivacyPolicy() {
   const updated = 'August 22, 2026';
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-screen text-foreground">
       <header className="sticky top-0 z-30 backdrop-blur bg-background/80 border-b border-border">
         <div className="max-w-3xl mx-auto px-4 h-16 flex items-center gap-3">
           <Button asChild variant="ghost" size="icon">

@@ -105,7 +105,7 @@ export default function Onboarding() {
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="fixed inset-0 z-50 flex items-stretch md:items-center justify-center p-0 md:p-4 overflow-y-auto bg-background"
+      className="fixed inset-0 z-50 flex items-stretch md:items-center justify-center p-0 md:p-4 overflow-y-auto bg-background/55 backdrop-blur-2xl"
     >
       <motion.div
         initial={{ opacity: 0, y: 24, scale: 0.96 }}
