@@ -3,6 +3,7 @@
 #   cp .env.docker.example .env      # then fill it in
 #   docker compose up -d --build                       # app on port 8787
 #   docker compose --profile https up -d --build       # + automatic HTTPS (Caddy)
+#   docker compose --profile tunnel up -d --build      # + Cloudflare Tunnel (no open ports)
 #
 # See DOCKER.md for the full guide.
 
@@ -55,6 +56,20 @@ services:
       - ./docker/Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy-data:/data
       - caddy-config:/config
+
+  # Optional: Cloudflare Tunnel. Outbound-only connection to Cloudflare, which
+  # serves your domain over HTTPS: no open ports, no certificates. Create the
+  # tunnel in the Cloudflare dashboard, add a public hostname pointing at
+  # http://app:8787, and put its token in TUNNEL_TOKEN. See DOCKER.md.
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    profiles: ["tunnel"]
+    restart: unless-stopped
+    depends_on:
+      - app
+    command: tunnel --no-autoupdate run
+    environment:
+      TUNNEL_TOKEN: ${TUNNEL_TOKEN:?Set TUNNEL_TOKEN in .env to use the tunnel profile}
 
 volumes:
   db-data:

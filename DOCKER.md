@@ -11,8 +11,10 @@ iPhone app / browser ──HTTPS──▶ Caddy :443 ──▶ app :8787 (API + 
 
 - A Linux server with Docker Engine and the Compose plugin
   (`docker compose version` should work).
-- For HTTPS: a domain name whose DNS **A record** points at the server, and
-  ports **80 and 443** open in the firewall.
+- For HTTPS, either:
+  - a **Cloudflare Tunnel** (domain on Cloudflare; no open ports needed), or
+  - a domain whose DNS **A record** points at the server, with ports **80
+    and 443** open (Caddy gets the certificate).
 
 Install Docker on Ubuntu/Debian:
 
@@ -78,6 +80,58 @@ Then open `https://<your domain>` (or `http://<server-ip>:8787`).
 
 The database schema is created or updated automatically every time the app
 starts.
+
+### Or: Cloudflare Tunnel (no open ports)
+
+If your domain is on Cloudflare, a tunnel is the simplest option. The
+`cloudflared` container connects *out* to Cloudflare, and Cloudflare serves
+your domain over HTTPS. You don't need open ports, a public IP or
+certificates. These steps use `studyspot.education`; substitute your own.
+
+1. In the Cloudflare dashboard, open **Zero Trust → Networks → Tunnels →
+   Create a tunnel**, choose **Cloudflared**, and name it (e.g. `studyspot`).
+2. On the install screen, copy the **token**: the long string after
+   `--token` in any of the shown commands. You don't need to run those
+   commands; the container does it.
+3. Under **Public Hostnames** (or **Routes**), add one:
+   - Domain: `studyspot.education` (leave the subdomain empty)
+   - Service type: **HTTP**, URL: **`app:8787`**
+
+   Cloudflare creates the DNS record for you.
+4. In `.env`, set:
+
+   ```
+   PUBLIC_URL=https://studyspot.education
+   TUNNEL_TOKEN=<the token>
+   APP_BIND=127.0.0.1
+   ```
+
+   `APP_BIND=127.0.0.1` keeps port 8787 closed to the outside; the tunnel
+   reaches the app over Docker's internal network.
+5. Start with the tunnel profile:
+
+   ```bash
+   docker compose --profile tunnel up -d --build
+   ```
+
+   Check it connected (look for `Registered tunnel connection`):
+
+   ```bash
+   docker compose logs cloudflared | tail
+   ```
+
+6. Recommended Cloudflare settings for `studyspot.education`:
+   - **SSL/TLS → Edge Certificates → Always Use HTTPS**: on.
+   - **Speed → Optimization → Rocket Loader**: off. It rewrites the
+     website's scripts.
+   - If the iOS app gets errors while the website works, check
+     **Security → Bots** (Bot Fight Mode) and **Security → WAF**. They can
+     challenge the app's API requests, because the app isn't a browser. Turn
+     Bot Fight Mode off, or add a WAF *Skip* rule for URI path starting with
+     `/api/`.
+
+Use the same `--profile tunnel` in the update and stop commands below
+(instead of `--profile https`).
 
 ## 4. Create your account and make it admin
 
