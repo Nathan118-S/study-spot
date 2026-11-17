@@ -4,7 +4,7 @@ import { api } from "@/api/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { AtSign, Lock, Loader2, User } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import AuthLayout from "@/components/AuthLayout";
 import { safeReturnTo } from "@/lib/authReturnTo";
 import { completeIosHandoff } from "@/lib/iosHandoff";
@@ -44,13 +44,13 @@ export default function Register() {
   return (
     <AuthLayout
       title="Create your account"
-      subtitle="Sign up to get started"
+      subtitle="Sign up to start planning with Study Spot"
       footer={
         <>
           Already have an account?{" "}
           <Link
             to={"/login" + (safeReturnTo() !== "/" ? "?returnTo=" + encodeURIComponent(safeReturnTo()) : "")}
-            className="text-primary font-medium hover:underline"
+            className="ml-1 text-primary font-semibold hover:underline"
           >
             Log in
           </Link>
@@ -64,79 +64,65 @@ export default function Register() {
       )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="name">Name</Label>
-          <div className="relative">
-            <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
-            <Input
-              id="name"
-              type="text"
-              autoComplete="name"
-              placeholder="Your name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="pl-10 h-12"
-              required
-            />
-          </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="name" className="text-[15px] font-medium">Name</Label>
+          <Input
+            id="name"
+            type="text"
+            autoComplete="name"
+            placeholder="Your name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className="h-12 rounded-xl"
+            required
+          />
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="username">Username</Label>
-          <div className="relative">
-            <AtSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
-            <Input
-              id="username"
-              type="text"
-              autoComplete="username"
-              autoCapitalize="none"
-              autoCorrect="off"
-              spellCheck={false}
-              placeholder="your-username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value.toLowerCase())}
-              className="pl-10 h-12"
-              minLength={3}
-              maxLength={30}
-              required
-            />
-          </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="username" className="text-[15px] font-medium">Username</Label>
+          <Input
+            id="username"
+            type="text"
+            autoComplete="username"
+            autoCapitalize="none"
+            autoCorrect="off"
+            spellCheck={false}
+            placeholder="your-username"
+            value={username}
+            onChange={(e) => setUsername(e.target.value.toLowerCase())}
+            className="h-12 rounded-xl"
+            minLength={3}
+            maxLength={30}
+            required
+          />
           <p className="text-xs text-muted-foreground">
             3–30 characters: letters, numbers, dots, dashes and underscores.
           </p>
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="password">Password</Label>
-          <div className="relative">
-            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
-            <Input
-              id="password"
-              type="password"
-              autoComplete="new-password"
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="pl-10 h-12"
-              required
-            />
-          </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="password" className="text-[15px] font-medium">Password</Label>
+          <Input
+            id="password"
+            type="password"
+            autoComplete="new-password"
+                        value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="h-12 rounded-xl"
+            required
+          />
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="confirm">Confirm Password</Label>
-          <div className="relative">
-            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
-            <Input
-              id="confirm"
-              type="password"
-              autoComplete="new-password"
-              placeholder="••••••••"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              className="pl-10 h-12"
-              required
-            />
-          </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="confirm" className="text-[15px] font-medium">Confirm password</Label>
+          <Input
+            id="confirm"
+            type="password"
+            autoComplete="new-password"
+                        value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            className="h-12 rounded-xl"
+            required
+          />
         </div>
-        <Button type="submit" className="w-full h-12 font-medium" disabled={loading}>
+        <Button type="submit" className="w-full h-12 rounded-full text-base font-semibold shadow-sm" disabled={loading}>
           {loading ? (
             <>
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
