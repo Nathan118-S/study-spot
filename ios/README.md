@@ -38,8 +38,8 @@ preset your signing team. You can re-run it any time.
 The app connects to `http://localhost:8787` by default, which is right for the
 simulator with `cd server && npm run dev`. To change the server:
 
-- per device: tap **Server** on the welcome screen (or *Settings → Server*)
-  and enter your server's address, or
+- per device: long-press the logo on the welcome screen (or, once signed
+  in, *Settings → Server*) and enter your server's address, or
 - per build: set the `STUDYSPOT_SERVER_URL` build setting on the target.
 
 **Signing in happens on the website.** *Log in* and *Create your account* open

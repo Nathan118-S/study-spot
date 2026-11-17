@@ -46,86 +46,47 @@ struct LandingView: View {
     @State private var busy: WebSignIn.Page?
     @State private var error = ""
 
-    private let features: [Feature] = [
-        Feature(symbol: "calendar", title: "Google Calendar Sync", text: "Assignments auto-import from your Google Calendar events using smart keyword matching."),
-        Feature(symbol: "book", title: "Google Classroom", text: "Pull coursework, due dates, and attachments straight from Classroom — and mark work done on both sides."),
-        Feature(symbol: "building.columns", title: "Blackboard Learn", text: "Connect your school's Blackboard instance to import courses and gradebook due-dated items."),
-        Feature(symbol: "bell", title: "Smart Reminders", text: "Set custom reminder times before each due date and a do-not-disturb window for quiet hours."),
-        Feature(symbol: "timer", title: "Study Timer", text: "A built-in Pomodoro timer tracks focus and break sessions, right on your Lock Screen."),
-        Feature(symbol: "flame", title: "Streak Tracking", text: "Stay motivated with completion streaks per class, with alerts when you break a record."),
-        Feature(symbol: "checkmark.circle", title: "Grading & Progress", text: "Track scores, subtasks, and per-assignment progress with a custom grading scale."),
-        Feature(symbol: "square.stack.3d.up", title: "Templates & Widgets", text: "Reuse assignment templates and see what's next from your Home and Lock Screen."),
-        Feature(symbol: "checkmark.shield", title: "Secure & Private", text: "Per-user data isolation plus optional two-factor auth (TOTP, email, or passkeys)."),
-    ]
-
-    struct Feature: Identifiable {
-        var symbol: String
-        var title: String
-        var text: String
-        var id: String { title }
-    }
-
     var body: some View {
-        ScrollView {
-            VStack(spacing: 28) {
-                VStack(spacing: 12) {
-                    LogoMark(size: 72)
-                    Text("Built for students who juggle everything")
-                        .font(.footnote.weight(.semibold)).foregroundStyle(.tint)
-                    Text("All your assignments, in one place.")
-                        .font(.largeTitle.bold()).multilineTextAlignment(.center)
-                    Text("Study Spot pulls every assignment from Google Calendar, Google Classroom, and Blackboard into a single dashboard — with smart reminders, a study timer, streaks, grading, and analytics.")
-                        .font(.callout).foregroundStyle(.secondary).multilineTextAlignment(.center)
-                }
-                .padding(.top, 24)
+        VStack(spacing: 0) {
+            Spacer()
 
-                VStack(spacing: 12) {
-                    if let reason = auth.disabledReason {
-                        Label {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text("Your account has been disabled.").font(.subheadline.weight(.semibold))
-                                if !reason.isEmpty { Text(reason).font(.footnote) }
-                            }
-                        } icon: { Image(systemName: "nosign") }
-                        .foregroundStyle(.red)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(12)
-                        .background(Color.red.opacity(0.1), in: RoundedRectangle(cornerRadius: 12))
-                    }
-                    signInButton(.register, title: "Create your account", prominent: true)
-                    signInButton(.login, title: "Log in", prominent: false)
-                    if !error.isEmpty {
-                        Text(error).font(.footnote).foregroundStyle(.red).multilineTextAlignment(.center)
-                    }
-                    Text("You'll sign in on the Study Spot website, then return here automatically.")
-                        .font(.footnote).foregroundStyle(.secondary).multilineTextAlignment(.center)
-                }
-
-                VStack(spacing: 12) {
-                    ForEach(features) { f in
-                        HStack(alignment: .top, spacing: 14) {
-                            Image(systemName: f.symbol).font(.title3).foregroundStyle(.tint).frame(width: 28)
-                            VStack(alignment: .leading, spacing: 3) {
-                                Text(f.title).font(.headline)
-                                Text(f.text).font(.subheadline).foregroundStyle(.secondary)
-                            }
-                            Spacer(minLength: 0)
-                        }
-                        .padding(16)
-                        .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 12))
-                    }
-                }
-
-                HStack(spacing: 20) {
-                    NavigationLink("Privacy Policy") { PrivacyPolicyView() }
-                    Button("Server settings") { showServer = true }
-                }
-                .font(.footnote)
-                .padding(.bottom, 8)
+            // Logo and name. Long-press the logo for server settings
+            // (only needed when pointing the app at another server).
+            VStack(spacing: 16) {
+                LogoMark(size: 112)
+                    .onLongPressGesture { showServer = true }
+                    .accessibilityAction(named: "Server settings") { showServer = true }
+                Text("Study Spot")
+                    .font(.largeTitle.bold())
             }
-            .padding(.horizontal, 20)
+
+            Spacer()
+
+            VStack(spacing: 12) {
+                if let reason = auth.disabledReason {
+                    Label {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Your account has been disabled.").font(.subheadline.weight(.semibold))
+                            if !reason.isEmpty { Text(reason).font(.footnote) }
+                        }
+                    } icon: { Image(systemName: "nosign") }
+                    .foregroundStyle(.red)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(12)
+                    .background(Color.red.opacity(0.1), in: RoundedRectangle(cornerRadius: 12))
+                }
+                if !error.isEmpty {
+                    Text(error).font(.footnote).foregroundStyle(.red).multilineTextAlignment(.center)
+                }
+                signInButton(.login, title: "Log in", prominent: true)
+                signInButton(.register, title: "Sign up", prominent: false)
+            }
+            .padding(.bottom, 16)
         }
-        .scrollBounceBehavior(.basedOnSize)
+        .padding(.horizontal, 24)
+        .frame(maxWidth: 500)
+        .frame(maxWidth: .infinity)
+        .toolbar(.hidden, for: .navigationBar)
         .sheet(isPresented: $showServer) { ServerSettingsView() }
     }
 
