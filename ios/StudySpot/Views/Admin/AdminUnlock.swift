@@ -31,7 +31,16 @@ final class AdminUnlock {
     func requestUnlock() async throws {
         try await withCheckedThrowingContinuation { (c: CheckedContinuation<Void, Error>) in
             waiters.append(c)
-            showSheet = true
+            presentSoon()
+        }
+    }
+
+    private func presentSoon() {
+        // Let a just-tapped alert or confirmation dialog finish dismissing:
+        // SwiftUI can't present a sheet while another presentation animates out.
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(350))
+            if !waiters.isEmpty { showSheet = true }
         }
     }
 

@@ -88,9 +88,14 @@ Everything in the web app is available natively:
   do-not-disturb, the grading scale, two-factor methods (TOTP with a QR code,
   passkey), account name, username and password, and the danger zone
 - **Onboarding wizard** for new accounts
-- **Admin** (admin role only): people management (including temporary
-  passwords and test notifications), sending notifications, integration
-  secrets, and deploy
+- **Admin** (admin role only): a full account manager for each user (profile
+  and username, role and disabling, 2FA methods, temporary or chosen
+  passwords, signing out everywhere, every setting, connections, push
+  devices, and browsing, editing and deleting their assignments, classes,
+  templates, study sessions and notifications), plus test notifications,
+  merging, sending notifications, integration secrets, and deploy. Opening
+  anyone's account needs a two-factor confirmation (authenticator code or
+  passkey) that stays unlocked for 15 minutes; admins must have 2FA turned on
 - **Demo role:** the same demo data as the web app
 
 ## Colors (60 / 20 / 20)
