@@ -1,32 +1,15 @@
 import SwiftUI
 import Observation
 
-enum AccentChoice: String, CaseIterable, Identifiable {
-    case orange, blue, purple, green, rose
-    var id: String { rawValue }
-    var label: String { rawValue.capitalized }
+/// The Study Spot brand color. It's fixed (not user-configurable), matching
+/// the website and the app icon.
+enum AccentChoice {
+    case orange
 
-    /// Hex equivalent, shared with widgets and Live Activities.
-    var hex: String {
-        switch self {
-        case .orange: "#f19d37"
-        case .blue: "#2463eb"
-        case .purple: "#7c3bed"
-        case .green: "#21c45d"
-        case .rose: "#e5345a"
-        }
-    }
+    /// Shared with widgets and Live Activities.
+    var hex: String { "#f19d37" }
 
-    /// HSL values shared with the web app's accent palette.
-    var color: Color {
-        switch self {
-        case .orange: Color(hue: 33 / 360, saturation: 0.87, lightness: 0.58)
-        case .blue: Color(hue: 221 / 360, saturation: 0.83, lightness: 0.53)
-        case .purple: Color(hue: 262 / 360, saturation: 0.83, lightness: 0.58)
-        case .green: Color(hue: 142 / 360, saturation: 0.71, lightness: 0.45)
-        case .rose: Color(hue: 347 / 360, saturation: 0.77, lightness: 0.55)
-        }
-    }
+    var color: Color { Color(hue: 33 / 360, saturation: 0.87, lightness: 0.58) }
 }
 
 /// Appearance preferences, stored on-device like the web app's localStorage.
@@ -38,14 +21,14 @@ final class ThemeStore {
     var dark: Bool { didSet { defaults.set(dark, forKey: "cf-theme-dark") } }
     var syncWithDevice: Bool { didSet { defaults.set(syncWithDevice, forKey: "cf-theme-sync") } }
     var animations: Bool { didSet { defaults.set(animations, forKey: "cf-animations") } }
-    var accent: AccentChoice { didSet { defaults.set(accent.rawValue, forKey: "cf-accent") } }
+    let accent: AccentChoice = .orange
 
     init() {
         let d = UserDefaults.standard
         dark = d.bool(forKey: "cf-theme-dark")
         syncWithDevice = d.object(forKey: "cf-theme-sync") == nil ? true : d.bool(forKey: "cf-theme-sync")
         animations = d.object(forKey: "cf-animations") == nil ? true : d.bool(forKey: "cf-animations")
-        accent = AccentChoice(rawValue: d.string(forKey: "cf-accent") ?? "") ?? .orange
+        d.removeObject(forKey: "cf-accent") // setting from older versions
     }
 
     /// nil follows the system setting.

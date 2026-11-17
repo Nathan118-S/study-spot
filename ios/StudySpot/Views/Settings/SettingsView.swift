@@ -107,13 +107,6 @@ struct AppearanceSettings: View {
             }
         }
         Section {
-            AccentPicker()
-        } header: {
-            Text("Accent color")
-        } footer: {
-            Text("Pick the highlight color used across the app.")
-        }
-        Section {
             WelcomeStylePicker()
         } header: {
             Text("Welcome message")
@@ -136,24 +129,6 @@ struct SettingLabel: View {
         } icon: {
             Image(systemName: symbol)
         }
-    }
-}
-
-struct AccentPicker: View {
-    @Environment(ThemeStore.self) private var theme
-    var body: some View {
-        HStack(spacing: 14) {
-            ForEach(AccentChoice.allCases) { a in
-                Button { theme.accent = a } label: {
-                    Circle().fill(a.color).frame(width: 32, height: 32)
-                        .overlay { if theme.accent == a { Image(systemName: "checkmark").font(.caption.bold()).foregroundStyle(.white) } }
-                        .overlay(Circle().stroke(Color.primary.opacity(theme.accent == a ? 0.4 : 0), lineWidth: 2).padding(-3))
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel(a.label)
-            }
-        }
-        .padding(.vertical, 4)
     }
 }
 

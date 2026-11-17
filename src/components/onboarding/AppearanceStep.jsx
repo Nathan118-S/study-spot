@@ -2,8 +2,8 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { useTheme } from '@/lib/theme';
 import { Switch } from '@/components/ui/switch';
-import { Moon, Sun, Smartphone, Sparkles, Palette, Hand } from 'lucide-react';
-import { AccentPicker, WelcomeStyleSelect } from '@/components/ThemeControls';
+import { Moon, Sun, Smartphone, Sparkles, Hand } from 'lucide-react';
+import { WelcomeStyleSelect } from '@/components/ThemeControls';
 
 const container = { hidden: {}, show: { transition: { staggerChildren: 0.07 } } };
 const item = {
@@ -58,14 +58,6 @@ export default function AppearanceStep() {
           <Switch checked={r.checked} onCheckedChange={r.onToggle} disabled={r.disabled} />
         </motion.div>
       ))}
-
-      <motion.div variants={item} whileHover={{ scale: 1.01 }} className="rounded-lg border p-4 bg-card space-y-3">
-        <div>
-          <p className="text-sm font-medium flex items-center gap-2"><Palette className="h-4 w-4" /> Accent color</p>
-          <p className="text-xs text-muted-foreground">Pick the highlight color used across the app.</p>
-        </div>
-        <AccentPicker />
-      </motion.div>
 
       <motion.div variants={item} whileHover={{ scale: 1.01 }} className="rounded-lg border p-4 bg-card space-y-3">
         <div>

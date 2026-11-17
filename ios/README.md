@@ -81,8 +81,8 @@ Everything in the web app is available natively:
 - **Insights:** weekly completion charts built with Swift Charts
 - **Notifications:** in-app notification center, mark read, clear, and deep
   links into the app
-- **Settings:** appearance (dark mode, sync with device, animations, accent
-  color, welcome style), Google Calendar/Classroom, Blackboard, sync, the
+- **Settings:** appearance (dark mode, sync with device, animations,
+  welcome style), Google Calendar/Classroom, Blackboard, sync, the
   leaderboard, re-running onboarding, Excel export (via the share sheet),
   email reminders and do-not-disturb, the grading scale, two-factor methods
   (TOTP with a QR code, email, passkey), account name, and the danger zone
