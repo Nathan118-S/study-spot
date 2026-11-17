@@ -3,7 +3,7 @@ import SwiftUI
 // Users sign in on the Study Spot website: "Log in" and "Create account" open
 // it in a private in-app browser session, and the site hands the session back
 // to the app (studyspot://oauth/callback#token=…) once any sign-in method
-// succeeds: email and password, a new account, or Google. Two-factor
+// succeeds: username and password, a new account, or a passkey. Two-factor
 // verification then happens natively in Verify2FAView.
 
 @MainActor
@@ -212,21 +212,21 @@ struct PrivacyPolicyView: View {
     var body: some View {
         List {
             Section("What we collect") {
-                Text("**Account information:** your name and email address, used to create and sign in to your account.")
+                Text("**Account information:** your name, username, and password, used to create and sign in to your account.")
                 Text("**Assignment and class data:** the assignments, classes, scores, notes, and study sessions you create or import from connected services.")
                 Text("**Connected service data:** when you link Google Calendar, Google Classroom, or Blackboard, we retrieve course work, due dates, and attachments you have access to, on your behalf.")
                 Text("**Usage data:** basic analytics about feature usage to improve the app.")
             }
             Section("How we use it") {
                 Text("To display and organize your assignments, classes, and progress.")
-                Text("To send you email reminders about upcoming due dates based on your reminder settings.")
+                Text("To send you notifications about upcoming due dates based on your reminder settings.")
                 Text("To sync completion status back to Google Classroom when you enable that option.")
                 Text("To provide analytics, streaks, and grading features.")
                 Text("To maintain, secure, and improve the app.")
             }
             Section("Your choices") {
                 Text("Connect or disconnect Google and Blackboard integrations anytime in Settings.")
-                Text("Customize or turn off email reminders and set a do-not-disturb window.")
+                Text("Customize or turn off reminders and set a do-not-disturb window.")
                 Text("Enable or disable two-factor authentication.")
                 Text("Export your data, or delete your account and all associated assignments and classes, from Settings.")
             }

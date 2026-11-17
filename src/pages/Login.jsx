@@ -4,13 +4,13 @@ import { api } from "@/api/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { LogIn, Mail, Lock, Loader2, KeyRound } from "lucide-react";
+import { LogIn, AtSign, Lock, Loader2, KeyRound } from "lucide-react";
 import AuthLayout from "@/components/AuthLayout";
 import { safeReturnTo } from "@/lib/authReturnTo";
 import { completeIosHandoff, isIosHandoff } from "@/lib/iosHandoff";
 
 export default function Login() {
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -34,11 +34,11 @@ export default function Login() {
     setDisabledReason("");
     setLoading(true);
     try {
-      const result = await api.auth.loginViaEmailPassword(email, password);
+      const result = await api.auth.loginWithPassword(username.trim(), password);
       if (completeIosHandoff(result?.access_token)) return;
       window.location.href = returnTo;
     } catch (err) {
-      setError(err.message || "Invalid email or password");
+      setError(err.message || "Invalid username or password");
     } finally {
       setLoading(false);
     }
@@ -49,7 +49,7 @@ export default function Login() {
     setDisabledReason("");
     setPasskeyLoading(true);
     try {
-      const result = await api.auth.loginWithPasskey(email.trim());
+      const result = await api.auth.loginWithPasskey(username.trim());
       if (completeIosHandoff(result?.access_token)) return;
       window.location.href = returnTo;
     } catch (err) {
@@ -115,29 +115,27 @@ export default function Login() {
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
+          <Label htmlFor="username">Username</Label>
           <div className="relative">
-            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
+            <AtSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
             <Input
-              id="email"
-              type="email"
-              autoComplete="email"
+              id="username"
+              type="text"
+              autoComplete="username"
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
               autoFocus
-              placeholder="you@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              placeholder="your-username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
               className="pl-10 h-12"
               required
             />
           </div>
         </div>
         <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <Label htmlFor="password">Password</Label>
-            <Link to="/forgot-password" className="text-xs text-primary hover:underline">
-              Forgot password?
-            </Link>
-          </div>
+          <Label htmlFor="password">Password</Label>
           <div className="relative">
             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
             <Input
@@ -162,6 +160,9 @@ export default function Login() {
             "Log in"
           )}
         </Button>
+        <p className="text-center text-xs text-muted-foreground">
+          Forgot your password? Ask your Study Spot admin to reset it.
+        </p>
       </form>
     </AuthLayout>
   );

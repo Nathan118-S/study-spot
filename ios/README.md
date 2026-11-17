@@ -44,9 +44,9 @@ simulator with `cd server && npm run dev`. To change the server:
 
 **Signing in happens on the website.** *Log in* and *Create your account* open
 the Study Spot website (`/login?client=ios` or `/register?client=ios`) in a
-private in-app browser session. When any sign-in method succeeds there (email
-and password, a new account with its email code, or Google), the website
-hands the session to the app and closes the browser. Two-factor verification
+private in-app browser session. When sign-in succeeds there (username and
+password, a passkey, or a newly created account), the website hands the
+session to the app and closes the browser. Two-factor verification
 then happens in the app. The website address is the server address
 unless you set one: with Docker (or any setup where one address serves both)
 there's nothing to configure. For local development, where the website runs
@@ -60,10 +60,10 @@ Security only allows plain `http://` for localhost/LAN addresses.
 
 Everything in the web app is available natively:
 
-- **Sign in:** on the website (email/password, sign-up with email code,
-  password reset, Google), then back in the app. The app shows a
-  disabled-account notice and its own two-factor prompt (authenticator code,
-  emailed code, or passkey)
+- **Sign in:** with a username and password on the website (accounts from
+  before usernames existed use their old email address as their username),
+  then back in the app. The app shows a disabled-account notice and its own
+  two-factor prompt (authenticator code or passkey)
 - **Dashboard:** stats, the Unfinished / Completed / Graded tabs, filters and
   sort, multi-select bulk edits, swipe to complete/edit/delete, pull to sync,
   and the welcome greeting
@@ -80,15 +80,17 @@ Everything in the web app is available natively:
   opt-in leaderboard
 - **Insights:** weekly completion charts built with Swift Charts
 - **Notifications:** in-app notification center, mark read, clear, and deep
-  links into the app
+  links into the app; assignment reminders as push notifications (see below)
 - **Settings:** appearance (dark mode, sync with device, animations,
   welcome style), Google Calendar/Classroom, Blackboard, sync, the
   leaderboard, re-running onboarding, Excel export (via the share sheet),
-  email reminders and do-not-disturb, the grading scale, two-factor methods
-  (TOTP with a QR code, email, passkey), account name, and the danger zone
+  assignment reminders (iPhone notifications, reminder times) and
+  do-not-disturb, the grading scale, two-factor methods (TOTP with a QR code,
+  passkey), account name, username and password, and the danger zone
 - **Onboarding wizard** for new accounts
-- **Admin** (admin role only): people management, sending notifications,
-  integration secrets, and deploy
+- **Admin** (admin role only): people management (including temporary
+  passwords and test notifications), sending notifications, integration
+  secrets, and deploy
 - **Demo role:** the same demo data as the web app
 
 ## Colors (60 / 20 / 20)
@@ -120,7 +122,34 @@ turned off in Settings or Reduce Motion is on. The helpers live in
 `StudySpot/Components/Glass.swift`. On iOS 17–18, or when built with
 Xcode 16, they fall back to frosted materials.
 
-## Class Live Activities
+## Push notifications: assignment reminders and class Live Activities
+
+Both features use Apple Push Notifications (APNs) from your server, so they
+share one setup. It needs a paid Apple Developer account and a real device
+(the simulator can't receive these pushes):
+
+1. In the Apple Developer portal, under *Keys*, create a key with **Apple
+   Push Notifications service (APNs)** enabled, and download the `.p8` file.
+2. In **Admin → Integration Secrets → Apple Push**, paste the `.p8` file's
+   contents, the key ID and your team ID.
+3. Build the app with the Push Notifications capability:
+   `python3 scripts/configure.py --push` (`--no-push` turns it off).
+
+Without this setup, registration fails quietly and everything else works:
+reminders still land in the in-app notification center, and class Live
+Activities use the local fallback described below.
+
+### Assignment reminders
+
+At the reminder times chosen under *Settings → Reminders*, the server sends a
+notification for each upcoming assignment (respecting do-not-disturb). It
+shows on the Lock Screen, as a banner while the app is open, and in the
+in-app notification center. Tapping it opens the assignment. After sign-in
+the app asks for notification permission and registers the device; signing
+out unregisters it. Users can turn reminders off entirely (*Assignment
+reminders*) or keep them in the app only (*iPhone notifications*).
+
+### Class Live Activities
 
 Give a class its **meeting times** (and optionally a subject and room) in
 the app or on the website. Five minutes before each class, a Live Activity
@@ -131,15 +160,8 @@ day. It ends shortly after class starts. Users can turn it off under
 
 There are two ways it can start:
 
-- **When the app is closed:** the server starts it with an ActivityKit
-  push. This needs a paid Apple Developer account:
-  1. In the Apple Developer portal, under *Keys*, create a key with **Apple
-     Push Notifications service (APNs)** enabled, and download the `.p8`
-     file.
-  2. In **Admin → Integration Secrets → Apple Push**, paste the `.p8`
-     file's contents, the key ID and your team ID.
-  3. Build the app with the Push Notifications capability:
-     `python3 scripts/configure.py --push` (`--no-push` turns it off).
+- **When the app is closed:** with the push setup above, the server starts
+  it with an ActivityKit push.
 - **Without push:** the app schedules a notification 5 minutes before each
   class. Opening it, or having the app open at that time, starts the Live
   Activity.
@@ -182,7 +204,7 @@ both `.entitlements` files and in `SharedStore.appGroup`
 (`Shared/SharedModels.swift`). The project file is generated by
 `scripts/gen_project.py`.
 
-## How sign-in with Google, Classroom and Blackboard works
+## How Google Calendar, Classroom and Blackboard connections work
 
 These flows open in a secure in-app browser (`ASWebAuthenticationSession`) and
 return to the app through the `studyspot://` URL scheme:
@@ -215,5 +237,5 @@ some setup:
 
 The app uses the server's host as the relying-party ID. If the web app and
 the API are served from the same domain, passkeys created on the web also
-work on iOS, and the reverse is true too. Authenticator-app and email 2FA work
-without any of this setup.
+work on iOS, and the reverse is true too. Authenticator-app 2FA works without
+any of this setup.

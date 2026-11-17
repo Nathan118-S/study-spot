@@ -279,7 +279,7 @@ export default function Dashboard() {
             <p className="text-3xl md:text-4xl font-heading font-bold tracking-tight">
               <span className="bg-gradient-to-r from-primary to-amber-500 bg-clip-text text-transparent">Hello</span>
               {(() => {
-                const name = user?.name || user?.full_name || (user?.email ? user.email.split('@')[0] : '');
+                const name = user?.name || user?.full_name || (user?.username || '').split('@')[0];
                 return name ? `, ${name}!` : '!';
               })()}
             </p>
@@ -308,7 +308,7 @@ export default function Dashboard() {
               <p className="font-heading font-bold text-lg leading-tight">
                 <span className="bg-gradient-to-r from-primary to-amber-500 bg-clip-text text-transparent">Hello</span>
                 {(() => {
-                  const name = user?.name || user?.full_name || (user?.email ? user.email.split('@')[0] : '');
+                  const name = user?.name || user?.full_name || (user?.username || '').split('@')[0];
                   return name ? `, ${name}!` : '!';
                 })()}
               </p>

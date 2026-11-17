@@ -49,7 +49,7 @@ const features = [
   {
     icon: ShieldCheck,
     title: 'Secure & Private',
-    description: 'Per-user data isolation plus optional two-factor auth (TOTP, email, or passkeys).',
+    description: 'Per-user data isolation plus optional two-factor auth (authenticator app or passkeys).',
   },
 ];
 

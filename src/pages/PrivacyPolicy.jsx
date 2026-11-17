@@ -4,7 +4,7 @@ import { GraduationCap, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export default function PrivacyPolicy() {
-  const updated = 'August 22, 2026';
+  const updated = 'November 17, 2026';
   return (
     <div className="min-h-screen text-foreground">
       <header className="sticky top-0 z-30 backdrop-blur bg-background/80 border-b border-border">
@@ -35,7 +35,7 @@ export default function PrivacyPolicy() {
 
         <Section title="Information we collect">
           <ul className="list-disc pl-5 space-y-2 text-muted-foreground">
-            <li><strong className="text-foreground">Account information:</strong> your name and email address, used to create and sign in to your account.</li>
+            <li><strong className="text-foreground">Account information:</strong> your name, username, and password (stored only as a secure hash), used to create and sign in to your account. We do not collect email addresses.</li>
             <li><strong className="text-foreground">Assignment and class data:</strong> the assignments, classes, scores, notes, and study sessions you create or import from connected services.</li>
             <li><strong className="text-foreground">Connected service data:</strong> when you link Google Calendar, Google Classroom, or Blackboard, we retrieve course work, due dates, and attachments you have access to, on your behalf.</li>
             <li><strong className="text-foreground">Usage data:</strong> basic analytics about feature usage to improve the app.</li>
@@ -45,7 +45,7 @@ export default function PrivacyPolicy() {
         <Section title="How we use your information">
           <ul className="list-disc pl-5 space-y-2 text-muted-foreground">
             <li>To display and organize your assignments, classes, and progress.</li>
-            <li>To send you email reminders about upcoming due dates based on your reminder settings.</li>
+            <li>To send you reminders about upcoming due dates in the app and as push notifications on your iPhone, based on your reminder settings.</li>
             <li>To sync completion status back to Google Classroom when you enable that option.</li>
             <li>To provide analytics, streaks, and grading features.</li>
             <li>To maintain, secure, and improve the app.</li>
@@ -64,7 +64,7 @@ export default function PrivacyPolicy() {
         <Section title="Data storage and security">
           <p className="text-muted-foreground">
             Your data is stored on secure servers and is isolated to your account — other users cannot see your
-            assignments or classes. We offer optional two-factor authentication (TOTP, email, or passkeys) and you can
+            assignments or classes. We offer optional two-factor authentication (authenticator app or passkeys) and you can
             sign out of all devices from Settings. While we work to protect your data, no system is perfectly secure.
           </p>
         </Section>
@@ -72,7 +72,7 @@ export default function PrivacyPolicy() {
         <Section title="Sharing of your information">
           <p className="text-muted-foreground">
             We do not sell your data. We share information only as needed to operate the app (for example, with our
-            hosting and email delivery providers), to comply with legal obligations, or to protect our rights. Admin
+            hosting provider, and Apple to deliver push notifications), to comply with legal obligations, or to protect our rights. Admin
             users in your workspace may access limited account information needed to manage the organization.
           </p>
         </Section>
@@ -80,7 +80,7 @@ export default function PrivacyPolicy() {
         <Section title="Your choices">
           <ul className="list-disc pl-5 space-y-2 text-muted-foreground">
             <li>Connect or disconnect Google and Blackboard integrations anytime in Settings.</li>
-            <li>Customize or turn off email reminders and set a do-not-disturb window.</li>
+            <li>Customize or turn off reminders and iPhone notifications, and set a do-not-disturb window.</li>
             <li>Enable or disable two-factor authentication.</li>
             <li>Export your data, or delete your account and all associated assignments and classes, from Settings.</li>
           </ul>

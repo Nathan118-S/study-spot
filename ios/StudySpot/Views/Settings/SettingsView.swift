@@ -20,10 +20,10 @@ struct SettingsView: View {
         Item(id: "leaderboard", label: "Leaderboard", desc: "Show study-streak rankings", symbol: "trophy"),
         Item(id: "onboarding", label: "Onboarding", desc: "Run the setup wizard again", symbol: "arrow.counterclockwise"),
         Item(id: "data", label: "Data", desc: "Export your assignments", symbol: "externaldrive"),
-        Item(id: "reminders", label: "Reminders", desc: "Email reminders and class Live Activities", symbol: "alarm"),
+        Item(id: "reminders", label: "Reminders", desc: "Assignment notifications and class Live Activities", symbol: "alarm"),
         Item(id: "grading", label: "Grading", desc: "Letter-grade thresholds", symbol: "graduationcap"),
         Item(id: "security", label: "Security", desc: "Two-factor authentication", symbol: "lock"),
-        Item(id: "account", label: "Account", desc: "Your name and email", symbol: "person"),
+        Item(id: "account", label: "Account", desc: "Your name, username, and password", symbol: "person"),
         Item(id: "danger", label: "Danger Zone", desc: "Log out all devices, delete account", symbol: "exclamationmark.triangle", danger: true),
     ]
 
@@ -63,7 +63,7 @@ struct SettingsView: View {
             Section {
                 Button(role: .destructive) { auth.signOut() } label: { Label("Sign out", systemImage: "rectangle.portrait.and.arrow.right") }
             } footer: {
-                Text("Signed in as \(auth.user?.email ?? "")")
+                Text("Signed in as \(auth.user?.username ?? "")")
             }
             .glassRows()
         }
@@ -527,11 +527,20 @@ struct ReminderSettings: View {
     var body: some View {
         Section {
             Toggle(isOn: $enabled) {
-                SettingLabel(title: "Email reminders", desc: "Get an email before assignments are due.", symbol: "bell")
+                SettingLabel(title: "Assignment reminders", desc: "Get a notification before assignments are due.", symbol: "bell")
             }
             .onChange(of: enabled) { _, v in save(["reminders_enabled": .bool(v)]) }
+            Toggle(isOn: Binding(
+                get: { auth.user?.data["push_reminders"]?.boolValue != false },
+                set: { v in Task { try? await auth.update(["push_reminders": .bool(v)]) } }
+            )) {
+                SettingLabel(title: "iPhone notifications",
+                             desc: "Send reminders to this iPhone as notifications. They also appear in the in-app notification center.",
+                             symbol: "iphone.radiowaves.left.and.right")
+            }
+            .disabled(!enabled || auth.user?.isDemo == true)
         } footer: {
-            Text("Control when you get email notifications about upcoming assignments.")
+            Text("Control when you get notified about upcoming assignments. If notifications are turned off for Study Spot in iOS Settings, reminders still show in the app.")
         }
 
         Section {
@@ -711,10 +720,116 @@ struct AccountSettings: View {
         } header: {
             Text("Name")
         } footer: {
-            Text("Used to personalize the emails we send you.")
+            Text("Used to personalize the app and its notifications.")
         }
-        Section("Email") { Text(auth.user?.email ?? "").foregroundStyle(.secondary) }
-            .onAppear { name = current }
+        .onAppear { name = current }
+        UsernameSettings()
+        ChangePasswordSettings()
+    }
+}
+
+struct UsernameSettings: View {
+    @Environment(AuthStore.self) private var auth
+    @Environment(ToastCenter.self) private var toasts
+    @State private var username = ""
+    @State private var saving = false
+    @State private var error = ""
+
+    private var trimmed: String { username.trimmingCharacters(in: .whitespaces).lowercased() }
+
+    var body: some View {
+        let current = auth.user?.username ?? ""
+        Section {
+            TextField("Username", text: $username)
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
+                .textContentType(.username)
+                .onChange(of: username) { _, v in
+                    error = ""
+                    if v.count > 30 { username = String(v.prefix(30)) }
+                }
+            Button {
+                Task { await save() }
+            } label: {
+                HStack { Text("Save username"); Spacer(); if saving { ProgressView() } }
+            }
+            .disabled(saving || trimmed.isEmpty || trimmed == current || auth.user?.isDemo == true)
+        } header: {
+            Text("Username")
+        } footer: {
+            if !error.isEmpty {
+                Text(error).foregroundStyle(.red)
+            } else {
+                Text("You sign in with your username. 3–30 characters: lowercase letters, numbers, periods, underscores, and hyphens, starting with a letter or number.")
+            }
+        }
+        .onAppear { if username.isEmpty { username = current } }
+    }
+
+    private func save() async {
+        error = ""
+        saving = true
+        defer { saving = false }
+        do {
+            try await auth.update(["username": .string(trimmed)])
+            username = auth.user?.username ?? trimmed
+            toasts.show("Username saved")
+        } catch {
+            self.error = error.localizedDescription
+        }
+    }
+}
+
+struct ChangePasswordSettings: View {
+    @Environment(AuthStore.self) private var auth
+    @Environment(ToastCenter.self) private var toasts
+    @State private var current = ""
+    @State private var newPassword = ""
+    @State private var confirm = ""
+    @State private var saving = false
+    @State private var error = ""
+
+    private var mismatch: Bool { !confirm.isEmpty && newPassword != confirm }
+
+    var body: some View {
+        Section {
+            SecureField("Current password", text: $current)
+                .textContentType(.password)
+            SecureField("New password", text: $newPassword)
+                .textContentType(.newPassword)
+            SecureField("Confirm new password", text: $confirm)
+                .textContentType(.newPassword)
+            Button {
+                Task { await save() }
+            } label: {
+                HStack { Text("Change password"); Spacer(); if saving { ProgressView() } }
+            }
+            .disabled(saving || current.isEmpty || newPassword.isEmpty || newPassword != confirm || auth.user?.isDemo == true)
+        } header: {
+            Text("Password")
+        } footer: {
+            if !error.isEmpty {
+                Text(error).foregroundStyle(.red)
+            } else if mismatch {
+                Text("The new passwords don't match.").foregroundStyle(.red)
+            }
+        }
+        .onChange(of: current) { _, _ in error = "" }
+        .onChange(of: newPassword) { _, _ in error = "" }
+    }
+
+    private func save() async {
+        error = ""
+        guard newPassword == confirm else { error = "The new passwords don't match."; return }
+        saving = true
+        defer { saving = false }
+        do {
+            try await APIClient.shared.changePassword(current: current, newPassword: newPassword)
+            current = ""; newPassword = ""; confirm = ""
+            toasts.show("Password changed")
+        } catch {
+            self.error = error.localizedDescription
+        }
     }
 }
 

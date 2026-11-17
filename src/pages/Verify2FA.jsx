@@ -4,12 +4,12 @@ import { api } from '@/api/client';
 import { useAuth } from '@/lib/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Loader2, ShieldCheck, LogOut, Fingerprint, Smartphone, Mail } from 'lucide-react';
+import { Loader2, ShieldCheck, LogOut, Fingerprint, Smartphone } from 'lucide-react';
 import { b64uEncode, b64uDecode } from '@/lib/webauthn';
 import { getMethods, METHOD_LABEL } from '@/lib/twofa';
 import { cn } from '@/lib/utils';
 
-const METHOD_ICON = { totp: Smartphone, email: Mail, passkey: Fingerprint };
+const METHOD_ICON = { totp: Smartphone, passkey: Fingerprint };
 
 export default function Verify2FA() {
   const { user, logout, checkUserAuth } = useAuth();
@@ -22,7 +22,6 @@ export default function Verify2FA() {
   const [code, setCode] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [emailSent, setEmailSent] = useState(false);
 
   const method = methods.length > 1 ? selected : methods[0];
 
@@ -35,38 +34,12 @@ export default function Verify2FA() {
     navigate('/', { replace: true });
   };
 
-  const sendEmail = async () => {
-    setError('');
-    setLoading(true);
-    try {
-      await api.functions.invoke('email2faSend', {});
-      setEmailSent(true);
-    } catch (e) {
-      setError(e.response?.data?.error || e.message || 'Failed to send code');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const submitTotp = async (e) => {
     e.preventDefault();
     setError('');
     setLoading(true);
     try {
       await finish(await api.functions.invoke('verify2fa', { code }));
-    } catch (err) {
-      setError(err.response?.data?.error || err.message || 'Invalid code');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const submitEmail = async (e) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
-    try {
-      await finish(await api.functions.invoke('email2faVerify', { code }));
     } catch (err) {
       setError(err.response?.data?.error || err.message || 'Invalid code');
     } finally {
@@ -106,9 +79,6 @@ export default function Verify2FA() {
   useEffect(() => {
     setCode('');
     setError('');
-    setEmailSent(false);
-    if (method === 'email' && !emailSent) sendEmail();
-     
   }, [method]);
 
   if (user && methods.length === 0) return <Navigate to="/" replace />;
@@ -122,7 +92,6 @@ export default function Verify2FA() {
           </div>
           <h1 className="font-heading text-2xl font-bold">Two-factor authentication</h1>
           <p className="text-sm text-muted-foreground">
-            {method === 'email' && 'Enter the 6-digit code sent to your email to continue.'}
             {method === 'passkey' && 'Use your passkey to continue.'}
             {method === 'totp' && 'Enter the 6-digit code from your authenticator app to continue.'}
           </p>
@@ -161,7 +130,7 @@ export default function Verify2FA() {
             </Button>
           </div>
         ) : (
-          <form onSubmit={method === 'email' ? submitEmail : submitTotp} className="space-y-4">
+          <form onSubmit={submitTotp} className="space-y-4">
             <Input
               inputMode="numeric"
               pattern="[0-9]*"
@@ -178,11 +147,6 @@ export default function Verify2FA() {
               {loading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
               Verify
             </Button>
-            {method === 'email' && (
-              <Button type="button" variant="ghost" className="w-full" onClick={sendEmail} disabled={loading}>
-                Resend code
-              </Button>
-            )}
           </form>
         )}
 

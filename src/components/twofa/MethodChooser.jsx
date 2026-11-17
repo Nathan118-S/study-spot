@@ -6,11 +6,10 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog';
-import { Smartphone, Mail, Fingerprint } from 'lucide-react';
+import { Smartphone, Fingerprint } from 'lucide-react';
 
 const OPTIONS = [
   { id: 'totp', label: 'Authenticator app', desc: 'Google Authenticator, Authy, 2FAS', icon: Smartphone },
-  { id: 'email', label: 'Email', desc: 'A code sent to your email each sign-in', icon: Mail },
   { id: 'passkey', label: 'Passkey', desc: 'Face ID, fingerprint or PIN; also signs you in without a password', icon: Fingerprint },
 ];
 

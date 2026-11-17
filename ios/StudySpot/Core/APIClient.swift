@@ -88,8 +88,10 @@ final class APIClient: @unchecked Sendable {
         try await request("/auth/me", method: "PATCH", body: .object(patch))
     }
 
-    func forgotPassword(email: String) async throws {
-        try await send("/auth/forgot-password", body: ["email": .string(email)])
+    func changePassword(current: String, newPassword: String) async throws {
+        try await send("/auth/change-password", body: [
+            "currentPassword": .string(current), "newPassword": .string(newPassword),
+        ])
     }
 
     // MARK: Entities

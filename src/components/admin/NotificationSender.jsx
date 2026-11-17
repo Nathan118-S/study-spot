@@ -57,7 +57,7 @@ export default function NotificationSender({ users }) {
             { value: 'all', label: 'All users' },
             ...users.map((u) => ({
               value: u.id,
-              label: u.name || u.full_name || u.email,
+              label: (u.name || u.full_name) ? `${u.name || u.full_name} (@${u.username})` : `@${u.username}`,
             })),
           ]}
         />

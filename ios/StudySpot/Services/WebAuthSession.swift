@@ -1,7 +1,7 @@
 import AuthenticationServices
 import UIKit
 
-/// Runs browser-based OAuth (Google sign-in, Google Calendar/Classroom,
+/// Runs browser-based flows (website sign-in, Google Calendar/Classroom,
 /// Blackboard) in an ASWebAuthenticationSession and returns the URL the
 /// server redirected back to on the app's custom scheme.
 @MainActor

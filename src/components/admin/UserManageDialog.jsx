@@ -10,7 +10,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import SheetSelect from '@/components/SheetSelect';
-import { KeyRound, Trash2, Flame, ShieldOff, Mail, GitMerge, Bell, Send, UserCog, Loader2, Check, Ban, RotateCcw } from 'lucide-react';
+import { KeyRound, Trash2, Flame, ShieldOff, GitMerge, Bell, UserCog, Loader2, Check, Ban, RotateCcw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -32,8 +32,8 @@ function ActionRow({ icon, title, desc, children }) {
 
 export default function UserManageDialog({
   open, onOpenChange, user: u, currentUser, busy,
-  onSetRole, onResetPassword, onRestoreStreak, onVerifyUser, onReset2fa, onDeleteUser, onMerge,
-  onSendTestPush, onSendTestEmail,
+  onSetRole, onResetPassword, onRestoreStreak, onReset2fa, onDeleteUser, onMerge,
+  onSendTestPush,
   onSaveName, onDisable, onEnable, onResetOnboarding,
 }) {
   const [name, setName] = useState('');
@@ -53,7 +53,7 @@ export default function UserManageDialog({
       <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <span className="truncate">{u.full_name || u.email}</span>
+            <span className="truncate">{u.name || u.full_name || u.username}</span>
             <Badge
               variant={u.role === 'admin' ? 'default' : 'secondary'}
               className={cn('capitalize', u.role === 'disabled' && 'border-transparent bg-red-500 text-white hover:bg-red-500/90')}
@@ -61,7 +61,7 @@ export default function UserManageDialog({
               {u.role}
             </Badge>
           </DialogTitle>
-          <DialogDescription className="truncate">{u.email}</DialogDescription>
+          <DialogDescription className="truncate">@{u.username}</DialogDescription>
         </DialogHeader>
         <p className="text-xs text-muted-foreground -mt-1">
           Joined {u.created_date ? new Date(u.created_date).toLocaleDateString() : '—'}
@@ -71,7 +71,7 @@ export default function UserManageDialog({
           <div className="rounded-lg border bg-card p-4 space-y-3">
             <div>
               <p className="text-sm font-medium">Display name</p>
-              <p className="text-xs text-muted-foreground">Shown in emails and across the app.</p>
+              <p className="text-xs text-muted-foreground">Shown across the app.</p>
             </div>
             <div className="flex gap-2">
               <Input
@@ -95,11 +95,28 @@ export default function UserManageDialog({
           <ActionRow
             icon={<KeyRound className="h-5 w-5" />}
             title="Reset password"
-            desc="Send a password-reset link to this user's email."
+            desc="Create a temporary password to give to this person. Signs them out everywhere."
           >
-            <Button variant="outline" size="sm" onClick={() => onResetPassword(u)} disabled={disabled}>
-              <KeyRound className="h-4 w-4 mr-1" /> Send
-            </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="outline" size="sm" disabled={disabled}>
+                  <KeyRound className="h-4 w-4 mr-1" /> Reset
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Reset password for @{u.username}?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Their current password stops working and they're signed out on every device. You'll get a
+                    temporary password to give them.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel disabled={disabled}>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={() => onResetPassword(u)} disabled={disabled}>Reset password</AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </ActionRow>
 
           <ActionRow
@@ -112,35 +129,13 @@ export default function UserManageDialog({
             </Button>
           </ActionRow>
 
-          {!u.is_verified && (
-            <ActionRow
-              icon={<Mail className="h-5 w-5" />}
-              title="Resend verification"
-              desc="This user hasn't verified their email. Send the link again."
-            >
-              <Button variant="outline" size="sm" onClick={() => onVerifyUser(u)} disabled={disabled}>
-                <Mail className="h-4 w-4 mr-1" /> Resend
-              </Button>
-            </ActionRow>
-          )}
-
           <ActionRow
             icon={<Bell className="h-5 w-5" />}
-            title="Test push notification"
-            desc="Send a test push to this user's device (requires the mobile app)."
+            title="Test notification"
+            desc="Send a test to this user's notification bell and their iPhones (if signed in to the app)."
           >
             <Button variant="outline" size="sm" onClick={() => onSendTestPush(u)} disabled={disabled}>
               <Bell className="h-4 w-4 mr-1" /> Send
-            </Button>
-          </ActionRow>
-
-          <ActionRow
-            icon={<Send className="h-5 w-5" />}
-            title="Test email"
-            desc="Send a test email to confirm delivery is working."
-          >
-            <Button variant="outline" size="sm" onClick={() => onSendTestEmail(u)} disabled={disabled}>
-              <Send className="h-4 w-4 mr-1" /> Send
             </Button>
           </ActionRow>
 
@@ -177,7 +172,7 @@ export default function UserManageDialog({
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
-                  <AlertDialogTitle>Reset 2FA for {u.email}?</AlertDialogTitle>
+                  <AlertDialogTitle>Reset 2FA for @{u.username}?</AlertDialogTitle>
                   <AlertDialogDescription>
                     This clears their second-factor setup so they can sign in without a code. They can re-enable 2FA from Settings.
                   </AlertDialogDescription>
@@ -260,7 +255,7 @@ export default function UserManageDialog({
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
-                  <AlertDialogTitle>Delete {u.email}?</AlertDialogTitle>
+                  <AlertDialogTitle>Delete @{u.username}?</AlertDialogTitle>
                   <AlertDialogDescription>
                     This permanently removes the user account. This action cannot be undone.
                   </AlertDialogDescription>
@@ -285,7 +280,7 @@ export default function UserManageDialog({
     <Dialog open={disableOpen} onOpenChange={setDisableOpen}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Disable {u.email}?</DialogTitle>
+          <DialogTitle>Disable @{u.username}?</DialogTitle>
           <DialogDescription>
             This user will not be able to log in. The reason below is shown on their next login attempt.
           </DialogDescription>

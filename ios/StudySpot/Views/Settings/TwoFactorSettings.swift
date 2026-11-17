@@ -29,7 +29,7 @@ struct TwoFactorSettings: View {
                         if methods.isEmpty { Pill(text: "Disabled") }
                         else { Pill(text: "Enabled" + (methods.count > 1 ? " · \(methods.count) methods" : ""), color: .green, filled: true) }
                     }
-                    Text("Add a second step at sign-in using an authenticator app, email code, or a passkey.")
+                    Text("Add a second step at sign-in using an authenticator app or a passkey.")
                         .font(.caption).foregroundStyle(.secondary)
                 }
             }
@@ -48,7 +48,6 @@ struct TwoFactorSettings: View {
                         Task { try? await Task.sleep(for: .milliseconds(400)); sheet = .setup(m) }
                     }
                 case .setup(.totp): TotpSetupView { done() }
-                case .setup(.email): EmailSetupView { done() }
                 case .setup(.passkey): PasskeySetupView { done() }
                 case .remove(let m): RemoveMethodView(method: m) { done() }
                 }
@@ -191,58 +190,6 @@ struct TotpSetupView: View {
     }
 }
 
-struct EmailSetupView: View {
-    @Environment(\.dismiss) private var dismiss
-    @Environment(AuthStore.self) private var auth
-    @Environment(ToastCenter.self) private var toasts
-    var onDone: () -> Void
-
-    @State private var code = ""
-    @State private var busy = false
-    @State private var sent = false
-    @State private var error = ""
-
-    var body: some View {
-        Form {
-            Section {
-                CodeField(code: $code)
-                Button(sent ? "Resend code" : "Send code") { Task { await send() } }
-            } header: {
-                Text("We sent a 6-digit code to \(auth.user?.email ?? "your email"). Enter it below to enable.")
-            } footer: {
-                if !error.isEmpty { Text(error).foregroundStyle(.red) }
-            }
-        }
-        .navigationTitle("Email verification")
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() }.tint(Palette.secondary) }
-            ToolbarItem(placement: .confirmationAction) {
-                Button("Enable") { Task { await confirm() } }.disabled(busy || code.count != 6)
-            }
-        }
-        .task { await send() }
-    }
-
-    private func send() async {
-        error = ""
-        do { try await APIClient.shared.invoke("email2faSend"); sent = true }
-        catch { self.error = error.localizedDescription }
-    }
-
-    private func confirm() async {
-        busy = true
-        defer { busy = false }
-        do {
-            try await APIClient.shared.invoke("email2faVerify", ["code": .string(code), "enable": true])
-            toasts.show("Email verification enabled")
-            onDone()
-        } catch {
-            self.error = error.localizedDescription
-        }
-    }
-}
-
 struct PasskeySetupView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(ToastCenter.self) private var toasts
@@ -289,7 +236,6 @@ struct RemoveMethodView: View {
 
     @State private var code = ""
     @State private var busy = false
-    @State private var sent = false
     @State private var error = ""
     @State private var passkeys = PasskeyService()
 
@@ -299,15 +245,11 @@ struct RemoveMethodView: View {
                 switch method {
                 case .passkey:
                     Text("Verify with your passkey to confirm removal.")
-                case .email:
-                    CodeField(code: $code)
-                    Button(sent ? "Resend code" : "Send code") { Task { await sendEmail() } }
                 case .totp:
                     CodeField(code: $code)
                 }
             } header: {
                 switch method {
-                case .email: Text("Enter the code sent to your email to confirm removal.")
                 case .totp: Text("Enter a current 6-digit code from your authenticator app.")
                 case .passkey: EmptyView()
                 }
@@ -324,12 +266,6 @@ struct RemoveMethodView: View {
         .navigationTitle("Remove \(method.label)?")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() }.tint(Palette.secondary) } }
-        .task { if method == .email { await sendEmail() } }
-    }
-
-    private func sendEmail() async {
-        do { try await APIClient.shared.invoke("email2faSend"); sent = true }
-        catch { self.error = error.localizedDescription }
     }
 
     private func confirm() async {
@@ -339,7 +275,6 @@ struct RemoveMethodView: View {
         do {
             switch method {
             case .totp: try await APIClient.shared.invoke("verify2fa", ["code": .string(code)])
-            case .email: try await APIClient.shared.invoke("email2faVerify", ["code": .string(code)])
             case .passkey: try await passkeys.verify()
             }
             try await APIClient.shared.invoke("remove2faMethod", ["method": .string(method.rawValue)])

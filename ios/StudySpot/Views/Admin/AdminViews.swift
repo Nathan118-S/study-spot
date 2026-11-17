@@ -19,7 +19,7 @@ struct AdminView: View {
                             AdminRow(title: "Send Notification", desc: "Send a custom in-app notification to a user or everyone.", symbol: "bell.badge")
                         }
                         NavigationLink { AdminSecretsView() } label: {
-                            AdminRow(title: "Integration Secrets", desc: "Paste SMTP, Google, and Blackboard credentials — write-once, encrypted.", symbol: "key")
+                            AdminRow(title: "Integration Secrets", desc: "Paste Google, Blackboard, and Apple Push credentials — write-once, encrypted.", symbol: "key")
                         }
                         NavigationLink { AdminDeployView() } label: {
                             AdminRow(title: "Deploy", desc: "Pull the latest commit from GitHub and restart the app.", symbol: "arrow.up.circle")
@@ -89,6 +89,13 @@ final class AdminPeopleModel {
     }
 
     private static func describe(_ res: JSONValue) -> String? {
+        if let devices = res["devices"]?.doubleValue {
+            let delivered = res["push_delivered"]?.boolValue ?? ((res["push_delivered"]?.doubleValue ?? 0) > 0)
+            if devices == 0 { return "Added to their notification center. They have no iPhone registered for push notifications." }
+            return delivered
+                ? "Added to their notification center and pushed to \(Int(devices)) device(s)."
+                : "Added to their notification center, but the push to their \(Int(devices)) device(s) wasn't delivered. Check the Apple Push secrets."
+        }
         if let n = res["restored"]?.doubleValue { return "\(Int(n)) overdue assignment(s) marked complete." }
         if let a = res["movedAssignments"]?.doubleValue, let c = res["movedClasses"]?.doubleValue {
             return "Moved \(Int(a)) assignment(s) and \(Int(c)) class(es)."
@@ -105,7 +112,7 @@ struct AdminPeopleView: View {
 
     var body: some View {
         let filtered = model.users.filter {
-            search.isEmpty || $0.email.localizedCaseInsensitiveContains(search) || $0.displayName.localizedCaseInsensitiveContains(search)
+            search.isEmpty || $0.username.localizedCaseInsensitiveContains(search) || $0.displayName.localizedCaseInsensitiveContains(search)
         }
         List {
             if model.loading && model.users.isEmpty {
@@ -118,14 +125,13 @@ struct AdminPeopleView: View {
                     HStack {
                         VStack(alignment: .leading, spacing: 2) {
                             Text(u.displayName).font(.body.weight(.medium))
-                            Text(u.email).font(.caption).foregroundStyle(.secondary)
+                            Text(u.username).font(.caption).foregroundStyle(.secondary)
                         }
                         Spacer()
                         if u.role != "user" {
                             Pill(text: u.role, color: u.role == "admin" ? .red : (u.role == "disabled" ? .secondary : .green))
                         }
                         if u.twofaEnabled { Image(systemName: "lock.fill").font(.caption).foregroundStyle(.secondary) }
-                        if !u.isVerified { Image(systemName: "envelope.badge").font(.caption).foregroundStyle(.orange) }
                         Image(systemName: u.onboardingCompleted ? "checkmark.circle.fill" : "circle.dashed")
                             .font(.caption).foregroundStyle(u.onboardingCompleted ? .green : .secondary)
                             .accessibilityLabel(u.onboardingCompleted ? "Onboarding complete" : "Onboarding pending")
@@ -157,6 +163,8 @@ struct UserManageView: View {
     @State private var confirmReset2fa = false
     @State private var confirmDelete = false
     @State private var showMerge = false
+    @State private var confirmResetPassword = false
+    @State private var tempPassword: String?
 
     private var u: AdminUser? { model.users.first { $0.id == userId } }
     private let api = APIClient.shared
@@ -178,10 +186,9 @@ struct UserManageView: View {
             Section {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(u.displayName).font(.headline)
-                    Text(u.email).font(.subheadline).foregroundStyle(.secondary)
+                    Text(u.username).font(.subheadline).foregroundStyle(.secondary)
                     HStack {
                         Pill(text: u.role)
-                        Pill(text: u.isVerified ? "Verified" : "Unverified", color: u.isVerified ? .green : .orange)
                         if u.twofaEnabled { Pill(text: "2FA: \(u.twofaMethod ?? "on")") }
                     }
                     if let created = u.createdDate {
@@ -194,40 +201,27 @@ struct UserManageView: View {
                 TextField("Display name", text: $name)
                 Button("Save name") {
                     Task {
-                        await model.run(u, toasts: toasts, success: "Name updated", detail: u.email) {
+                        await model.run(u, toasts: toasts, success: "Name updated", detail: u.username) {
                             try await api.invoke("adminUpdateUser", ["userId": .string(u.id), "name": .string(name)])
                         }
                     }
                 }
                 .disabled(busy || name.trimmingCharacters(in: .whitespaces) == savedName)
-            } header: { Text("Display name") } footer: { Text("Shown in emails and across the app.") }
+            } header: { Text("Display name") } footer: { Text("Shown across the app.") }
 
             Section("Actions") {
-                action("Reset password", "Send a password-reset link to this user's email.", "key") {
-                    await model.run(u, toasts: toasts, success: "Reset email sent", detail: u.email, reload: false) {
-                        try await api.forgotPassword(email: u.email); return .null
-                    }
+                Button { confirmResetPassword = true } label: {
+                    SettingLabel(title: "Reset password", desc: "Set a temporary password to give to this user. Signs them out everywhere.", symbol: "key")
                 }
+                .foregroundStyle(.primary)
                 action("Restore streak", "Mark overdue assignments complete to rebuild their streak.", "flame") {
                     await model.run(u, toasts: toasts, success: "Streak restored", reload: false) {
                         try await api.invoke("adminRestoreStreak", ["userId": .string(u.id)])
                     }
                 }
-                if !u.isVerified {
-                    action("Resend verification", "This user hasn't verified their email. Send the code again.", "envelope") {
-                        await model.run(u, toasts: toasts, success: "Verification email sent", detail: u.email, reload: false) {
-                            try await api.invoke("adminVerifyUser", ["userId": .string(u.id)])
-                        }
-                    }
-                }
-                action("Test in-app notification", "Send a test notification to this user's notification center.", "bell") {
-                    await model.run(u, toasts: toasts, success: "Test notification sent", detail: "Notification sent to \(u.email).", reload: false) {
-                        try await api.invoke("adminSendTestNotification", ["userId": .string(u.id), "type": "push"])
-                    }
-                }
-                action("Test email", "Send a test email to confirm delivery is working.", "envelope.open") {
-                    await model.run(u, toasts: toasts, success: "Test email sent", detail: "Email sent to \(u.email).", reload: false) {
-                        try await api.invoke("adminSendTestNotification", ["userId": .string(u.id), "type": "email"])
+                action("Test notification", "Send a test notification to this user's notification center and their iPhones.", "bell") {
+                    await model.run(u, toasts: toasts, success: "Test notification sent", reload: false) {
+                        try await api.invoke("adminSendTestNotification", ["userId": .string(u.id)])
                     }
                 }
                 if !isSelf {
@@ -237,7 +231,7 @@ struct UserManageView: View {
                     .foregroundStyle(.primary)
                 }
                 action("Reset onboarding", u.onboardingCompleted ? "Require the setup wizard to run again on next visit." : "Onboarding has not been completed yet.", "arrow.counterclockwise") {
-                    await model.run(u, toasts: toasts, success: "Onboarding reset", detail: "\(u.email) will be asked to set up again.") {
+                    await model.run(u, toasts: toasts, success: "Onboarding reset", detail: "\(u.username) will be asked to set up again.") {
                         try await api.invoke("adminResetOnboarding", ["userId": .string(u.id)])
                     }
                 }
@@ -256,7 +250,7 @@ struct UserManageView: View {
                         get: { u.role == "disabled" ? "user" : u.role },
                         set: { role in
                             Task {
-                                await model.run(u, toasts: toasts, success: "Role updated", detail: "\(u.email) is now \(role)") {
+                                await model.run(u, toasts: toasts, success: "Role updated", detail: "\(u.username) is now \(role)") {
                                     try await api.invoke("adminUpdateUserRole", ["userId": .string(u.id), "role": .string(role)])
                                 }
                             }
@@ -275,7 +269,7 @@ struct UserManageView: View {
                         }
                         Button("Re-enable account") {
                             Task {
-                                await model.run(u, toasts: toasts, success: "Account re-enabled", detail: "\(u.email) can log in again.") {
+                                await model.run(u, toasts: toasts, success: "Account re-enabled", detail: "\(u.username) can log in again.") {
                                     try await api.invoke("adminUpdateUserRole", ["userId": .string(u.id), "role": "user"])
                                 }
                             }
@@ -288,22 +282,42 @@ struct UserManageView: View {
                 .disabled(busy)
             }
         }
-        .alert("Reset 2FA for \(u.email)?", isPresented: $confirmReset2fa) {
+        .alert("Reset password for \(u.username)?", isPresented: $confirmResetPassword) {
             Button("Cancel", role: .cancel) {}
             Button("Reset", role: .destructive) {
                 Task {
-                    await model.run(u, toasts: toasts, success: "2FA reset", detail: "\(u.email) can sign in without a code.") {
+                    await model.run(u, toasts: toasts, success: "Password reset", detail: "\(u.username) was signed out everywhere.", reload: false) {
+                        let res = try await api.invoke("adminResetPassword", ["userId": .string(u.id)])
+                        tempPassword = res["password"]?.stringValue
+                        return res
+                    }
+                }
+            }
+        } message: {
+            Text("A temporary password replaces their current one, and they're signed out on every device.")
+        }
+        .alert("Temporary password", isPresented: Binding(get: { tempPassword != nil }, set: { if !$0 { tempPassword = nil } }), presenting: tempPassword) { password in
+            Button("Copy") { UIPasteboard.general.string = password; toasts.show("Password copied") }
+            Button("Done", role: .cancel) {}
+        } message: { password in
+            Text("Give this to \(u.username) so they can sign in, then have them change it in Settings → Account.\n\n\(password)")
+        }
+        .alert("Reset 2FA for \(u.username)?", isPresented: $confirmReset2fa) {
+            Button("Cancel", role: .cancel) {}
+            Button("Reset", role: .destructive) {
+                Task {
+                    await model.run(u, toasts: toasts, success: "2FA reset", detail: "\(u.username) can sign in without a code.") {
                         try await api.invoke("adminReset2fa", ["userId": .string(u.id)])
                     }
                 }
             }
         }
-        .alert("Disable \(u.email)?", isPresented: $showDisable) {
+        .alert("Disable \(u.username)?", isPresented: $showDisable) {
             TextField("Reason (optional)", text: $disableReason)
             Button("Cancel", role: .cancel) {}
             Button("Disable", role: .destructive) {
                 Task {
-                    await model.run(u, toasts: toasts, success: "Account disabled", detail: "\(u.email) can no longer log in.") {
+                    await model.run(u, toasts: toasts, success: "Account disabled", detail: "\(u.username) can no longer log in.") {
                         try await api.invoke("adminUpdateUserRole", ["userId": .string(u.id), "role": "disabled", "reason": .string(disableReason)])
                     }
                 }
@@ -311,11 +325,11 @@ struct UserManageView: View {
         } message: {
             Text("They'll see the reason when they try to log in.")
         }
-        .alert("Delete \(u.email)?", isPresented: $confirmDelete) {
+        .alert("Delete \(u.username)?", isPresented: $confirmDelete) {
             Button("Cancel", role: .cancel) {}
             Button("Delete", role: .destructive) {
                 Task {
-                    await model.run(u, toasts: toasts, success: "User deleted", detail: u.email) {
+                    await model.run(u, toasts: toasts, success: "User deleted", detail: u.username) {
                         try await api.invoke("adminDeleteUser", ["userId": .string(u.id)])
                     }
                     dismiss()
@@ -347,14 +361,14 @@ struct MergeView: View {
     var body: some View {
         Form {
             Section {
-                Text("Move \(source.email)'s assignments and classes into another account, then delete \(source.email).")
+                Text("Move \(source.username)'s assignments and classes into another account, then delete \(source.username).")
                     .font(.subheadline).foregroundStyle(.secondary)
             }
             Section("Keep which account?") {
                 Picker("Target account", selection: $targetId) {
                     Text("Choose…").tag("")
                     ForEach(model.users.filter { $0.id != source.id }) { u in
-                        Text(u.fullName.map { "\($0) — \(u.email)" } ?? u.email).tag(u.id)
+                        Text(u.fullName.map { "\($0) — \(u.username)" } ?? u.username).tag(u.id)
                     }
                 }
             }
@@ -375,7 +389,7 @@ struct MergeView: View {
                 }
             }
         } message: {
-            Text("\(source.email) will be deleted after its data is moved. This can't be undone.")
+            Text("\(source.username) will be deleted after its data is moved. This can't be undone.")
         }
     }
 }
@@ -450,8 +464,6 @@ struct AdminSecretsView: View {
     @State private var loading = true
     @State private var saving = false
     @State private var confirmClear: SecretStatus?
-    @State private var testTo = ""
-    @State private var sendingTest = false
 
     var body: some View {
         let groups = Dictionary(grouping: secrets, by: \.group)
@@ -493,17 +505,6 @@ struct AdminSecretsView: View {
                     HStack { Text(pending > 0 ? "Save \(pending) secret(s)" : "Save").bold(); Spacer(); if saving { ProgressView() } }
                 }
                 .disabled(saving || pending == 0)
-            }
-            Section {
-                TextField("you@example.com", text: $testTo).keyboardType(.emailAddress).textInputAutocapitalization(.never)
-                Button { Task { await sendTest() } } label: {
-                    HStack { Text("Send test email"); Spacer(); if sendingTest { ProgressView() } }
-                }
-                .disabled(sendingTest || testTo.trimmingCharacters(in: .whitespaces).isEmpty)
-            } header: {
-                Text("Test email delivery")
-            } footer: {
-                Text("Confirms sign-up codes, password resets, and reminders can be delivered.")
             }
         }
         .navigationTitle("Integration Secrets")
@@ -557,18 +558,6 @@ struct AdminSecretsView: View {
             toasts.show("Cleared", "\(s.key) can now be re-entered.")
         } catch {
             toasts.show("Failed to clear", error.localizedDescription, error: true)
-        }
-    }
-
-    private func sendTest() async {
-        sendingTest = true
-        defer { sendingTest = false }
-        let to = testTo.trimmingCharacters(in: .whitespaces)
-        do {
-            try await APIClient.shared.invoke("adminSendTestEmail", ["to": .string(to)])
-            toasts.show("Test email sent", "Check \(to) for delivery.")
-        } catch {
-            toasts.show("Test email failed", error.localizedDescription, error: true)
         }
     }
 }

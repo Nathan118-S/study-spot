@@ -110,6 +110,7 @@ struct MainTabView: View {
             await data.load(for: user)
             publishWidgets()
             await ClassActivityManager.configure(user: auth.user, classes: data.classes, assignments: data.assignments)
+            await PushNotifications.configure(user: auth.user)
             await data.loadNotifications()
             maybeGreet()
             await data.autoSyncIfStale(user: user, auth: auth)
@@ -129,6 +130,12 @@ struct MainTabView: View {
         }
         .onChange(of: auth.user?.data["class_live_activities"]) { _, _ in
             Task { await ClassActivityManager.configure(user: auth.user, classes: data.classes, assignments: data.assignments) }
+        }
+        .onChange(of: auth.user?.data["push_reminders"]) { _, _ in
+            Task { await PushNotifications.configure(user: auth.user) }
+        }
+        .onChange(of: auth.user?.data["reminders_enabled"]) { _, _ in
+            Task { await PushNotifications.configure(user: auth.user) }
         }
         .task(id: scenePhase) {
             // While the app is open, start a class's Live Activity right at
@@ -174,7 +181,7 @@ struct AppToolbarModifier: ViewModifier {
                 .accessibilityLabel("Notifications")
                 Menu {
                     if let user = auth.user {
-                        Section(user.email) {
+                        Section(user.username) {
                             if user.isDemo { Label("Demo account", systemImage: "eye") }
                         }
                     }

@@ -48,7 +48,8 @@ def main():
                                   "for local development, e.g. http://<mac-ip>:5173")
     ap.add_argument("--push", action=argparse.BooleanOptionalAction, default=None,
                     help="Enable (--push) or disable (--no-push) the Push Notifications capability, used by the "
-                         "server to start class Live Activities when the app is closed. Needs a paid Apple "
+                         "server for assignment reminder notifications and to start class Live Activities "
+                         "when the app is closed. Needs a paid Apple "
                          "Developer account and the APNs key set on the server.")
     args = ap.parse_args()
 

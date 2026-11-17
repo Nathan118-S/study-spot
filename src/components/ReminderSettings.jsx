@@ -29,6 +29,7 @@ export default function ReminderSettings() {
   const { user } = useAuth();
   const [enabled, setEnabled] = useState(user?.data?.reminders_enabled !== false);
   const [leads, setLeads] = useState(readLeads(user?.data?.reminder_lead_hours));
+  const [pushEnabled, setPushEnabled] = useState(user?.data?.push_reminders !== false);
   const [dndEnabled, setDndEnabled] = useState(user?.data?.dnd_enabled === true);
   const [classActivities, setClassActivities] = useState(user?.data?.class_live_activities !== false);
   const [dndStart, setDndStart] = useState(user?.data?.dnd_start || '22:00');
@@ -50,6 +51,11 @@ export default function ReminderSettings() {
   const toggleEnabled = async (v) => {
     setEnabled(v);
     await persist({ reminders_enabled: v });
+  };
+
+  const togglePush = async (v) => {
+    setPushEnabled(v);
+    await persist({ push_reminders: v });
   };
 
   const addLead = async (value) => {
@@ -90,14 +96,29 @@ export default function ReminderSettings() {
         <div className="flex items-start gap-3 min-w-0">
           <div className="mt-0.5"><Bell className="h-5 w-5 text-primary" /></div>
           <div className="min-w-0">
-            <p className="text-sm font-medium">Email reminders</p>
-            <p className="text-xs text-muted-foreground">Get an email before assignments are due.</p>
+            <p className="text-sm font-medium">Assignment reminders</p>
+            <p className="text-xs text-muted-foreground">
+              Reminders before assignments are due appear in the notification bell and on your iPhone.
+            </p>
           </div>
         </div>
         <div className="flex items-center gap-2">
           {saving && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
-          <Switch checked={enabled} onCheckedChange={toggleEnabled} aria-label="Toggle email reminders" />
+          <Switch checked={enabled} onCheckedChange={toggleEnabled} aria-label="Toggle assignment reminders" />
         </div>
+      </div>
+
+      <div className={cn('flex items-center justify-between gap-4 border-t pt-4', disabled && 'opacity-50 pointer-events-none')}>
+        <div className="flex items-start gap-3 min-w-0">
+          <div className="mt-0.5"><Smartphone className="h-5 w-5 text-primary" /></div>
+          <div className="min-w-0">
+            <p className="text-sm font-medium">iPhone notifications</p>
+            <p className="text-xs text-muted-foreground">
+              Also send reminders as push notifications to the iPhones you've signed in on.
+            </p>
+          </div>
+        </div>
+        <Switch checked={pushEnabled} onCheckedChange={togglePush} disabled={disabled} aria-label="Toggle iPhone notifications" />
       </div>
 
       <div className={cn('space-y-3', disabled && 'opacity-50 pointer-events-none')}>

@@ -2,16 +2,15 @@ import React, { useState } from 'react';
 import { useAuth } from '@/lib/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ShieldCheck, KeyRound, Smartphone, Mail, Fingerprint, Plus, Trash2 } from 'lucide-react';
+import { ShieldCheck, KeyRound, Smartphone, Fingerprint, Plus, Trash2 } from 'lucide-react';
 import { getMethods, METHOD_LABEL } from '@/lib/twofa';
 import MethodChooser from './twofa/MethodChooser';
 import TotpSetup from './twofa/TotpSetup';
-import EmailSetup from './twofa/EmailSetup';
 import PasskeySetup from './twofa/PasskeySetup';
 import RemoveMethodDialog from './twofa/RemoveMethodDialog';
 
-const METHOD_ICON = { totp: Smartphone, email: Mail, passkey: Fingerprint };
-const ALL_METHODS = ['totp', 'email', 'passkey'];
+const METHOD_ICON = { totp: Smartphone, passkey: Fingerprint };
+const ALL_METHODS = ['totp', 'passkey'];
 
 export default function TwoFactorSettings() {
   const { user, checkUserAuth } = useAuth();
@@ -44,7 +43,7 @@ export default function TwoFactorSettings() {
               )}
             </div>
             <p className="text-sm text-muted-foreground">
-              Add a second step at sign-in using an authenticator app, email code, or a passkey.
+              Add a second step at sign-in using an authenticator app or a passkey.
             </p>
           </div>
         </div>
@@ -88,7 +87,6 @@ export default function TwoFactorSettings() {
         enabledMethods={methods}
       />
       <TotpSetup open={dialog === 'totp'} onOpenChange={(o) => !o && setDialog(null)} onDone={onDone} />
-      <EmailSetup open={dialog === 'email'} onOpenChange={(o) => !o && setDialog(null)} onDone={onDone} />
       <PasskeySetup open={dialog === 'passkey'} onOpenChange={(o) => !o && setDialog(null)} onDone={onDone} />
       <RemoveMethodDialog
         open={!!removing}

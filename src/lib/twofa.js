@@ -1,4 +1,5 @@
-const VALID = ['totp', 'email', 'passkey'];
+// Email codes were removed along with email addresses; only these remain.
+const VALID = ['totp', 'passkey'];
 
 // Returns the enabled 2FA methods for the current user, accounting for the
 // legacy single-method field and the new multi-method array.
@@ -12,4 +13,4 @@ export function getMethods(user) {
   return methods.filter((m) => VALID.includes(m));
 }
 
-export const METHOD_LABEL = { totp: 'Authenticator app', email: 'Email', passkey: 'Passkey' };
+export const METHOD_LABEL = { totp: 'Authenticator app', passkey: 'Passkey' };

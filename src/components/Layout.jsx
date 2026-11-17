@@ -75,7 +75,7 @@ export default function Layout() {
   const onboardingDone = (user?.onboarding_completed ?? user?.data?.onboarding_completed) === true;
   const showOnboarding = !!user && !isDemoUser(user) && !onboardingDone;
   const closeAccount = () => setAccountOpen(false);
-  const displayName = user?.name || user?.full_name || user?.email || 'User';
+  const displayName = user?.name || user?.full_name || user?.username || 'User';
 
   return (
     <div className="min-h-screen text-foreground flex">
@@ -143,7 +143,7 @@ export default function Layout() {
             <CircleUserRound className={cn('h-8 w-8 shrink-0 text-muted-foreground', collapsed && 'md:hidden')} />
             <div className={cn('flex-1 min-w-0', collapsed && 'md:hidden')}>
               <p className="text-[15px] font-medium truncate">{displayName}</p>
-              <p className="text-[13px] text-muted-foreground truncate">{user?.email}</p>
+              {user?.username && <p className="text-[13px] text-muted-foreground truncate">@{user.username}</p>}
             </div>
             <Button variant="ghost" size="icon" onClick={() => logout()} title="Sign out" aria-label="Sign out">
               <LogOut />

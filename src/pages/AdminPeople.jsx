@@ -7,8 +7,13 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/components/ui/use-toast';
 import MergeDialog from '@/components/admin/MergeDialog';
 import UserManageDialog from '@/components/admin/UserManageDialog';
-import { Loader2, RefreshCw, ChevronRight, ArrowLeft, CheckCircle2, Circle } from 'lucide-react';
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
+} from '@/components/ui/dialog';
+import { Loader2, RefreshCw, ChevronRight, ArrowLeft, CheckCircle2, Circle, Copy, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
+
+const handle = (u) => (u?.username ? `@${u.username}` : 'This user');
 
 export default function AdminPeople() {
   const { user, isLoadingAuth } = useAuth();
@@ -18,6 +23,8 @@ export default function AdminPeople() {
   const [busy, setBusy] = useState(null);
   const [mergeSource, setMergeSource] = useState(null);
   const [selectedId, setSelectedId] = useState(null);
+  const [tempPassword, setTempPassword] = useState(null);
+  const [copied, setCopied] = useState(false);
   const { toast } = useToast();
 
   const load = async () => {
@@ -47,7 +54,7 @@ export default function AdminPeople() {
     try {
       await api.functions.invoke('adminUpdateUserRole', { userId: u.id, role });
       setUsers((prev) => prev.map((x) => (x.id === u.id ? { ...x, role } : x)));
-      toast({ title: 'Role updated', description: `${u.email} is now ${role}` });
+      toast({ title: 'Role updated', description: `${handle(u)} is now ${role}` });
     } catch (e) {
       toast({ title: 'Update failed', description: e.message, variant: 'destructive' });
     } finally {
@@ -60,7 +67,7 @@ export default function AdminPeople() {
     try {
       await api.functions.invoke('adminUpdateUserRole', { userId: u.id, role: 'disabled', reason });
       setUsers((prev) => prev.map((x) => (x.id === u.id ? { ...x, role: 'disabled', disabled_reason: reason || null } : x)));
-      toast({ title: 'Account disabled', description: `${u.email} can no longer log in.` });
+      toast({ title: 'Account disabled', description: `${handle(u)} can no longer log in.` });
     } catch (e) {
       toast({ title: 'Failed', description: e.message, variant: 'destructive' });
     } finally {
@@ -73,7 +80,7 @@ export default function AdminPeople() {
     try {
       await api.functions.invoke('adminUpdateUserRole', { userId: u.id, role: 'user' });
       setUsers((prev) => prev.map((x) => (x.id === u.id ? { ...x, role: 'user', disabled_reason: null } : x)));
-      toast({ title: 'Account re-enabled', description: `${u.email} can log in again.` });
+      toast({ title: 'Account re-enabled', description: `${handle(u)} can log in again.` });
     } catch (e) {
       toast({ title: 'Failed', description: e.message, variant: 'destructive' });
     } finally {
@@ -84,8 +91,9 @@ export default function AdminPeople() {
   const resetPassword = async (u) => {
     setBusy(u.id);
     try {
-      await api.auth.resetPasswordRequest(u.email);
-      toast({ title: 'Reset email sent', description: u.email });
+      const res = await api.functions.invoke('adminResetPassword', { userId: u.id });
+      setCopied(false);
+      setTempPassword({ user: u, password: res.data.password });
     } catch (e) {
       toast({ title: 'Failed', description: e.message, variant: 'destructive' });
     } finally {
@@ -110,7 +118,7 @@ export default function AdminPeople() {
     try {
       await api.functions.invoke('adminResetOnboarding', { userId: u.id });
       setUsers((prev) => prev.map((x) => (x.id === u.id ? { ...x, onboarding_completed: false } : x)));
-      toast({ title: 'Onboarding reset', description: `${u.email} will be asked to set up again.` });
+      toast({ title: 'Onboarding reset', description: `${handle(u)} will be asked to set up again.` });
     } catch (e) {
       toast({ title: 'Failed', description: e.message, variant: 'destructive' });
     } finally {
@@ -123,19 +131,7 @@ export default function AdminPeople() {
     try {
       await api.functions.invoke('adminReset2fa', { userId: u.id });
       setUsers((prev) => prev.map((x) => (x.id === u.id ? { ...x, twofa_enabled: false } : x)));
-      toast({ title: '2FA reset', description: `${u.email} can sign in without a code.` });
-    } catch (e) {
-      toast({ title: 'Failed', description: e.message, variant: 'destructive' });
-    } finally {
-      setBusy(null);
-    }
-  };
-
-  const verifyUser = async (u) => {
-    setBusy(u.id);
-    try {
-      await api.functions.invoke('adminVerifyUser', { userId: u.id });
-      toast({ title: 'Verification email sent', description: u.email });
+      toast({ title: '2FA reset', description: `${handle(u)} can sign in without a code.` });
     } catch (e) {
       toast({ title: 'Failed', description: e.message, variant: 'destructive' });
     } finally {
@@ -148,7 +144,7 @@ export default function AdminPeople() {
     try {
       await api.functions.invoke('adminDeleteUser', { userId: u.id });
       setUsers((prev) => prev.filter((x) => x.id !== u.id));
-      toast({ title: 'User deleted', description: u.email });
+      toast({ title: 'User deleted', description: handle(u) });
     } catch (e) {
       toast({ title: 'Failed', description: e.message, variant: 'destructive' });
     } finally {
@@ -156,13 +152,16 @@ export default function AdminPeople() {
     }
   };
 
-  const sendTestNotification = async (u, type) => {
+  const sendTestNotification = async (u) => {
     setBusy(u.id);
     try {
-      await api.functions.invoke('adminSendTestNotification', { userId: u.id, type });
+      const res = await api.functions.invoke('adminSendTestNotification', { userId: u.id });
+      const devices = res.data?.devices || 0;
       toast({
-        title: type === 'push' ? 'Test push sent' : 'Test email sent',
-        description: type === 'push' ? `Push notification sent to ${u.email}.` : `Email sent to ${u.email}.`,
+        title: 'Test notification sent',
+        description: res.data?.push_delivered
+          ? `Delivered to ${handle(u)}'s notification bell and ${devices} iPhone${devices === 1 ? '' : 's'}.`
+          : `Delivered to ${handle(u)}'s notification bell. No iPhone received a push.`,
       });
     } catch (e) {
       toast({ title: 'Failed', description: e.message, variant: 'destructive' });
@@ -189,7 +188,7 @@ export default function AdminPeople() {
     try {
       await api.functions.invoke('adminUpdateUser', { userId: u.id, name });
       setUsers((prev) => prev.map((x) => (x.id === u.id ? { ...x, name: name.trim() } : x)));
-      toast({ title: 'Name updated', description: u.email });
+      toast({ title: 'Name updated', description: handle(u) });
     } catch (e) {
       toast({ title: 'Failed', description: e.message, variant: 'destructive' });
     } finally {
@@ -217,7 +216,8 @@ export default function AdminPeople() {
       </div>
 
       <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-sm text-amber-900 dark:text-amber-200">
-        Email addresses cannot be changed. Use <span className="font-medium">Reset password</span> to send a password-reset link instead.
+        People sign in with their username. If someone forgets their password, use <span className="font-medium">Reset password</span> to
+        create a temporary one and give it to them.
       </div>
 
       {loading ? (
@@ -233,8 +233,8 @@ export default function AdminPeople() {
               className="w-full text-left px-4 py-3 hover:bg-accent/60 transition-colors flex items-center justify-between gap-3"
             >
               <div className="min-w-0">
-                <p className="font-medium truncate">{u.name || u.full_name || u.email}</p>
-                <p className="text-sm text-muted-foreground truncate">{u.email}</p>
+                <p className="font-medium truncate">{u.name || u.full_name || u.username}</p>
+                <p className="text-sm text-muted-foreground truncate">@{u.username}</p>
               </div>
               <div className="flex items-center gap-2 shrink-0">
                 <span
@@ -274,17 +274,51 @@ export default function AdminPeople() {
         onSetRole={setRole}
         onResetPassword={resetPassword}
         onRestoreStreak={restoreStreak}
-        onVerifyUser={verifyUser}
         onReset2fa={reset2fa}
         onResetOnboarding={resetOnboarding}
         onDeleteUser={deleteUser}
         onMerge={(u) => { setSelectedId(null); setMergeSource(u); }}
-        onSendTestPush={(u) => sendTestNotification(u, 'push')}
-        onSendTestEmail={(u) => sendTestNotification(u, 'email')}
+        onSendTestPush={sendTestNotification}
         onSaveName={saveName}
         onDisable={disableUser}
         onEnable={enableUser}
       />
+
+      <Dialog open={!!tempPassword} onOpenChange={(o) => !o && setTempPassword(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Temporary password</DialogTitle>
+            <DialogDescription>
+              Give this to {handle(tempPassword?.user)}. They've been signed out everywhere and can change it in
+              Settings → Account after logging in. It won't be shown again.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex items-center gap-2">
+            <code className="flex-1 rounded-lg border bg-muted/50 px-3 py-2.5 font-mono text-base tracking-wide select-all break-all">
+              {tempPassword?.password}
+            </code>
+            <Button
+              variant="outline"
+              size="icon"
+              aria-label="Copy password"
+              title="Copy password"
+              onClick={async () => {
+                try {
+                  await navigator.clipboard.writeText(tempPassword?.password || '');
+                  setCopied(true);
+                } catch {
+                  toast({ title: 'Copy failed', description: 'Select the password and copy it manually.', variant: 'destructive' });
+                }
+              }}
+            >
+              {copied ? <Check className="h-4 w-4 text-emerald-500" /> : <Copy className="h-4 w-4" />}
+            </Button>
+          </div>
+          <DialogFooter>
+            <Button onClick={() => setTempPassword(null)}>Done</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <MergeDialog
         open={!!mergeSource}

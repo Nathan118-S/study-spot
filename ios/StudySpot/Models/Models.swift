@@ -35,7 +35,9 @@ enum Source: String, Codable, Sendable {
 
 struct User: Decodable, Equatable, Sendable {
     var id: String
-    var email: String
+    /// Sign-in name. Accounts created before usernames existed use their old
+    /// address as their username.
+    var username: String
     var name: String?
     var fullName: String?
     var role: String
@@ -50,7 +52,7 @@ struct User: Decodable, Equatable, Sendable {
     var data: [String: JSONValue]
 
     enum CodingKeys: String, CodingKey {
-        case id, email, name, role, data
+        case id, username, name, role, data
         case fullName = "full_name"
         case disabledReason = "disabled_reason"
         case isVerified = "is_verified"
@@ -63,7 +65,7 @@ struct User: Decodable, Equatable, Sendable {
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         id = try c.decode(String.self, forKey: .id)
-        email = c.flexString(.email) ?? ""
+        username = c.flexString(.username) ?? ""
         name = c.flexString(.name)
         fullName = c.flexString(.fullName)
         role = c.flexString(.role) ?? "user"
@@ -82,7 +84,7 @@ struct User: Decodable, Equatable, Sendable {
     var displayName: String {
         if let n = name, !n.isEmpty { return n }
         if let n = fullName, !n.isEmpty { return n }
-        return email.split(separator: "@").first.map(String.init) ?? "User"
+        return username.split(separator: "@").first.map(String.init) ?? "User"
     }
 
     var onboardingCompleted: Bool { data["onboarding_completed"]?.boolValue == true }
@@ -112,26 +114,23 @@ struct User: Decodable, Equatable, Sendable {
 }
 
 enum TwoFactorMethod: String, CaseIterable, Identifiable, Sendable {
-    case totp, email, passkey
+    case totp, passkey
     var id: String { rawValue }
     var label: String {
         switch self {
         case .totp: "Authenticator app"
-        case .email: "Email"
         case .passkey: "Passkey"
         }
     }
     var detail: String {
         switch self {
         case .totp: "Google Authenticator, Authy, 2FAS"
-        case .email: "A code sent to your email each sign-in"
         case .passkey: "Face ID or Touch ID; also signs you in without a password"
         }
     }
     var symbol: String {
         switch self {
         case .totp: "iphone"
-        case .email: "envelope"
         case .passkey: "person.badge.key"
         }
     }
@@ -386,7 +385,7 @@ struct ClassroomAttachment: Decodable, Hashable, Sendable {
 
 struct AdminUser: Decodable, Identifiable, Hashable, Sendable {
     var id: String
-    var email: String
+    var username: String
     var fullName: String?
     var name: String?
     var role: String
@@ -398,7 +397,7 @@ struct AdminUser: Decodable, Identifiable, Hashable, Sendable {
     var createdDate: Date?
 
     enum CodingKeys: String, CodingKey {
-        case id, email, name, role
+        case id, username, name, role
         case fullName = "full_name"
         case disabledReason = "disabled_reason"
         case twofaEnabled = "twofa_enabled"
@@ -411,7 +410,7 @@ struct AdminUser: Decodable, Identifiable, Hashable, Sendable {
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         id = try c.decode(String.self, forKey: .id)
-        email = c.flexString(.email) ?? ""
+        username = c.flexString(.username) ?? ""
         fullName = c.flexString(.fullName)
         name = c.flexString(.name)
         role = c.flexString(.role) ?? "user"
@@ -426,7 +425,7 @@ struct AdminUser: Decodable, Identifiable, Hashable, Sendable {
     var displayName: String {
         if let n = name, !n.isEmpty { return n }
         if let n = fullName, !n.isEmpty { return n }
-        return email
+        return username
     }
 }
 

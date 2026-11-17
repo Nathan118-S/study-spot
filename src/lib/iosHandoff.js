@@ -1,6 +1,6 @@
 // Native iOS app sign-in. The app opens /login?client=ios (or /register) in a
 // private in-app browser session. The flag is kept in sessionStorage for that
-// tab so it survives the Google redirect round-trip. Once any sign-in method
+// tab so it survives moving between /login and /register. Once any sign-in method
 // produces a session token, it is handed to the app through its URL scheme
 // instead of signing in on the web.
 import { api } from '@/api/client';

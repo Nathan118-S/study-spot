@@ -11,6 +11,7 @@ import BlackboardConnection from '@/components/BlackboardConnection';
 import ReminderSettings from '@/components/ReminderSettings';
 import DataExport from '@/components/DataExport';
 import AccountName from '@/components/AccountName';
+import ChangePassword from '@/components/ChangePassword';
 import { WelcomeStyleSelect } from '@/components/ThemeControls';
 import { Switch } from '@/components/ui/switch';
 import {
@@ -44,10 +45,10 @@ const CARDS = [
   { value: 'leaderboard', label: 'Leaderboard', desc: 'Show study-streak rankings', icon: Trophy },
   { value: 'onboarding', label: 'Onboarding', desc: 'Run the setup wizard again', icon: RotateCcw },
   { value: 'data', label: 'Data', desc: 'Export your assignments', icon: Database },
-  { value: 'reminders', label: 'Reminders', desc: 'Email reminder timing', icon: AlarmClock },
+  { value: 'reminders', label: 'Reminders', desc: 'Reminder timing and notifications', icon: AlarmClock },
   { value: 'grading', label: 'Grading', desc: 'Letter-grade thresholds', icon: GraduationCap },
   { value: 'security', label: 'Security', desc: 'Two-factor authentication', icon: Lock },
-  { value: 'account', label: 'Account', desc: 'Your name and email', icon: User },
+  { value: 'account', label: 'Account', desc: 'Name, username and password', icon: User },
   { value: 'danger', label: 'Danger Zone', desc: 'Log out all devices, delete account', icon: AlertTriangle, danger: true },
 ];
 
@@ -323,7 +324,7 @@ export default function Settings() {
         return (
           <div className="space-y-3">
             <p className="text-sm text-muted-foreground">
-              Control when you get email notifications about upcoming assignments.
+              Control when you get reminders about upcoming assignments.
             </p>
             <ReminderSettings />
           </div>
@@ -340,7 +341,12 @@ export default function Settings() {
       case 'security':
         return <TwoFactorSettings />;
       case 'account':
-        return <AccountName />;
+        return (
+          <div className="space-y-3">
+            <AccountName />
+            <ChangePassword />
+          </div>
+        );
       case 'danger':
         return (
           <div className="space-y-3">

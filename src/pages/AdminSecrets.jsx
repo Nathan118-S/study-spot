@@ -16,7 +16,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Loader2, ArrowLeft, Lock, KeyRound, Trash2, Save, Send } from 'lucide-react';
+import { Loader2, ArrowLeft, Lock, KeyRound, Trash2, Save } from 'lucide-react';
 
 export default function AdminSecrets() {
   const { user, isLoadingAuth } = useAuth();
@@ -29,8 +29,6 @@ export default function AdminSecrets() {
   const [saving, setSaving] = useState(false);
   const [clearing, setClearing] = useState(null);
   const [confirmClear, setConfirmClear] = useState(null);
-  const [testEmailTo, setTestEmailTo] = useState('');
-  const [sendingTest, setSendingTest] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -88,19 +86,6 @@ export default function AdminSecrets() {
       toast({ title: 'Save failed', description: e.message, variant: 'destructive' });
     } finally {
       setSaving(false);
-    }
-  };
-
-  const sendTestEmail = async () => {
-    if (!testEmailTo.trim()) return;
-    setSendingTest(true);
-    try {
-      await api.functions.invoke('adminSendTestEmail', { to: testEmailTo.trim() });
-      toast({ title: 'Test email sent', description: `Check ${testEmailTo.trim()} for delivery.` });
-    } catch (e) {
-      toast({ title: 'Test email failed', description: e.message, variant: 'destructive' });
-    } finally {
-      setSendingTest(false);
     }
   };
 
@@ -181,32 +166,6 @@ export default function AdminSecrets() {
                   </div>
                 ))}
               </div>
-              {group === 'Email (SMTP)' && items.find((s) => s.key === 'SMTP_HOST')?.isSet && (
-                <div className="pt-1 space-y-1.5 border-t">
-                  <p className="text-sm text-muted-foreground pt-3">
-                    Send a test email to confirm delivery works — this is the same path new sign-ups use for their
-                    verification code.
-                  </p>
-                  <div className="flex items-center gap-2">
-                    <Input
-                      type="email"
-                      placeholder="you@example.com"
-                      value={testEmailTo}
-                      onChange={(e) => setTestEmailTo(e.target.value)}
-                    />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={sendTestEmail}
-                      disabled={sendingTest || !testEmailTo.trim()}
-                      className="shrink-0"
-                    >
-                      {sendingTest ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                      <span className="ml-1.5 hidden sm:inline">Send test</span>
-                    </Button>
-                  </div>
-                </div>
-              )}
             </div>
           ))}
 
@@ -223,7 +182,7 @@ export default function AdminSecrets() {
             <AlertDialogTitle>Clear {confirmClear?.label}?</AlertDialogTitle>
             <AlertDialogDescription>
               This deletes the stored value for <span className="font-medium text-foreground">{confirmClear?.key}</span>{' '}
-              so a new one can be pasted in. Anything relying on it (sign-in, sync, email) will stop working until
+              so a new one can be pasted in. Anything relying on it (sync, push notifications) will stop working until
               it's replaced.
             </AlertDialogDescription>
           </AlertDialogHeader>

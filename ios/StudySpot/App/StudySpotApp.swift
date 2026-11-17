@@ -3,6 +3,8 @@ import Observation
 
 @main
 struct StudySpotApp: App {
+    /// Push notification registration and taps (see PushNotifications.swift).
+    @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @State private var auth = AuthStore()
     @State private var theme = ThemeStore()
     @State private var data = DataStore()
@@ -27,11 +29,16 @@ struct StudySpotApp: App {
                 .preferredColorScheme(theme.colorScheme)
                 .transaction { t in if !theme.animations { t.animation = nil } }
                 .onOpenURL { url in Task { await handle(url) } }
+                .task {
+                    // Notification taps, including one that launched the app.
+                    DeepLinkInbox.setHandler { url in Task { await handle(url) } }
+                }
         }
     }
 
     /// Fallback for app-scheme links opened outside an auth session
-    /// (e.g. Blackboard finishing in Safari).
+    /// (e.g. Blackboard finishing in Safari), plus widget, Live Activity, and
+    /// notification links.
     @MainActor
     private func handle(_ url: URL) async {
         guard url.scheme == AppConfig.urlScheme else { return }

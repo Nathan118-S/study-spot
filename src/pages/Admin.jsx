@@ -96,7 +96,7 @@ export default function Admin() {
             </div>
             <div className="min-w-0">
               <p className="font-medium">Integration Secrets</p>
-              <p className="text-sm text-muted-foreground truncate">Paste SMTP, Google, and Blackboard credentials — write-once, encrypted.</p>
+              <p className="text-sm text-muted-foreground truncate">Paste Google, Blackboard, and Apple Push credentials — write-once, encrypted.</p>
             </div>
           </div>
           <ChevronRight className="h-5 w-5 text-muted-foreground shrink-0" />

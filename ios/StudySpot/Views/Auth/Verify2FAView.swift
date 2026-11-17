@@ -7,7 +7,6 @@ struct Verify2FAView: View {
     @State private var code = ""
     @State private var error = ""
     @State private var loading = false
-    @State private var emailSent = false
     @State private var passkeys = PasskeyService()
 
     private var methods: [TwoFactorMethod] { auth.user?.enabledTwoFactorMethods ?? [] }
@@ -19,7 +18,7 @@ struct Verify2FAView: View {
                     VStack(spacing: 8) {
                         Image(systemName: "lock.shield").font(.system(size: 44)).foregroundStyle(.tint)
                         Text("Verify it's you").font(.title2.bold())
-                        Text(auth.user?.email ?? "").font(.subheadline).foregroundStyle(.secondary)
+                        Text(auth.user?.username ?? "").font(.subheadline).foregroundStyle(.secondary)
                     }
                     .frame(maxWidth: .infinity)
                     .listRowBackground(Color.clear)
@@ -42,15 +41,6 @@ struct Verify2FAView: View {
                     } footer: { errorText }
                     submitButton("Verify") { try await APIClient.shared.invoke("verify2fa", ["code": .string(code)]) }
                         .disabled(code.count != 6)
-                case .email:
-                    Section {
-                        CodeField(code: $code)
-                        Button(emailSent ? "Resend code" : "Send code") { Task { await sendEmail() } }
-                    } header: {
-                        Text("Enter the code we emailed you")
-                    } footer: { errorText }
-                    submitButton("Verify") { try await APIClient.shared.invoke("email2faVerify", ["code": .string(code)]) }
-                        .disabled(code.count != 6)
                 case .passkey:
                     Section {
                         Text("Use Face ID, Touch ID, or your device passcode to confirm.")
@@ -70,9 +60,8 @@ struct Verify2FAView: View {
             let pref = auth.user?.twofaMethod.flatMap(TwoFactorMethod.init(rawValue:))
             selected = pref.flatMap { methods.contains($0) ? $0 : nil } ?? methods.first ?? .totp
         }
-        .onChange(of: selected) { _, m in
+        .onChange(of: selected) { _, _ in
             code = ""; error = ""
-            if m == .email && !emailSent { Task { await sendEmail() } }
         }
     }
 
@@ -97,14 +86,5 @@ struct Verify2FAView: View {
             HStack { Spacer(); if loading { ProgressView() } else { Text(title).bold() }; Spacer() }
         }
         .disabled(loading)
-    }
-
-    private func sendEmail() async {
-        do {
-            try await APIClient.shared.invoke("email2faSend")
-            emailSent = true
-        } catch {
-            self.error = error.localizedDescription
-        }
     }
 }

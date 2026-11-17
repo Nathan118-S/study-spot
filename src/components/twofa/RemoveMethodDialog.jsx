@@ -20,32 +20,12 @@ export default function RemoveMethodDialog({ open, onOpenChange, method, onDone 
   const [code, setCode] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  const [sent, setSent] = useState(false);
 
   useEffect(() => {
     if (open) {
       setCode('');
       setError('');
-      setSent(false);
     }
-  }, [open, method]);
-
-  const sendEmail = async () => {
-    setBusy(true);
-    setError('');
-    try {
-      await api.functions.invoke('email2faSend', {});
-      setSent(true);
-    } catch (e) {
-      setError(e.response?.data?.error || e.message || 'Failed to send code');
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  useEffect(() => {
-    if (open && method === 'email') sendEmail();
-     
   }, [open, method]);
 
   const passkeyVerify = async () => {
@@ -74,8 +54,6 @@ export default function RemoveMethodDialog({ open, onOpenChange, method, onDone 
     try {
       if (method === 'totp') {
         await api.functions.invoke('verify2fa', { code });
-      } else if (method === 'email') {
-        await api.functions.invoke('email2faVerify', { code });
       } else if (method === 'passkey') {
         await passkeyVerify();
       }
@@ -120,9 +98,7 @@ export default function RemoveMethodDialog({ open, onOpenChange, method, onDone 
         <DialogHeader>
           <DialogTitle>Remove {METHOD_LABEL[method]}?</DialogTitle>
           <DialogDescription>
-            {method === 'email'
-              ? 'Enter the code sent to your email to confirm removal.'
-              : 'Enter a current 6-digit code from your authenticator app.'}
+            Enter a current 6-digit code from your authenticator app.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-2 py-2">
@@ -137,11 +113,6 @@ export default function RemoveMethodDialog({ open, onOpenChange, method, onDone 
             autoFocus
           />
           {error && <p className="text-sm text-destructive">{error}</p>}
-          {method === 'email' && (
-            <Button variant="ghost" size="sm" onClick={sendEmail} disabled={busy} className="w-full">
-              {sent ? 'Resend code' : 'Send code'}
-            </Button>
-          )}
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={busy}>Cancel</Button>

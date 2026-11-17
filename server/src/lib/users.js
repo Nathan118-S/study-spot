@@ -1,3 +1,4 @@
+import crypto from 'node:crypto';
 import jwt from 'jsonwebtoken';
 import { pool } from '../db.js';
 
@@ -29,7 +30,8 @@ const KNOWN_COLUMNS = new Set([
 // endpoints (see middleware/auth.js). Verification issues a full session.
 export function signSession(userId, { mfaPending = false } = {}) {
   const claims = mfaPending ? { sub: userId, mfa: 'pending' } : { sub: userId };
-  return jwt.sign(claims, process.env.SESSION_SECRET, { expiresIn: '30d' });
+  // A random ID makes every session token unique (admin elevations are tied to one).
+  return jwt.sign(claims, process.env.SESSION_SECRET, { expiresIn: '30d', jwtid: crypto.randomUUID() });
 }
 
 // Returns { userId, mfaPending, issuedAt } or null.

@@ -20,7 +20,7 @@ export default function MergeDialog({ open, onOpenChange, source, users, onMerge
 
   const options = users
     .filter((u) => u.id !== source?.id)
-    .map((u) => ({ value: u.id, label: u.full_name ? `${u.full_name} — ${u.email}` : u.email }));
+    .map((u) => ({ value: u.id, label: (u.name || u.full_name) ? `${u.name || u.full_name} — @${u.username}` : `@${u.username}` }));
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -29,8 +29,8 @@ export default function MergeDialog({ open, onOpenChange, source, users, onMerge
           <DialogTitle>Merge account</DialogTitle>
           <DialogDescription>
             Move all assignments and classes from{' '}
-            <span className="font-medium text-foreground">{source?.email}</span> into another
-            account, then remove {source?.email}. This cannot be undone.
+            <span className="font-medium text-foreground">@{source?.username}</span> into another
+            account, then remove @{source?.username}. This cannot be undone.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-2 py-2">

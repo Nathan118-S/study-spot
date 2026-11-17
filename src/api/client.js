@@ -131,17 +131,12 @@ export const api = {
   auth: {
     me: () => request('/auth/me'),
 
-    async register({ email, password }) {
-      return request('/auth/register', { method: 'POST', body: { email, password } });
-    },
-
-    async verifyOtp({ email, otpCode }) {
-      const result = await request('/auth/verify-otp', { method: 'POST', body: { email, otpCode } });
+    // Accounts are username-based (no email). Registration signs straight in.
+    async register({ username, password }) {
+      const result = await request('/auth/register', { method: 'POST', body: { username, password } });
       if (result?.access_token) setToken(result.access_token);
       return result;
     },
-
-    resendOtp: (email) => request('/auth/resend-otp', { method: 'POST', body: { email } }),
 
     setToken,
 
@@ -151,25 +146,18 @@ export const api = {
       return request('/auth/me', { method: 'PATCH', body: patch });
     },
 
-    async loginViaEmailPassword(email, password) {
-      const result = await request('/auth/login', { method: 'POST', body: { email, password } });
+    async loginWithPassword(username, password) {
+      const result = await request('/auth/login', { method: 'POST', body: { username, password } });
       if (result?.access_token) setToken(result.access_token);
       return result;
     },
 
-    loginWithProvider(provider, returnTo) {
-      if (provider !== 'google') throw new Error(`Unsupported provider: ${provider}`);
-      const url = new URL(`${API_BASE}/auth/google/start`, window.location.origin);
-      url.searchParams.set('returnTo', returnTo || '/');
-      window.location.href = url.toString();
-    },
-
-    // Passwordless sign-in. With an email, only that account's passkey is
+    // Passwordless sign-in. With a username, only that account's passkey is
     // offered; without one, the device shows its own list of passkeys.
     passkeySupported: () => typeof window !== 'undefined' && !!window.PublicKeyCredential,
 
-    async loginWithPasskey(email) {
-      const opts = await request('/auth/passkey/start', { method: 'POST', body: { email: email || undefined } });
+    async loginWithPasskey(username) {
+      const opts = await request('/auth/passkey/start', { method: 'POST', body: { username: username || undefined } });
       const assertion = await navigator.credentials.get({
         publicKey: {
           challenge: b64uDecode(opts.challenge),
@@ -194,10 +182,8 @@ export const api = {
       return result;
     },
 
-    resetPasswordRequest: (email) => request('/auth/forgot-password', { method: 'POST', body: { email } }),
-
-    resetPassword: ({ resetToken, newPassword }) =>
-      request('/auth/reset-password', { method: 'POST', body: { resetToken, newPassword } }),
+    changePassword: ({ currentPassword, newPassword }) =>
+      request('/auth/change-password', { method: 'POST', body: { currentPassword, newPassword } }),
 
     logout(redirectUrl) {
       setToken(null);
