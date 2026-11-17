@@ -434,7 +434,7 @@ export default function Settings() {
             <div className="flex items-center gap-3 min-w-0">
               <div
                 className={`h-9 w-9 rounded-full flex items-center justify-center shrink-0 ${
-                  c.danger ? 'bg-destructive/10 text-destructive' : 'bg-primary/10 text-primary'
+                  c.danger ? 'bg-destructive/10 text-destructive' : 'bg-secondary text-secondary-foreground'
                 }`}
               >
                 <c.icon className="h-5 w-5" />

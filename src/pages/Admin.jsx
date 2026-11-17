@@ -57,7 +57,7 @@ export default function Admin() {
           className="w-full text-left bg-card px-4 py-3 hover:bg-accent/60 transition-colors flex items-center justify-between gap-3"
         >
           <div className="flex items-center gap-3 min-w-0">
-            <div className="h-10 w-10 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0">
+            <div className="h-10 w-10 rounded-full bg-secondary text-secondary-foreground flex items-center justify-center shrink-0">
               <Users className="h-5 w-5" />
             </div>
             <div className="min-w-0">
@@ -75,7 +75,7 @@ export default function Admin() {
           className="w-full text-left bg-card px-4 py-3 hover:bg-accent/60 transition-colors flex items-center justify-between gap-3"
         >
           <div className="flex items-center gap-3 min-w-0">
-            <div className="h-10 w-10 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0">
+            <div className="h-10 w-10 rounded-full bg-secondary text-secondary-foreground flex items-center justify-center shrink-0">
               <Bell className="h-5 w-5" />
             </div>
             <div className="min-w-0">
@@ -91,7 +91,7 @@ export default function Admin() {
           className="w-full text-left bg-card px-4 py-3 hover:bg-accent/60 transition-colors flex items-center justify-between gap-3"
         >
           <div className="flex items-center gap-3 min-w-0">
-            <div className="h-10 w-10 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0">
+            <div className="h-10 w-10 rounded-full bg-secondary text-secondary-foreground flex items-center justify-center shrink-0">
               <KeyRound className="h-5 w-5" />
             </div>
             <div className="min-w-0">
@@ -107,7 +107,7 @@ export default function Admin() {
           className="w-full text-left bg-card px-4 py-3 hover:bg-accent/60 transition-colors flex items-center justify-between gap-3"
         >
           <div className="flex items-center gap-3 min-w-0">
-            <div className="h-10 w-10 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0">
+            <div className="h-10 w-10 rounded-full bg-secondary text-secondary-foreground flex items-center justify-center shrink-0">
               <GitBranch className="h-5 w-5" />
             </div>
             <div className="min-w-0">

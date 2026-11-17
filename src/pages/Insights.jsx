@@ -214,7 +214,7 @@ export default function Insights() {
 function StatCard({ icon, label, value }) {
   return (
     <div className="rounded-xl border bg-card p-4 flex items-center gap-3">
-      <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">{icon}</div>
+      <div className="h-10 w-10 rounded-full bg-secondary flex items-center justify-center shrink-0">{icon}</div>
       <div className="min-w-0">
         <p className="text-xs text-muted-foreground">{label}</p>
         <p className="text-xl font-bold">{value}</p>

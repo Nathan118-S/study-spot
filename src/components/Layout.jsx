@@ -40,13 +40,13 @@ function SidebarLink({ to, end, icon: Icon, label, collapsed, danger, onClick })
             ? danger
               ? 'bg-destructive text-destructive-foreground'
               : 'bg-primary text-primary-foreground'
-            : 'text-foreground hover:bg-sidebar-accent'
+            : 'text-[hsl(var(--navy))] hover:bg-sidebar-accent'
         )
       }
     >
       {({ isActive }) => (
         <>
-          <Icon className={cn('h-[22px] w-[22px] shrink-0', !isActive && (danger ? 'text-destructive' : 'text-primary'))} />
+          <Icon className={cn('h-[22px] w-[22px] shrink-0', !isActive && (danger ? 'text-destructive' : 'text-[hsl(var(--navy))]'))} />
           <span className={cn('truncate', collapsed && 'md:hidden')}>{label}</span>
         </>
       )}
