@@ -69,7 +69,7 @@ struct LandingView: View {
         ScrollView {
             VStack(spacing: 28) {
                 VStack(spacing: 12) {
-                    Image(systemName: "graduationcap.fill").font(.system(size: 54)).foregroundStyle(.tint)
+                    LogoMark(size: 72)
                     Text("Built for students who juggle everything")
                         .font(.footnote.weight(.semibold)).foregroundStyle(.tint)
                     Text("All your assignments, in one place.")

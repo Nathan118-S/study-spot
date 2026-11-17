@@ -43,9 +43,8 @@ struct RootView: View {
 struct SplashView: View {
     var body: some View {
         VStack(spacing: 16) {
-            Image(systemName: "graduationcap.fill")
-                .font(.system(size: 56))
-                .foregroundStyle(.tint)
+            // Same logo and size as the launch screen, so the hand-off is seamless.
+            LogoMark(size: 128)
             ProgressView()
         }
     }

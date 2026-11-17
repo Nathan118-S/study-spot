@@ -52,7 +52,7 @@ struct UpNextView: View {
 
     private var header: some View {
         HStack(spacing: 4) {
-            Image(systemName: "graduationcap.fill")
+            LogoMark(size: 16)
             Text("Up Next")
         }
         .font(.caption.weight(.semibold))

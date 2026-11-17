@@ -104,9 +104,7 @@ struct OnboardingView: View {
     private var welcome: some View {
         VStack(spacing: 16) {
             Spacer()
-            Image(systemName: "graduationcap.fill")
-                .font(.system(size: 72))
-                .foregroundStyle(.tint)
+            LogoMark(size: 96)
                 .offset(y: bounce ? -8 : 0)
                 .rotationEffect(.degrees(bounce ? -6 : 6))
                 .animation(theme.animations ? .easeInOut(duration: 1.2).repeatForever(autoreverses: true) : nil, value: bounce)

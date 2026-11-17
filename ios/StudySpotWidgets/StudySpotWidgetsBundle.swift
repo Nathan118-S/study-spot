@@ -50,7 +50,7 @@ extension WidgetSnapshot {
 struct SignedOutView: View {
     var body: some View {
         VStack(spacing: 6) {
-            Image(systemName: "graduationcap.fill").font(.title2).foregroundStyle(.tint)
+            LogoMark(size: 34)
             Text("Open Study Spot to sign in").font(.caption).multilineTextAlignment(.center).foregroundStyle(.secondary)
         }
     }

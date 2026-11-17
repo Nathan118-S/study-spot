@@ -20,6 +20,16 @@
 			</array>
 		</dict>
 	</array>
+	<!-- Launch screen: the logo on the system background (light/dark). -->
+	<key>UILaunchScreen</key>
+	<dict>
+		<key>UIImageName</key>
+		<string>LaunchLogo</string>
+		<key>UIColorName</key>
+		<string>LaunchBackground</string>
+		<key>UIImageRespectsSafeAreaInsets</key>
+		<true/>
+	</dict>
 	<!-- Allows http:// to localhost / LAN servers during development. Use https in production. -->
 	<key>NSAppTransportSecurity</key>
 	<dict>
