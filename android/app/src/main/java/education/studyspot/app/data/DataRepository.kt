@@ -6,6 +6,8 @@ import education.studyspot.app.core.Entities
 import education.studyspot.app.core.doubleValue
 import education.studyspot.app.core.get
 import education.studyspot.app.core.userMessage
+import education.studyspot.app.logic.AssignmentEdits
+import education.studyspot.app.logic.CalendarMath
 import education.studyspot.app.model.AppNotification
 import education.studyspot.app.model.Assignment
 import education.studyspot.app.model.AssignmentTemplate
@@ -35,7 +37,6 @@ import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.put
 import java.time.Instant
 import java.time.ZoneId
-import java.time.ZonedDateTime
 
 /**
  * The single source of truth for the signed-in user's data, shared by every
@@ -302,12 +303,27 @@ class DataRepository(
         }
     }
 
-    suspend fun toggleComplete(a: Assignment) {
-        val next = a.copy(completed = !a.completed)
-        val saved = updateAssignment(a.id, buildJsonObject { put("completed", next.completed) }, next)
-        if (saved != null && next.completed && a.source == Source.GoogleClassroom && a.externalId != null &&
-            _user.value?.syncCompletionToClassroom != false && !isDemo
-        ) {
+    /**
+     * Marks [a] complete or not. With [withProgress] (the detail screen, like iOS)
+     * progress and subtasks follow the new state too. Completing a Google Classroom
+     * assignment also turns it in on Classroom when the user allows it.
+     */
+    suspend fun toggleComplete(a: Assignment, withProgress: Boolean = false) {
+        val next = if (withProgress) AssignmentEdits.toggledCompletion(a) else a.copy(completed = !a.completed)
+        val patch = buildJsonObject {
+            put("completed", next.completed)
+            if (withProgress) {
+                put("progress", next.progress)
+                if (a.subtasks.isNotEmpty()) put("subtasks", AssignmentEdits.subtasksJson(next.subtasks))
+            }
+        }
+        val saved = updateAssignment(a.id, patch, next)
+        if (saved != null && next.completed) syncCompletionToClassroom(listOf(a))
+    }
+
+    private fun syncCompletionToClassroom(completed: List<Assignment>) {
+        if (isDemo || _user.value?.syncCompletionToClassroom == false) return
+        completed.filter { it.source == Source.GoogleClassroom && it.externalId != null }.forEach { a ->
             scope.launch {
                 runCatching { api.invoke("syncCompletionToClassroom", buildJsonObject { put("assignment_id", a.id) }) }
             }
@@ -346,6 +362,7 @@ class DataRepository(
         if (isDemo) return
         try {
             coroutineScope { ids.map { id -> async { api.updateAssignment(id, patch) } }.awaitAll() }
+            if (completed == true) syncCompletionToClassroom(prev.filter { it.id in ids && !it.completed })
         } catch (e: Exception) {
             if (e is kotlinx.coroutines.CancellationException) throw e
             _assignments.value = prev
@@ -353,11 +370,51 @@ class DataRepository(
         }
     }
 
+    /** Deletes several assignments (dashboard select mode). */
+    suspend fun bulkDelete(ids: Set<String>) {
+        if (ids.isEmpty()) return
+        val prev = _assignments.value
+        _assignments.update { list -> list.filterNot { it.id in ids } }
+        if (isDemo) return
+        val failed = coroutineScope {
+            ids.map { id -> async { id.takeIf { runCatching { api.delete(Entities.ASSIGNMENT, id) }.isFailure } } }.awaitAll()
+        }.filterNotNull().toSet()
+        if (failed.isNotEmpty()) {
+            _assignments.update { list -> list + prev.filter { it.id in failed } }
+            messages.show("Couldn't delete ${failed.size} assignment(s)", error = true)
+        }
+    }
+
+    /**
+     * Moves several assignments to [day], keeping each one's time of day
+     * (11:59 PM for ones without a due date).
+     */
+    suspend fun bulkReschedule(ids: Set<String>, day: java.time.LocalDate, zone: ZoneId = ZoneId.systemDefault()) {
+        if (ids.isEmpty()) return
+        val prev = _assignments.value
+        val moved = prev.filter { it.id in ids }.associate { a ->
+            a.id to (CalendarMath.moveToDay(a.dueDate, day, zone) ?: day.atTime(23, 59).atZone(zone).toInstant())
+        }
+        _assignments.update { list -> list.map { a -> moved[a.id]?.let { a.copy(dueDate = it) } ?: a } }
+        if (isDemo) return
+        try {
+            coroutineScope {
+                moved.map { (id, due) ->
+                    async { api.updateAssignment(id, buildJsonObject { put("due_date", Dates.format(due)) }) }
+                }.awaitAll()
+            }
+        } catch (e: Exception) {
+            if (e is kotlinx.coroutines.CancellationException) throw e
+            _assignments.value = prev
+            messages.show("Couldn't reschedule the assignments", e.userMessage, error = true)
+        }
+    }
+
     /** Moves an assignment to another day, keeping its time of day (calendar drag and drop). */
     suspend fun reschedule(id: String, day: java.time.LocalDate, zone: ZoneId = ZoneId.systemDefault()) {
         val a = assignment(id) ?: return
-        val old = a.dueDate?.atZone(zone) ?: return
-        val newDate = ZonedDateTime.of(day, old.toLocalTime(), zone).toInstant()
+        val newDate = CalendarMath.moveToDay(a.dueDate, day, zone) ?: return
+        if (newDate == a.dueDate) return
         updateAssignment(id, buildJsonObject { put("due_date", Dates.format(newDate)) }, a.copy(dueDate = newDate))
     }
 

@@ -1,7 +1,7 @@
 package education.studyspot.app.ui.dashboard
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,10 +12,14 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.outlined.Circle
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.MaterialTheme
@@ -27,6 +31,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
@@ -43,6 +49,10 @@ import education.studyspot.app.ui.theme.StudySpotTheme
  * One assignment: class color bar, completion checkbox, title with source /
  * overdue pills, then class · type · due date. Reused by other lists (calendar,
  * class detail).
+ *
+ * In [selectMode] a selection circle leads the row and taps toggle selection
+ * (the caller decides what [onClick] does). [onLongClick] enters select mode on
+ * the dashboard.
  */
 @Composable
 fun AssignmentRow(
@@ -51,21 +61,44 @@ fun AssignmentRow(
     onToggleComplete: () -> Unit,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    selectMode: Boolean = false,
+    selected: Boolean = false,
+    onLongClick: (() -> Unit)? = null,
 ) {
     val a = assignment
     val colors = StudySpotTheme.colors
     val overdue = a.isOverdue
+    val base = when {
+        selected -> colors.accent.copy(alpha = 0.14f).compositeOver(colors.surface)
+        overdue -> colors.danger.copy(alpha = 0.08f).compositeOver(colors.surface)
+        else -> colors.surface
+    }
     Row(
         modifier = modifier
             .fillMaxWidth()
             .clip(MaterialTheme.shapes.medium)
-            .background(if (overdue) colors.danger.copy(alpha = 0.08f).compositeOver(colors.surface) else colors.surface)
-            .clickable(onClick = onClick)
+            .background(base)
+            .combinedClickable(
+                onClick = onClick,
+                onLongClick = onLongClick,
+                onLongClickLabel = if (onLongClick != null) "Select" else null,
+            )
             .height(IntrinsicSize.Min)
             .padding(end = 12.dp)
-            .semantics { if (overdue) stateDescription = "Overdue" },
+            .semantics {
+                if (overdue) stateDescription = "Overdue"
+                if (selectMode) this.selected = selected
+            },
         verticalAlignment = Alignment.CenterVertically,
     ) {
+        if (selectMode) {
+            Icon(
+                if (selected) Icons.Filled.CheckCircle else Icons.Outlined.Circle,
+                contentDescription = null,
+                tint = if (selected) colors.accent else colors.mutedText,
+                modifier = Modifier.padding(start = 12.dp).size(22.dp),
+            )
+        }
         Box(
             Modifier
                 .padding(start = 10.dp, top = 10.dp, bottom = 10.dp)
@@ -76,7 +109,8 @@ fun AssignmentRow(
         )
         Checkbox(
             checked = a.completed,
-            onCheckedChange = { onToggleComplete() },
+            onCheckedChange = if (selectMode) null else { _ -> onToggleComplete() },
+            modifier = Modifier.semantics { contentDescription = if (a.completed) "Mark incomplete" else "Mark complete" },
             colors = CheckboxDefaults.colors(checkedColor = colors.accent, uncheckedColor = colors.mutedText),
         )
         Column(Modifier.weight(1f).padding(vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
