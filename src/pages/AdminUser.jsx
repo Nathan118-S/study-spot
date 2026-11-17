@@ -16,6 +16,7 @@ import SheetSelect from '@/components/SheetSelect';
 import MergeDialog from '@/components/admin/MergeDialog';
 import AdminUserSettings from '@/components/admin/AdminUserSettings';
 import AdminUserRecords from '@/components/admin/AdminUserRecords';
+import AdminSimulate from '@/components/admin/AdminSimulate';
 import { ElevationStatus } from '@/components/admin/AdminElevation';
 import { Section, Row, ConfirmButton, fmtDate, fmtDay } from '@/components/admin/AdminUserParts';
 import { METHOD_LABEL } from '@/lib/twofa';
@@ -37,7 +38,11 @@ const CONNECTORS = [
   { id: 'google_classroom', label: 'Google Classroom', icon: GraduationCap },
 ];
 
-const DEVICE_KIND = { alert: 'Push notifications', 'live-activity-start': 'Live Activities' };
+const DEVICE_KIND = {
+  alert: 'Push notifications',
+  'live-activity-start': 'Class Live Activities',
+  'timer-activity-start': 'Study timer Live Activities',
+};
 
 function TempPasswordDialog({ value, onClose }) {
   const [copied, setCopied] = useState(false);
@@ -585,6 +590,8 @@ export default function AdminUser() {
           ))
         )}
       </Section>
+
+      <AdminSimulate userId={userId} />
 
       <section>
         <p className="ios-section-header">Overview</p>
