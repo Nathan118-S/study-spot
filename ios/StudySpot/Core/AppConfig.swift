@@ -9,14 +9,23 @@ enum AppConfig {
 
     static var defaultServerURL: String {
         let configured = (Bundle.main.object(forInfoDictionaryKey: "StudySpotServerURL") as? String) ?? ""
-        return configured.isEmpty || configured.hasPrefix("$(") ? "http://localhost:8787" : configured
+        return configured.isEmpty || configured.hasPrefix("$(") ? productionServerURL : configured
     }
+
+    /// The hosted Study Spot server.
+    static let productionServerURL = "https://studyspot.education"
 
     /// Base URL of the server, e.g. "https://studyspot.example.com".
     static var serverURL: String {
         get {
             let stored = UserDefaults.standard.string(forKey: serverURLKey) ?? ""
-            return normalize(stored.isEmpty ? defaultServerURL : stored)
+            // An address saved by an older development build (localhost) would
+            // never work on a phone: fall back to the real server.
+            if stored.isEmpty || (isLocalHost(URL(string: normalize(stored))?.host)
+                                  && !isLocalHost(URL(string: normalize(defaultServerURL))?.host)) {
+                return normalize(defaultServerURL)
+            }
+            return normalize(stored)
         }
         set { UserDefaults.standard.set(normalize(newValue), forKey: serverURLKey) }
     }
@@ -45,7 +54,10 @@ enum AppConfig {
     static var webURL: String {
         get {
             let stored = UserDefaults.standard.string(forKey: webURLKey) ?? ""
-            return normalize(stored.isEmpty ? defaultWebURL : stored)
+            if stored.isEmpty || (isLocalHost(URL(string: normalize(stored))?.host) && !isLocalHost(URL(string: serverURL)?.host)) {
+                return normalize(defaultWebURL)
+            }
+            return normalize(stored)
         }
         set {
             let n = normalize(newValue)

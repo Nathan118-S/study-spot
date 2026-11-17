@@ -35,8 +35,9 @@ preset your signing team. You can re-run it any time.
    (`com.studyspot.app`).
 3. Pick a simulator or device and press **Run**.
 
-The app connects to `http://localhost:8787` by default, which is right for the
-simulator with `cd server && npm run dev`. To change the server:
+The app connects to `https://studyspot.education` by default. To use a
+different server (e.g. `http://localhost:8787` with `cd server && npm run dev`
+in the simulator):
 
 - per device: long-press the logo on the welcome screen (or, once signed
   in, *Settings → Server*) and enter your server's address, or

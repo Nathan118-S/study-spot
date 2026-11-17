@@ -102,7 +102,7 @@ app = """				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.studyspot.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				STUDYSPOT_SERVER_URL = "http://localhost:8787";
+				STUDYSPOT_SERVER_URL = "https://studyspot.education";
 				STUDYSPOT_WEB_URL = "";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				TARGETED_DEVICE_FAMILY = "1,2";
