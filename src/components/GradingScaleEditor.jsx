@@ -5,7 +5,9 @@ import { Input } from '@/components/ui/input';
 import { Loader2, Plus, Trash2, RotateCcw } from 'lucide-react';
 import { DEFAULT_GRADING_SCALE } from '@/lib/grading';
 
-export default function GradingScaleEditor({ initialScale }) {
+// onSave defaults to saving the signed-in user's own scale; admins pass
+// their own to save someone else's.
+export default function GradingScaleEditor({ initialScale, onSave }) {
   const [rows, setRows] = useState(
     initialScale?.length ? initialScale : DEFAULT_GRADING_SCALE
   );
@@ -32,7 +34,8 @@ export default function GradingScaleEditor({ initialScale }) {
       const sorted = [...rows]
         .filter((r) => r.letter && r.letter.trim())
         .sort((a, b) => b.min - a.min);
-      await api.auth.updateMe({ grading_scale: sorted });
+      if (onSave) await onSave(sorted);
+      else await api.auth.updateMe({ grading_scale: sorted });
       setRows(sorted);
     } finally {
       setSaving(false);

@@ -4,9 +4,11 @@ struct APIError: LocalizedError, Sendable {
     var status: Int
     var message: String
     var notConnected: Bool = false
+    /// The admin 2FA step-up is missing or expired (see AdminUnlock).
+    var elevationRequired: Bool = false
 
     var errorDescription: String? { message }
-    var isAuthError: Bool { status == 401 || status == 403 }
+    var isAuthError: Bool { (status == 401 || status == 403) && !elevationRequired }
 }
 
 /// Talks to the Study Spot Express/PostgreSQL backend (`server/`). Mirrors the
@@ -29,6 +31,25 @@ final class APIClient: @unchecked Sendable {
     func setToken(_ token: String?) {
         if let token { Keychain.set(token, for: Keychain.tokenKey) }
         else { Keychain.delete(Keychain.tokenKey) }
+        // The admin step-up is tied to the session it was issued for.
+        setAdminElevation(nil)
+    }
+
+    // MARK: Admin step-up
+
+    /// Short-lived admin elevation token (X-Admin-Elevation). Memory only:
+    /// never written to disk, gone when the app quits or the session changes.
+    private let elevationLock = NSLock()
+    private var elevationToken: String?
+
+    var adminElevation: String? {
+        elevationLock.lock(); defer { elevationLock.unlock() }
+        return elevationToken
+    }
+
+    func setAdminElevation(_ token: String?) {
+        elevationLock.lock(); defer { elevationLock.unlock() }
+        elevationToken = token
     }
 
     // MARK: Core request
@@ -45,6 +66,9 @@ final class APIClient: @unchecked Sendable {
             req.httpBody = try encoder.encode(body)
         }
         if let auth = bearer ?? token { req.setValue("Bearer \(auth)", forHTTPHeaderField: "Authorization") }
+        if path.hasPrefix("/functions/"), let elevation = adminElevation {
+            req.setValue(elevation, forHTTPHeaderField: "X-Admin-Elevation")
+        }
 
         let data: Data
         let response: URLResponse
@@ -57,7 +81,8 @@ final class APIClient: @unchecked Sendable {
         guard (200..<300).contains(status) else {
             let json = try? decoder.decode(JSONValue.self, from: data)
             let message = json?["error"]?.stringValue ?? "Request failed (\(status))"
-            throw APIError(status: status, message: message, notConnected: json?["notConnected"]?.boolValue == true)
+            throw APIError(status: status, message: message, notConnected: json?["notConnected"]?.boolValue == true,
+                           elevationRequired: json?["elevationRequired"]?.boolValue == true)
         }
         return data
     }

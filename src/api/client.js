@@ -16,12 +16,64 @@ function getToken() {
 }
 
 function setToken(token) {
+  // An admin elevation is tied to the session it was issued for.
+  clearElevation();
   try {
     if (token) localStorage.setItem(TOKEN_KEY, token);
     else localStorage.removeItem(TOKEN_KEY);
   } catch {
     // Storage may be unavailable (private browsing); the session just won't persist.
   }
+}
+
+// --- Admin step-up (2FA) ----------------------------------------------------
+// Opening or changing someone else's account needs a recent second-factor
+// confirmation. The resulting token lives in memory only (never storage), is
+// sent as X-Admin-Elevation on function calls, and expires after 15 minutes.
+let elevation = null; // { token, expiresAt (ms) }
+const elevationListeners = new Set();
+let elevationHandler = null; // () => Promise<void>; shows the 2FA prompt
+let pendingElevation = null;
+let elevationTimer = null;
+
+// reason: 'set' | 'lock' (admin pressed Lock / signed out) | 'expired' | 'retry'
+// (the server rejected it and a fresh prompt is about to show).
+function notifyElevation(reason) {
+  for (const fn of elevationListeners) fn(getElevation(), reason);
+}
+
+function getElevation() {
+  if (elevation && elevation.expiresAt <= Date.now()) elevation = null;
+  return elevation;
+}
+
+function setElevation(token, expiresAt) {
+  clearTimeout(elevationTimer);
+  elevation = token ? { token, expiresAt: new Date(expiresAt).getTime() } : null;
+  if (elevation) {
+    elevationTimer = setTimeout(() => clearElevation('expired'), Math.max(0, elevation.expiresAt - Date.now()));
+  }
+  notifyElevation('set');
+}
+
+function clearElevation(reason = 'lock') {
+  clearTimeout(elevationTimer);
+  if (!elevation) return;
+  elevation = null;
+  notifyElevation(reason);
+}
+
+// Runs the registered prompt once, even if several calls need it at once.
+function requestElevation() {
+  if (!elevationHandler) {
+    return Promise.reject(Object.assign(new Error('Two-factor confirmation is required'), { elevationCancelled: true }));
+  }
+  if (!pendingElevation) {
+    pendingElevation = elevationHandler().finally(() => {
+      pendingElevation = null;
+    });
+  }
+  return pendingElevation;
 }
 
 async function request(path, { method = 'GET', body, headers } = {}) {
@@ -206,8 +258,42 @@ export const api = {
 
   functions: {
     async invoke(name, payload) {
-      const data = await request(`/functions/${name}`, { method: 'POST', body: payload || {} });
-      return { data };
+      const call = () => {
+        const el = getElevation();
+        return request(`/functions/${name}`, {
+          method: 'POST',
+          body: payload || {},
+          headers: el ? { 'X-Admin-Elevation': el.token } : undefined,
+        });
+      };
+      try {
+        return { data: await call() };
+      } catch (err) {
+        if (!err?.data?.elevationRequired) throw err;
+        // Missing or expired step-up: confirm 2FA, then retry once.
+        clearElevation('retry');
+        await requestElevation();
+        return { data: await call() };
+      }
+    },
+  },
+
+  // Admin step-up state, for the 2FA prompt and the "Unlocked" indicator.
+  elevation: {
+    get: getElevation,
+    set: setElevation,
+    clear: () => clearElevation('lock'),
+    subscribe(fn) {
+      elevationListeners.add(fn);
+      return () => elevationListeners.delete(fn);
+    },
+    // The app registers a function that shows the prompt and resolves once
+    // elevated (or rejects with err.elevationCancelled).
+    setHandler(fn) {
+      elevationHandler = fn;
+      return () => {
+        if (elevationHandler === fn) elevationHandler = null;
+      };
     },
   },
 

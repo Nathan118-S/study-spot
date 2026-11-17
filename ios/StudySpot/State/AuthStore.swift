@@ -88,6 +88,7 @@ final class AuthStore {
         let outgoing = api.token
         Task { await ClassActivityManager.unregister(bearer: outgoing) }
         Task { await PushNotifications.unregister(bearer: outgoing) }
+        AdminUnlock.shared.lock()
         api.setToken(nil)
         user = nil
         phase = .signedOut

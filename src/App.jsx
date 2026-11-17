@@ -10,6 +10,7 @@ import LiveBackground from '@/components/LiveBackground';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import Require2fa from '@/components/Require2fa';
 import Layout from '@/components/Layout';
+import { AdminElevationProvider } from '@/components/admin/AdminElevation';
 import Login from '@/pages/Login';
 import Register from '@/pages/Register';
 import { lazy, Suspense } from 'react';
@@ -21,6 +22,7 @@ const Insights = lazy(() => import('@/pages/Insights'));
 const Settings = lazy(() => import('@/pages/Settings'));
 const Admin = lazy(() => import('@/pages/Admin'));
 const AdminPeople = lazy(() => import('@/pages/AdminPeople'));
+const AdminUser = lazy(() => import('@/pages/AdminUser'));
 const AdminSecrets = lazy(() => import('@/pages/AdminSecrets'));
 const AdminDeploy = lazy(() => import('@/pages/AdminDeploy'));
 const Verify2FA = lazy(() => import('@/pages/Verify2FA'));
@@ -74,6 +76,7 @@ const AuthenticatedApp = () => {
             <Route path="/settings" element={<Suspense fallback={<PageLoader />}><Settings /></Suspense>} />
             <Route path="/admin" element={<Suspense fallback={<PageLoader />}><Admin /></Suspense>} />
             <Route path="/admin/people" element={<Suspense fallback={<PageLoader />}><AdminPeople /></Suspense>} />
+            <Route path="/admin/people/:userId" element={<Suspense fallback={<PageLoader />}><AdminUser /></Suspense>} />
             <Route path="/admin/secrets" element={<Suspense fallback={<PageLoader />}><AdminSecrets /></Suspense>} />
             <Route path="/admin/deploy" element={<Suspense fallback={<PageLoader />}><AdminDeploy /></Suspense>} />
           </Route>
@@ -94,6 +97,7 @@ function App() {
           <LiveBackground />
           <ScrollToTop />
           <AuthenticatedApp />
+          <AdminElevationProvider />
         </Router>
         <Toaster />
       </QueryClientProvider>
