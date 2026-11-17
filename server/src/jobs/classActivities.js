@@ -5,6 +5,8 @@
 // them it does nothing and the app falls back to a local notification.
 import { pool } from '../db.js';
 import { apnsConfigured, sendLiveActivityPush } from '../lib/apns.js';
+import { fcmConfigured } from '../lib/fcm.js';
+import { sendAndroidData } from '../lib/notify.js';
 
 export const LEAD_MINUTES = 5;
 export const END_AFTER_MINUTES = 10;
@@ -68,6 +70,22 @@ export function cleanSchedule(schedule) {
     .filter(Boolean);
 }
 
+/** The FCM data message for Android's class-start countdown. */
+export function androidClassData(cls, state) {
+  return {
+    type: 'class_start',
+    classId: cls.id,
+    className: cls.name,
+    subject: cls.subject || '',
+    room: cls.room || '',
+    color: cls.color || '#f19d37',
+    startsAt: state.startsAt,
+    endsAfterMinutes: END_AFTER_MINUTES,
+    dueCount: state.dueCount,
+    dueToday: state.dueToday,
+  };
+}
+
 export function contentState(startsAt, due) {
   return {
     startsAt: Math.floor(startsAt.getTime() / 1000),
@@ -98,7 +116,8 @@ async function dropDeadToken(result, token) {
 }
 
 export async function sendClassActivities(now = new Date()) {
-  if (!(await apnsConfigured())) return { skipped: 'APNs not configured' };
+  const [apns, fcm] = await Promise.all([apnsConfigured(), fcmConfigured()]);
+  if (!apns && !fcm) return { skipped: 'No push service configured' };
   let started = 0;
   let ended = 0;
 
@@ -156,6 +175,12 @@ export async function sendClassActivities(now = new Date()) {
             'relevance-score': 100,
           },
         };
+        // Android: a data message the app turns into an ongoing countdown notification.
+        if (fcm) {
+          const android = await sendAndroidData(user.id, androidClassData(cls, state), { collapseKey: `class-${cls.id}`, ttlSeconds: LEAD_MINUTES * 60 });
+          started += android.filter((r) => r.ok).length;
+        }
+        if (!apns) continue;
         const tokens = await pool.query("SELECT * FROM device_push_tokens WHERE user_id = $1 AND kind = 'live-activity-start'", [user.id]);
         for (const t of tokens.rows) {
           const result = await sendLiveActivityPush({ token: t.token, environment: t.environment, bundleId: t.bundle_id, payload });

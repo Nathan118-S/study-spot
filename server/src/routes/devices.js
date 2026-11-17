@@ -4,6 +4,7 @@ import { Router } from 'express';
 import { pool } from '../db.js';
 import { requireAuth } from '../middleware/auth.js';
 import { apnsConfigured } from '../lib/apns.js';
+import { fcmConfigured } from '../lib/fcm.js';
 
 const router = Router();
 router.use(requireAuth);
@@ -23,7 +24,7 @@ function validDevice(body) {
 // Whether the server can start Live Activities itself (APNs configured).
 router.get('/config', async (req, res) => {
   const push = await apnsConfigured();
-  res.json({ classActivitiesPush: push, alertPush: push });
+  res.json({ classActivitiesPush: push, alertPush: push, androidPush: await fcmConfigured() });
 });
 
 // The app's notification device token (assignment reminders).
@@ -38,6 +39,28 @@ router.post('/alerts', async (req, res) => {
        environment = EXCLUDED.environment, bundle_id = EXCLUDED.bundle_id, updated_at = now()`,
     [token, req.user.id, environment, bundleId]
   );
+  res.json({ ok: true });
+});
+
+// Android: the app's Firebase Cloud Messaging token (reminders, class
+// countdowns, admin simulations).
+router.post('/android', async (req, res) => {
+  const { token, packageName } = req.body || {};
+  if (typeof token !== 'string' || token.length < 20 || token.length > 4096) return res.status(400).json({ error: 'Invalid token' });
+  if (!BUNDLE_RE.test(packageName || '')) return res.status(400).json({ error: 'Invalid package name' });
+  await pool.query(
+    `INSERT INTO device_push_tokens (token, user_id, kind, environment, bundle_id)
+     VALUES ($1, $2, 'fcm', 'production', $3)
+     ON CONFLICT (token) DO UPDATE SET user_id = EXCLUDED.user_id, kind = 'fcm',
+       bundle_id = EXCLUDED.bundle_id, updated_at = now()`,
+    [token, req.user.id, packageName]
+  );
+  res.json({ ok: true });
+});
+
+router.delete('/android', async (req, res) => {
+  const token = req.body?.token;
+  if (token) await pool.query('DELETE FROM device_push_tokens WHERE token = $1 AND user_id = $2', [token, req.user.id]);
   res.json({ ok: true });
 });
 

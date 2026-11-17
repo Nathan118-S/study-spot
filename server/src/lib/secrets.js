@@ -17,6 +17,7 @@ export const KNOWN_SECRETS = [
   { key: 'BLACKBOARD_CLIENT_ID', group: 'Blackboard Learn', label: 'Client ID' },
   { key: 'BLACKBOARD_CLIENT_SECRET', group: 'Blackboard Learn', label: 'Client secret' },
   { key: 'BLACKBOARD_REDIRECT_URI', group: 'Blackboard Learn', label: 'Redirect URI' },
+  { key: 'FCM_SERVICE_ACCOUNT', group: 'Firebase (Android notifications)', label: 'Service account JSON' },
   { key: 'APNS_KEY', group: 'Apple Push (iOS notifications)', label: 'Auth key (.p8 contents)' },
   { key: 'APNS_KEY_ID', group: 'Apple Push (iOS notifications)', label: 'Key ID' },
   { key: 'APNS_TEAM_ID', group: 'Apple Push (iOS notifications)', label: 'Team ID' },

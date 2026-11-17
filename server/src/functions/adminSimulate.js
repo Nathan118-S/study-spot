@@ -4,9 +4,10 @@
 import { pool } from '../db.js';
 import { getUserById } from '../lib/users.js';
 import { apnsConfigured, isDeadToken, sendLiveActivityPush } from '../lib/apns.js';
-import { sendUserPushDetailed } from '../lib/notify.js';
+import { sendAndroidData, sendUserPushDetailed } from '../lib/notify.js';
+import { fcmConfigured } from '../lib/fcm.js';
 import { duePhrase } from '../jobs/reminders.js';
-import { contentState, dueToday, END_AFTER_MINUTES, userTimeZone } from '../jobs/classActivities.js';
+import { androidClassData, contentState, dueToday, END_AFTER_MINUTES, userTimeZone } from '../jobs/classActivities.js';
 import { HttpError } from '../lib/httpError.js';
 
 // Swift's default Date encoding (used by ActivityKit content states) counts
@@ -41,10 +42,12 @@ export async function adminSimulateOptions(caller, body) {
   const counts = Object.fromEntries(devices.rows.map((r) => [r.kind, r.n]));
   return {
     apns: await apnsConfigured(),
+    fcm: await fcmConfigured(),
     devices: {
       notifications: counts.alert || 0,
       class_activity: counts['live-activity-start'] || 0,
       timer_activity: counts['timer-activity-start'] || 0,
+      android: counts.fcm || 0,
     },
     classes: classes.rows,
     assignments: assignments.rows,
@@ -115,7 +118,7 @@ export async function adminSimulateNotification(caller, body) {
   const results = await sendUserPushDetailed(u.id, {
     title: msg.title, subtitle: msg.subtitle, body: msg.body, data: { simulated: true, ...msg.data }, threadId: msg.threadId,
   });
-  return summary(results, { apns: await apnsConfigured(), inApp: !!body.inApp });
+  return summary(results, { apns: await apnsConfigured(), fcm: await fcmConfigured(), inApp: !!body.inApp });
 }
 
 function summary(results, extra = {}) {
@@ -124,7 +127,7 @@ function summary(results, extra = {}) {
     ...extra,
     devices: results.length,
     delivered: results.filter((r) => r.ok).length,
-    results: results.map(({ device, environment, ok, status, reason }) => ({ device, environment, ok, status, reason })),
+    results: results.map(({ device, platform, environment, ok, status, reason }) => ({ device, platform: platform || 'ios', environment, ok, status, reason })),
   };
 }
 
@@ -150,15 +153,17 @@ async function pushActivity(tokens, payload) {
  */
 export async function adminSimulateLiveActivity(caller, body) {
   const u = await target(body?.userId);
-  if (!(await apnsConfigured())) throw new HttpError(400, 'Apple Push isn\'t set up. Add the APNs key in Admin → Integration Secrets.');
+  const [apns, fcm] = await Promise.all([apnsConfigured(), fcmConfigured()]);
+  if (!apns && !fcm) throw new HttpError(400, 'Push isn\'t set up. Add the Apple Push key and/or the Firebase service account in Admin → Integration Secrets.');
+  const androidCount = fcm ? (await devicesOf(u.id, 'fcm')).length : 0;
   const kind = body?.kind;
   const action = body?.action || 'start';
   const now = new Date();
   const nowSec = Math.floor(now.getTime() / 1000);
 
   if (kind === 'class_start' && action === 'start') {
-    const tokens = await devicesOf(u.id, 'live-activity-start');
-    if (!tokens.length) throw new HttpError(400, 'No iPhone has registered for class Live Activities yet (needs iOS 17.2+ and the app opened while signed in).');
+    const tokens = apns ? await devicesOf(u.id, 'live-activity-start') : [];
+    if (!tokens.length && !androidCount) throw new HttpError(400, 'No phone has registered for class countdowns yet (iPhone: iOS 17.2+; open the latest app while signed in).');
     let cls = { id: 'simulated', name: 'Sample class', subject: 'Simulation', room: '101', color: '#f19d37' };
     if (body.classId) {
       const res = await pool.query('SELECT id, name, subject, room, color FROM classes WHERE id = $1 AND created_by_id = $2', [body.classId, u.id]);
@@ -177,6 +182,9 @@ export async function adminSimulateLiveActivity(caller, body) {
         [u.id, cls.id, startsAt.toISOString()]
       );
     }
+    const androidResults = androidCount
+      ? await sendAndroidData(u.id, { ...androidClassData(cls, state), simulated: true }, { collapseKey: `class-${cls.id}` })
+      : [];
     const results = await pushActivity(tokens, {
       aps: {
         timestamp: nowSec,
@@ -194,7 +202,7 @@ export async function adminSimulateLiveActivity(caller, body) {
         'relevance-score': 100,
       },
     });
-    return summary(results, { startsAt: startsAt.toISOString() });
+    return summary([...results, ...androidResults], { startsAt: startsAt.toISOString() });
   }
 
   if (kind === 'class_start' && action === 'end') {
@@ -219,12 +227,13 @@ export async function adminSimulateLiveActivity(caller, body) {
         [row.user_id, row.class_id, row.starts_at]
       );
     }
-    return summary(results, { ended: rows.length });
+    const androidResults = androidCount ? await sendAndroidData(u.id, { type: 'class_end' }) : [];
+    return summary([...results, ...androidResults], { ended: rows.length + androidResults.filter((x) => x.ok).length });
   }
 
   if (kind === 'study_timer' && action === 'start') {
-    const tokens = await devicesOf(u.id, 'timer-activity-start');
-    if (!tokens.length) throw new HttpError(400, 'No iPhone has registered for study timer Live Activities yet (needs iOS 17.2+ and the latest app opened while signed in).');
+    const tokens = apns ? await devicesOf(u.id, 'timer-activity-start') : [];
+    if (!tokens.length && !androidCount) throw new HttpError(400, 'No phone has registered for study timer activities yet (iPhone: iOS 17.2+; open the latest app while signed in).');
     const phase = ['focus', 'short', 'long'].includes(body.phase) ? body.phase : 'focus';
     const label = { focus: 'Focus', short: 'Short Break', long: 'Long Break' }[phase];
     const minutes = Math.max(1, Math.min(Number(body.minutes) || 25, 120));
@@ -237,6 +246,11 @@ export async function adminSimulateLiveActivity(caller, body) {
     }
     const total = minutes * 60;
     const endsAtUnix = nowSec + total;
+    const androidResults = androidCount
+      ? await sendAndroidData(u.id, {
+        type: 'study_timer', phase, phaseLabel: label, endsAt: endsAtUnix, total, assignmentTitle: assignmentTitle || '', className: className || '', simulated: true,
+      })
+      : [];
     const results = await pushActivity(tokens, {
       aps: {
         timestamp: nowSec,
@@ -250,7 +264,7 @@ export async function adminSimulateLiveActivity(caller, body) {
         'stale-date': endsAtUnix + 60,
       },
     });
-    return summary(results, { endsAt: new Date(endsAtUnix * 1000).toISOString() });
+    return summary([...results, ...androidResults], { endsAt: new Date(endsAtUnix * 1000).toISOString() });
   }
 
   throw new HttpError(400, 'Unknown Live Activity simulation');
