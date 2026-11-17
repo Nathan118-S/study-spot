@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Launcher background: the iOS icon's warm cream fill (#FFFAF1). -->
+    <color name="ic_launcher_background">#FFFFFAF1</color>
+    <!-- 60/20/20 palette, also in ui/theme/Color.kt. -->
+    <color name="ss_base">#FFFEFDFB</color>
+    <color name="ss_accent">#FFF19D37</color>
+    <color name="ss_secondary">#FF1F2B47</color>
+</resources>

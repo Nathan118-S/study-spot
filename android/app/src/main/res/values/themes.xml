@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Window theme only: everything visible is drawn by Compose
+         (ui/theme/Theme.kt). The window background matches the palette base
+         so there is no flash before the first frame. -->
+    <style name="Theme.StudySpot" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/ss_base</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+    </style>
+</resources>

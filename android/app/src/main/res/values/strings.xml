@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Study Spot</string>
+    <string name="widget_description">Upcoming assignments at a glance</string>
+    <string name="push_channel_reminders">Assignment reminders</string>
+    <string name="push_channel_general">General</string>
+</resources>

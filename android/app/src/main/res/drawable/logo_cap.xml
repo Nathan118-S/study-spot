@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The Study Spot cap on its own (in-app logo, notification art). Same
+     artwork and framing as the iOS icon (viewBox "-3 -2.5 30 30"). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="120dp"
+    android:height="120dp"
+    android:viewportWidth="30"
+    android:viewportHeight="30">
+    <group android:translateX="3" android:translateY="2.5">
+        <!-- Cap body (back-cap.svg) -->
+        <path android:pathData="M6,12.2 V16 a6,3 0,0 0,12 0 V12.2 L12.83,14.6 a2,2 0,0 1,-1.66 0 Z">
+            <aapt:attr name="android:fillColor">
+                <gradient android:type="linear" android:startX="0" android:startY="12.2" android:endX="0" android:endY="19"
+                    android:startColor="#FFF19D37" android:endColor="#FFE07F22" />
+            </aapt:attr>
+        </path>
+        <!-- Tassel cord and knot (middle-tassel.svg) -->
+        <path android:pathData="M21.2,10 V15.6" android:strokeColor="#FFF5B23E" android:strokeWidth="1.6" android:strokeLineCap="round" />
+        <path android:pathData="M19.95,16.6 a1.25,1.25 0,1 0,2.5 0 a1.25,1.25 0,1 0,-2.5 0 Z" android:fillColor="#FFF5B23E" />
+        <!-- Mortarboard top (front-mortarboard.svg) -->
+        <path android:pathData="M21.42,10.922a1,1 0,0 0,-0.019 -1.838L12.83,5.18a2,2 0,0 0,-1.66 0L2.6,9.08a1,1 0,0 0,0 1.832l8.57,3.908a2,2 0,0 0,1.66 0z">
+            <aapt:attr name="android:fillColor">
+                <gradient android:type="linear" android:startX="0" android:startY="5.18" android:endX="0" android:endY="14.82"
+                    android:startColor="#FFFFC857" android:endColor="#FFF19D37" />
+            </aapt:attr>
+        </path>
+    </group>
+</vector>
