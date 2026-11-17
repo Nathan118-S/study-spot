@@ -130,6 +130,21 @@ certificates. These steps use `studyspot.education`; substitute your own.
      Bot Fight Mode off, or add a WAF *Skip* rule for URI path starting with
      `/api/`.
 
+**Cloudflare Error 1000** means the domain still has an A/AAAA record
+(often left over from before). Delete the A/AAAA records for the hostname
+under **DNS → Records**, then re-save the tunnel's public hostname so
+Cloudflare creates a proxied CNAME to `<tunnel-id>.cfargotunnel.com`.
+**502 / 1033** means DNS is fine, but the tunnel can't reach the app: check
+the hostname's service URL and `curl http://localhost:8787/api/health`.
+
+**Already running a tunnel?** Skip the `tunnel` profile, start with plain
+`docker compose up -d --build`, and add a public hostname to your existing
+tunnel:
+- **cloudflared installed on this server:** service `http://localhost:8787`
+- **cloudflared in another container:** `docker network connect
+  study-spot_default <container>`, then service `http://app:8787`
+- **cloudflared on another machine:** service `http://<server-ip>:8787`
+
 Use the same `--profile tunnel` in the update and stop commands below
 (instead of `--profile https`).
 
