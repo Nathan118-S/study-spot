@@ -43,7 +43,9 @@ def main():
     ap.add_argument("--bundle-id", help="App bundle ID, e.g. com.yourname.studyspot")
     ap.add_argument("--team", help="Apple Development Team ID (10 characters), optional")
     ap.add_argument("--server", help="Default server address, e.g. https://studyspot.example.com")
-    ap.add_argument("--web", help="Default website address (where users log in)")
+    ap.add_argument("--web", help="Website address where users log in. Defaults to the server "
+                                  "address (right when one address serves both, as with Docker). Only needed "
+                                  "for local development, e.g. http://<mac-ip>:5173")
     args = ap.parse_args()
 
     gen = read(GEN)
@@ -75,6 +77,10 @@ def main():
     if args.web:
         gen = re.sub(r'STUDYSPOT_WEB_URL = "[^"]*";', f'STUDYSPOT_WEB_URL = "{args.web.rstrip("/")}";', gen)
         print(f"Default website: {args.web}")
+    elif args.server:
+        # One address serves the API and the website (e.g. Docker).
+        gen = re.sub(r'STUDYSPOT_WEB_URL = "[^"]*";', 'STUDYSPOT_WEB_URL = "";', gen)
+        print(f"Default website: same as server ({args.server})")
 
     write(GEN, gen)
     subprocess.run([sys.executable, GEN], cwd=IOS, check=True)

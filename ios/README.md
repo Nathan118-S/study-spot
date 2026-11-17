@@ -17,12 +17,14 @@ data are shared between web and iPhone/iPad.
 ```bash
 cd ios
 python3 scripts/configure.py --bundle-id com.yourname.studyspot \
-    --server http://<your-mac-ip>:8787 --web http://<your-mac-ip>:5173
+    --server https://studyspot.example.com
 ```
 
 This sets your own bundle ID (they must be unique per Apple account), the
-matching App Group for the widgets, and the default server and website
-addresses, then regenerates the Xcode project. Add `--team <TEAMID>` to
+matching App Group for the widgets, and the default server address (the
+website is assumed to be on the same address), then regenerates the Xcode
+project. For local development with the website on Vite, also pass
+`--web http://<your-mac-ip>:5173`. Add `--team <TEAMID>` to
 preset your signing team. You can re-run it any time.
 
 ## Run it
@@ -45,10 +47,11 @@ the Study Spot website (`/login?client=ios` or `/register?client=ios`) in a
 private in-app browser session. When any sign-in method succeeds there (email
 and password, a new account with its email code, or Google), the website
 hands the session to the app and closes the browser. Two-factor verification
-then happens in the app. The website address defaults to the
-`STUDYSPOT_WEB_URL` build setting (`http://localhost:5173` for development).
-It can be changed under *Server settings*, and if it's empty the server
-address is used.
+then happens in the app. The website address is the server address
+unless you set one: with Docker (or any setup where one address serves both)
+there's nothing to configure. For local development, where the website runs
+separately on Vite's port, pass `--web http://<mac-ip>:5173` to
+`scripts/configure.py` or set it under *Server settings*.
 
 Use `https://` for anything other than local development. App Transport
 Security only allows plain `http://` for localhost/LAN addresses.

@@ -28,7 +28,18 @@ enum AppConfig {
     /// setup serves the website and API from one domain).
     static var defaultWebURL: String {
         let configured = (Bundle.main.object(forInfoDictionaryKey: "StudySpotWebURL") as? String) ?? ""
-        return configured.isEmpty || configured.hasPrefix("$(") ? serverURL : configured
+        if configured.isEmpty || configured.hasPrefix("$(") { return serverURL }
+        // A development "localhost" website is never right when the server is
+        // a real address (it would open localhost on the phone): follow the server.
+        if isLocalHost(URL(string: normalize(configured))?.host), !isLocalHost(URL(string: serverURL)?.host) {
+            return serverURL
+        }
+        return configured
+    }
+
+    private static func isLocalHost(_ host: String?) -> Bool {
+        guard let host = host?.lowercased() else { return false }
+        return host == "localhost" || host == "127.0.0.1" || host == "::1" || host.hasSuffix(".localhost")
     }
 
     static var webURL: String {

@@ -104,7 +104,7 @@ app = """				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				PRODUCT_BUNDLE_IDENTIFIER = com.studyspot.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STUDYSPOT_SERVER_URL = "http://localhost:8787";
-				STUDYSPOT_WEB_URL = "http://localhost:5173";
+				STUDYSPOT_WEB_URL = "";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				TARGETED_DEVICE_FAMILY = "1,2";
 """
