@@ -7,7 +7,7 @@
     /* 60/20/20: 60% near-white warm base, 20% navy (structure), 20% orange (actions).
        Matches Palette in the iOS app (ios/StudySpot/State/ThemeStore.swift). */
     --navy: 222 39% 20%;                /* #1F2B47 */
-    --background: 40 60% 98%;  /* base #FDFBF7 */
+    --background: 40 60% 99%;  /* base #FEFDFB */
     --foreground: 222 30% 12%;
     --card: 0 0% 100%;
     --card-foreground: 222 30% 12%;
@@ -37,7 +37,7 @@
     --font-body: -apple-system, BlinkMacSystemFont, "SF Pro Text", Inter, "Segoe UI", Roboto, sans-serif;
     --font-display: var(--font-heading);
     --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-    --sidebar-background: 40 60% 98%;
+    --sidebar-background: 40 60% 99%;
     --sidebar-foreground: 222 39% 20%;
     --sidebar-primary: 33 87% 58%;
     --sidebar-primary-foreground: 0 0% 100%;
@@ -191,7 +191,7 @@ main h1.font-heading {
   width: 70vmax;
   height: 70vmax;
   border-radius: 9999px;
-  opacity: var(--live-opacity, 0.22); /* faint, so the base stays dominant */
+  opacity: var(--live-opacity, 0.12); /* faint, so the base stays dominant */
   will-change: transform;
 }
 .dark .live-bg__blob { --live-opacity: 0.16; }

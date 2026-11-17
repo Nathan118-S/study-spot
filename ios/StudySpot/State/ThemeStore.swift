@@ -62,7 +62,7 @@ extension Color {
 // sit outside the split.
 enum Palette {
     /// 60%: the canvas behind everything.
-    static let base = dynamic(light: 0xFDFBF7, dark: 0x15120F)
+    static let base = dynamic(light: 0xFEFDFB, dark: 0x15120F)
     /// Cards and list rows sit on this, slightly lifted from the base.
     static let surface = dynamic(light: 0xFFFFFF, dark: 0x221D18)
     /// 20%: structure and secondary emphasis.
@@ -70,7 +70,7 @@ enum Palette {
     /// 20%: actions and highlights.
     static let accent = AccentChoice.orange.color
 
-    static let uiBase = uiDynamic(light: 0xFDFBF7, dark: 0x15120F)
+    static let uiBase = uiDynamic(light: 0xFEFDFB, dark: 0x15120F)
     static let uiSecondary = uiDynamic(light: 0x1F2B47, dark: 0xA9B8DC)
 
     private static func uiDynamic(light: UInt32, dark: UInt32) -> UIColor {

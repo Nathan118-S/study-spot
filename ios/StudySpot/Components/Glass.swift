@@ -35,7 +35,7 @@ struct AppBackground: View {
     var body: some View {
         let animate = theme.animations && !reduceMotion
         // Kept subtle so the base stays dominant.
-        let strength = colorScheme == .dark ? 0.16 : 0.20
+        let strength = colorScheme == .dark ? 0.14 : 0.12
         GeometryReader { geo in
             let size = max(geo.size.width, geo.size.height) * 1.1
             TimelineView(.animation(minimumInterval: 1.0 / 30, paused: !animate)) { context in

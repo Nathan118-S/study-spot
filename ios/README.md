@@ -96,7 +96,7 @@ Everything in the web app is available natively:
 The app's colors follow the 60/20/20 rule, defined in `Palette`
 (`StudySpot/State/ThemeStore.swift`), with light and dark variants:
 
-- **60% base:** a warm cream canvas (`#FDFBF7`; `#15120F` in dark mode)
+- **60% base:** a near-white canvas with a hint of warmth (`#FEFDFB`; `#15120F` in dark mode)
   behind every screen. The live background's glows are kept faint so it
   stays dominant.
 - **20% secondary:** deep navy (`#1F2B47`; `#A9B8DC` in dark mode) for
