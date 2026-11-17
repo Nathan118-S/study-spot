@@ -46,7 +46,12 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const distDir = process.env.STATIC_DIR || path.resolve(__dirname, '../../dist');
 if (fs.existsSync(path.join(distDir, 'index.html'))) {
   app.use('/assets', express.static(path.join(distDir, 'assets'), { immutable: true, maxAge: '1y' }));
-  app.use(express.static(distDir, { index: false, maxAge: '1h' }));
+  // Root files (favicon.ico, manifest, app icons) keep fixed names, so make
+  // browsers and Cloudflare re-check them instead of holding old copies.
+  app.use(express.static(distDir, {
+    index: false,
+    setHeaders: (res) => res.set('Cache-Control', 'no-cache'),
+  }));
   app.get(/^\/(?!api\/|\.well-known\/).*/, (req, res) => {
     res.set('Cache-Control', 'no-cache');
     res.sendFile(path.join(distDir, 'index.html'));

@@ -2,14 +2,15 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <!-- The iOS app icon; ?v= makes browsers drop cached older icons. -->
-    <link rel="icon" href="/favicon.ico?v=3" sizes="48x48" />
-    <link rel="icon" type="image/png" sizes="32x32" href="/icon-32.png?v=3" />
-    <link rel="icon" type="image/png" sizes="16x16" href="/icon-16.png?v=3" />
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=3" />
+    <!-- The app icon. These live in src/assets so each build gives them a new,
+         content-based file name: browsers and Cloudflare can't keep showing an old one. -->
+    <link rel="icon" href="/src/assets/icons/favicon.ico" sizes="48x48" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/src/assets/icons/icon-32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/src/assets/icons/icon-16.png" />
+    <link rel="apple-touch-icon" href="/src/assets/icons/apple-touch-icon.png" />
     <meta name="theme-color" content="#f19d37" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <link rel="manifest" href="/manifest.json?v=3" />
+    <link rel="manifest" href="/manifest.json?v=4" />
     <title>Study Spot</title>
   </head>
   <body>
