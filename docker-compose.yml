@@ -69,7 +69,9 @@ services:
       - app
     command: tunnel --no-autoupdate run
     environment:
-      TUNNEL_TOKEN: ${TUNNEL_TOKEN:?Set TUNNEL_TOKEN in .env to use the tunnel profile}
+      # Only used with --profile tunnel; empty otherwise (a required-variable
+      # check here would break `docker compose` for everyone not using it).
+      TUNNEL_TOKEN: ${TUNNEL_TOKEN:-}
 
 volumes:
   db-data:
