@@ -6,6 +6,8 @@ import { getUserByEmail, needsSecondFactor, pickSelfEditable, signSession, toPub
 import { requireAuth } from '../middleware/auth.js';
 import { sendEmail } from '../lib/mailer.js';
 import { sendOtpEmailFor } from './authHelpers.js';
+import { verifyPasskeyAssertion } from '../lib/passkeys.js';
+import { b64uDecode, b64uEncode } from '../lib/webauthn.js';
 
 const router = Router();
 const sendOtpEmail = sendOtpEmailFor;
@@ -96,6 +98,76 @@ router.post('/login', async (req, res) => {
     res.json({ access_token: signSession(user.id, { mfaPending }), mfa_required: mfaPending });
   } catch (error) {
     res.status(500).json({ error: error.message });
+  }
+});
+
+// --- Passwordless sign-in with a passkey -----------------------------------
+// start issues a one-time challenge (kept in oauth_states for 5 minutes);
+// finish finds the account by the passkey's credential ID, verifies the
+// signature (with Face ID / Touch ID / PIN required), and signs the user in
+// fully: a verified passkey is already two factors.
+
+const PASSKEY_PURPOSE = 'passkey-login';
+const PASSKEY_TTL_MS = 5 * 60 * 1000;
+
+router.post('/passkey/start', async (req, res) => {
+  try {
+    await pool.query(
+      "DELETE FROM oauth_states WHERE purpose = $1 AND created_at < now() - interval '10 minutes'",
+      [PASSKEY_PURPOSE]
+    );
+    const challenge = b64uEncode(crypto.randomBytes(32));
+    await pool.query('INSERT INTO oauth_states (state, purpose) VALUES ($1, $2)', [challenge, PASSKEY_PURPOSE]);
+
+    // With an email we can name the credential (helps security keys that
+    // aren't discoverable); without one the device shows its own picker.
+    let allowCredentials = [];
+    const email = (req.body?.email || '').toLowerCase().trim();
+    if (email) {
+      const user = await getUserByEmail(email);
+      if (user?.passkey_cred_id) allowCredentials = [{ type: 'public-key', id: user.passkey_cred_id }];
+    }
+    res.json({ challenge, allowCredentials, timeout: 60000, userVerification: 'required' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.post('/passkey/finish', async (req, res) => {
+  try {
+    const { credentialId, clientDataJSON, userHandle } = req.body || {};
+    if (!credentialId || !clientDataJSON) return res.status(400).json({ error: 'Missing passkey response' });
+
+    let challenge;
+    try {
+      challenge = JSON.parse(new TextDecoder().decode(b64uDecode(clientDataJSON))).challenge;
+    } catch {
+      return res.status(400).json({ error: 'Invalid passkey response' });
+    }
+    // One-time use: delete the challenge whether or not verification succeeds.
+    const stateRes = await pool.query(
+      'DELETE FROM oauth_states WHERE state = $1 AND purpose = $2 RETURNING created_at',
+      [challenge, PASSKEY_PURPOSE]
+    );
+    const issued = stateRes.rows[0];
+    if (!issued || Date.now() - new Date(issued.created_at).getTime() > PASSKEY_TTL_MS) {
+      return res.status(400).json({ error: 'This sign-in request expired. Please try again.' });
+    }
+
+    const userRes = await pool.query('SELECT * FROM users WHERE passkey_cred_id = $1', [credentialId]);
+    const user = userRes.rows[0];
+    if (!user) return res.status(400).json({ error: "This passkey isn't registered with Study Spot" });
+    if (userHandle && userHandle !== b64uEncode(new TextEncoder().encode(user.id))) {
+      return res.status(400).json({ error: "This passkey isn't registered with Study Spot" });
+    }
+    if (user.role === 'disabled') return res.status(403).json({ error: 'This account has been disabled' });
+    if (!user.is_verified) return res.status(403).json({ error: 'Please verify your email before logging in' });
+
+    const signCount = await verifyPasskeyAssertion(user, req.body, challenge, { requireUserVerification: true });
+    await pool.query('UPDATE users SET passkey_counter = $1 WHERE id = $2', [signCount, user.id]);
+    res.json({ access_token: signSession(user.id) });
+  } catch (error) {
+    res.status(error.status || 500).json({ error: error.message });
   }
 });
 

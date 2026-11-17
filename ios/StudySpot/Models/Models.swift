@@ -125,7 +125,7 @@ enum TwoFactorMethod: String, CaseIterable, Identifiable, Sendable {
         switch self {
         case .totp: "Google Authenticator, Authy, 2FAS"
         case .email: "A code sent to your email each sign-in"
-        case .passkey: "Face ID, Touch ID, or device passcode"
+        case .passkey: "Face ID or Touch ID; also signs you in without a password"
         }
     }
     var symbol: String {

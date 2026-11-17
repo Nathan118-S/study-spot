@@ -2,6 +2,8 @@
 // Exposes a small, consistent surface (auth.*, entities.*, functions.invoke,
 // connectors.*) that the rest of the app calls into.
 
+import { b64uDecode, b64uEncode } from '@/lib/webauthn';
+
 const API_BASE = import.meta.env.VITE_API_URL || '/api';
 const TOKEN_KEY = 'ss_access_token';
 
@@ -160,6 +162,36 @@ export const api = {
       const url = new URL(`${API_BASE}/auth/google/start`, window.location.origin);
       url.searchParams.set('returnTo', returnTo || '/');
       window.location.href = url.toString();
+    },
+
+    // Passwordless sign-in. With an email, only that account's passkey is
+    // offered; without one, the device shows its own list of passkeys.
+    passkeySupported: () => typeof window !== 'undefined' && !!window.PublicKeyCredential,
+
+    async loginWithPasskey(email) {
+      const opts = await request('/auth/passkey/start', { method: 'POST', body: { email: email || undefined } });
+      const assertion = await navigator.credentials.get({
+        publicKey: {
+          challenge: b64uDecode(opts.challenge),
+          rpId: window.location.hostname,
+          allowCredentials: (opts.allowCredentials || []).map((c) => ({ ...c, id: b64uDecode(c.id) })),
+          userVerification: 'required',
+          timeout: opts.timeout || 60000,
+        },
+      });
+      const r = assertion.response;
+      const result = await request('/auth/passkey/finish', {
+        method: 'POST',
+        body: {
+          credentialId: b64uEncode(assertion.rawId),
+          authenticatorData: b64uEncode(r.authenticatorData),
+          clientDataJSON: b64uEncode(r.clientDataJSON),
+          signature: b64uEncode(r.signature),
+          userHandle: r.userHandle ? b64uEncode(r.userHandle) : null,
+        },
+      });
+      if (result?.access_token) setToken(result.access_token);
+      return result;
     },
 
     resetPasswordRequest: (email) => request('/auth/forgot-password', { method: 'POST', body: { email } }),

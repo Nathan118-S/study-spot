@@ -4,7 +4,7 @@ import { api } from "@/api/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { LogIn, Mail, Lock, Loader2 } from "lucide-react";
+import { LogIn, Mail, Lock, Loader2, KeyRound } from "lucide-react";
 import AuthLayout from "@/components/AuthLayout";
 import GoogleIcon from "@/components/GoogleIcon";
 import { safeReturnTo } from "@/lib/authReturnTo";
@@ -15,6 +15,7 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [passkeyLoading, setPasskeyLoading] = useState(false);
   // Post-login destination (e.g. the MCP OAuth consent page sends users here
   // with returnTo so the grant flow can resume). Same-origin paths only.
   const returnTo = safeReturnTo();
@@ -41,6 +42,22 @@ export default function Login() {
       setError(err.message || "Invalid email or password");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handlePasskey = async () => {
+    setError("");
+    setDisabledReason("");
+    setPasskeyLoading(true);
+    try {
+      const result = await api.auth.loginWithPasskey(email.trim());
+      if (completeIosHandoff(result?.access_token)) return;
+      window.location.href = returnTo;
+    } catch (err) {
+      // NotAllowedError = the user cancelled or no passkey was chosen.
+      if (err?.name !== "NotAllowedError") setError(err.message || "Passkey sign-in failed");
+    } finally {
+      setPasskeyLoading(false);
     }
   };
 
@@ -73,6 +90,18 @@ export default function Login() {
         <GoogleIcon className="w-5 h-5 mr-2" />
         Continue with Google
       </Button>
+
+      {api.auth.passkeySupported() && (
+        <Button
+          variant="outline"
+          className="w-full h-12 text-sm font-medium -mt-3 mb-6"
+          onClick={handlePasskey}
+          disabled={passkeyLoading}
+        >
+          {passkeyLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <KeyRound className="w-5 h-5" />}
+          Sign in with a passkey
+        </Button>
+      )}
 
       <div className="relative mb-6">
         <div className="absolute inset-0 flex items-center">

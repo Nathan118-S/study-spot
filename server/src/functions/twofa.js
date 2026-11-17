@@ -1,5 +1,6 @@
 import { pool } from '../db.js';
 import { signSession, updateUser } from '../lib/users.js';
+import { originAllowed, verifyPasskeyAssertion } from '../lib/passkeys.js';
 import { verifyTotp, generateSecret } from '../lib/totp.js';
 import { getMethods, withMethod, withoutMethod, displayName } from '../lib/twofa.js';
 import { sendEmail } from '../lib/mailer.js';
@@ -121,7 +122,8 @@ export async function passkeyRegisterStart(user) {
     ],
     timeout: 60000,
     attestation: 'none',
-    authenticatorSelection: { userVerification: 'preferred', residentKey: 'preferred', requireResidentKey: false },
+    // Discoverable + user-verifying, so the passkey also works for passwordless sign-in.
+    authenticatorSelection: { userVerification: 'required', residentKey: 'required', requireResidentKey: true },
     excludeCredentials: exclude,
   };
 }
@@ -134,7 +136,7 @@ export async function passkeyRegisterFinish(user, body) {
   const clientData = JSON.parse(new TextDecoder().decode(b64uDecode(clientDataJSON)));
   if (clientData.type !== 'webauthn.create') throw new HttpError(400, 'Wrong client data type');
   if (clientData.challenge !== user.webauthn_challenge) throw new HttpError(400, 'Challenge mismatch');
-  if (!/^https:\/\//i.test(clientData.origin || '')) throw new HttpError(400, 'Invalid origin');
+  if (!originAllowed(clientData.origin || '')) throw new HttpError(400, 'Invalid origin');
 
   const attObj = decodeCbor(b64uDecode(attestationObject));
   const authData = attObj.get('authData');
@@ -168,41 +170,7 @@ export async function passkeyLoginStart(user) {
 }
 
 export async function passkeyLoginFinish(user, body) {
-  const { authenticatorData, clientDataJSON, signature } = body || {};
-  if (!authenticatorData || !clientDataJSON || !signature) throw new HttpError(400, 'Missing assertion data');
-  if (!user.passkey_pub_key) throw new HttpError(400, 'No passkey registered');
-  if (!user.webauthn_challenge) throw new HttpError(400, 'No active login challenge');
-
-  const clientData = JSON.parse(new TextDecoder().decode(b64uDecode(clientDataJSON)));
-  if (clientData.type !== 'webauthn.get') throw new HttpError(400, 'Wrong client data type');
-  if (clientData.challenge !== user.webauthn_challenge) throw new HttpError(400, 'Challenge mismatch');
-  if (!/^https:\/\//i.test(clientData.origin || '')) throw new HttpError(400, 'Invalid origin');
-
-  const rpId = new URL(clientData.origin).hostname;
-  const authData = b64uDecode(authenticatorData);
-  const parsed = parseAuthData(authData);
-  if (!(parsed.flags & 0x01)) throw new HttpError(400, 'User presence required');
-  const expectedRpIdHash = new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(rpId)));
-  if (!bufsEqual(parsed.rpIdHash, expectedRpIdHash)) throw new HttpError(400, 'RP ID mismatch');
-
-  const alg = user.passkey_alg;
-  let importAlg, verifyAlg;
-  if (alg === -7) {
-    importAlg = { name: 'ECDSA', namedCurve: 'P-256' };
-    verifyAlg = { name: 'ECDSA', hash: 'SHA-256' };
-  } else if (alg === -257) {
-    importAlg = { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' };
-    verifyAlg = { name: 'RSASSA-PKCS1-v1_5' };
-  } else {
-    throw new HttpError(400, 'Unsupported passkey algorithm');
-  }
-
-  const cryptoKey = await crypto.subtle.importKey('jwk', user.passkey_pub_key, importAlg, false, ['verify']);
-  const clientDataHash = await crypto.subtle.digest('SHA-256', b64uDecode(clientDataJSON));
-  const signedData = concatBytes(authData, new Uint8Array(clientDataHash));
-  const ok = await crypto.subtle.verify(verifyAlg, cryptoKey, b64uDecode(signature), signedData);
-  if (!ok) throw new HttpError(400, 'Signature verification failed');
-
-  await updateUser(user.id, { webauthn_challenge: '', passkey_counter: parsed.signCount });
+  const signCount = await verifyPasskeyAssertion(user, body, user.webauthn_challenge);
+  await updateUser(user.id, { webauthn_challenge: '', passkey_counter: signCount });
   return { ok: true, access_token: signSession(user.id) };
 }
