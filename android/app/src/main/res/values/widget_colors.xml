@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Widget preview colors (light); the live widgets use widget/WidgetUi.kt WidgetColors. -->
+<resources>
+    <color name="widget_surface">#FFFFFFFF</color>
+    <color name="widget_text">#FF151B28</color>
+    <color name="widget_muted">#FF656F86</color>
+    <color name="widget_accent">#FFF19D37</color>
+    <color name="widget_danger">#FFFF3B30</color>
+    <color name="widget_streak">#FFFF9500</color>
+</resources>

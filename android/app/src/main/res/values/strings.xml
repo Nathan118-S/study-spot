@@ -1,7 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Study Spot</string>
-    <string name="widget_description">Upcoming assignments at a glance</string>
+    <string name="widget_description">Your next assignments, what\'s due today, and what\'s overdue.</string>
     <string name="push_channel_reminders">Assignment reminders</string>
     <string name="push_channel_general">General</string>
+
+    <!-- Notification channels (push/NotificationChannels.kt) -->
+    <string name="push_channel_reminders_desc">Reminders before assignments are due.</string>
+    <string name="push_channel_streaks">Streaks</string>
+    <string name="push_channel_streaks_desc">When a class streak is at risk or reaches a milestone.</string>
+    <string name="push_channel_live">Class countdowns</string>
+    <string name="push_channel_live_desc">A live countdown 5 minutes before each class, with what\'s due today.</string>
+    <string name="push_channel_timer">Study timer</string>
+    <string name="push_channel_timer_desc">The running study timer and an alert when a focus session or break ends.</string>
+
+    <!-- Widgets (widget/) -->
+    <string name="widget_up_next_label">Up Next</string>
+    <string name="widget_streak_label">Streak</string>
+    <string name="widget_streak_description">Your best class streak and how many are active or at risk.</string>
 </resources>

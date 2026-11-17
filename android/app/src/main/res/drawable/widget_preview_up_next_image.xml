@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Widget picker image for "Up Next" before Android 12 (later versions use widget_preview_up_next.xml). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="200dp"
+    android:height="88dp"
+    android:viewportWidth="250"
+    android:viewportHeight="110">
+    <path android:fillColor="#FFFFFFFF" android:pathData="M20,0h210a20,20 0,0 1,20 20v70a20,20 0,0 1,-20 20h-210a20,20 0,0 1,-20 -20v-70a20,20 0,0 1,20 -20z" />
+    <!-- header -->
+    <path android:fillColor="#FFF19D37" android:pathData="M14,14h48v8h-48z" />
+    <!-- stats -->
+    <path android:fillColor="#FFF19D37" android:pathData="M14,52h16v16h-16z" />
+    <path android:fillColor="#FFFF3B30" android:pathData="M14,78h16v16h-16z" />
+    <!-- rows -->
+    <path android:fillColor="#FF6366F1" android:pathData="M108,18a4,4 0,1 0,0.1 0z" />
+    <path android:fillColor="#FF151B28" android:pathData="M118,14h90v8h-90z" />
+    <path android:fillColor="#FF656F86" android:pathData="M118,26h70v5h-70z" />
+    <path android:fillColor="#FFEC4899" android:pathData="M108,50a4,4 0,1 0,0.1 0z" />
+    <path android:fillColor="#FF151B28" android:pathData="M118,46h80v8h-80z" />
+    <path android:fillColor="#FF656F86" android:pathData="M118,58h60v5h-60z" />
+    <path android:fillColor="#FF10B981" android:pathData="M108,82a4,4 0,1 0,0.1 0z" />
+    <path android:fillColor="#FF151B28" android:pathData="M118,78h96v8h-96z" />
+    <path android:fillColor="#FF656F86" android:pathData="M118,90h64v5h-64z" />
+</vector>

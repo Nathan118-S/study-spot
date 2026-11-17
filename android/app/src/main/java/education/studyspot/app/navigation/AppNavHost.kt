@@ -13,6 +13,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import education.studyspot.app.LocalAppContainer
+import education.studyspot.app.push.NotificationPermissionPrompt
 import education.studyspot.app.push.PushManager
 import education.studyspot.app.ui.admin.AdminScreen
 import education.studyspot.app.ui.auth.Verify2FAScreen
@@ -56,6 +57,9 @@ fun AppNavHost() {
     LaunchedEffect(popToMain) {
         if (popToMain > 0) nav.popBackStack(Routes.MAIN, inclusive = false)
     }
+
+    // Asks for notification permission once, with a rationale (push/NotificationPermission.kt).
+    NotificationPermissionPrompt()
 
     CompositionLocalProvider(LocalAppNavigator provides navigator) {
         NavHost(navController = nav, startDestination = Routes.MAIN) {

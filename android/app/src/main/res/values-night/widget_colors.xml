@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Widget preview colors (dark). -->
+<resources>
+    <color name="widget_surface">#FF221D18</color>
+    <color name="widget_text">#FFF8F6F3</color>
+    <color name="widget_muted">#FF9198AC</color>
+    <color name="widget_accent">#FFF19D37</color>
+    <color name="widget_danger">#FFFF453A</color>
+    <color name="widget_streak">#FFFF9F0A</color>
+</resources>

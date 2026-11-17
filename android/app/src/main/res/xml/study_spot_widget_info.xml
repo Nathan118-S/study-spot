@@ -1,14 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- "Up Next" widget (widget/StudySpotWidget.kt). Small (2x2), medium (4x2) and large (4x4). -->
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     tools:targetApi="31"
     android:description="@string/widget_description"
-    android:minWidth="180dp"
+    android:minWidth="110dp"
     android:minHeight="110dp"
-    android:targetCellWidth="3"
+    android:minResizeWidth="110dp"
+    android:minResizeHeight="110dp"
+    android:targetCellWidth="4"
     android:targetCellHeight="2"
+    android:maxResizeWidth="530dp"
+    android:maxResizeHeight="530dp"
     android:resizeMode="horizontal|vertical"
     android:updatePeriodMillis="1800000"
     android:widgetCategory="home_screen"
-    android:previewLayout="@layout/glance_default_loading_layout"
+    android:previewLayout="@layout/widget_preview_up_next"
+    android:previewImage="@drawable/widget_preview_up_next_image"
     android:initialLayout="@layout/glance_default_loading_layout" />

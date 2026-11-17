@@ -4,6 +4,15 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Study timer foreground service (timer/StudyTimerService.kt). -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <!-- Live Updates (promoted ongoing notifications) on Android 16+. -->
+    <uses-permission android:name="android.permission.POST_PROMOTED_NOTIFICATIONS" />
+    <!-- On-time phase ends and class countdowns; falls back to inexact alarms when not allowed. -->
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <!-- Re-arm class countdown alarms after a reboot. -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
     <application
         android:name=".StudySpotApplication"
@@ -41,13 +50,56 @@
         <!-- Home-screen widget (widget/StudySpotWidget.kt). -->
         <receiver
             android:name=".widget.StudySpotWidgetReceiver"
-            android:exported="true">
+            android:exported="true"
+            android:label="@string/widget_up_next_label">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
             <meta-data
                 android:name="android.appwidget.provider"
                 android:resource="@xml/study_spot_widget_info" />
+        </receiver>
+
+        <!-- "Streak" widget (widget/StreakWidget.kt). -->
+        <receiver
+            android:name=".widget.StreakWidgetReceiver"
+            android:exported="true"
+            android:label="@string/widget_streak_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/streak_widget_info" />
+        </receiver>
+
+        <!-- Study timer: foreground service, notification actions and the phase-end alarm. -->
+        <service
+            android:name=".timer.StudyTimerService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Study timer (Pomodoro): keeps a user-started focus/break countdown running and shows it with pause, resume and stop controls until the user stops it or the phase ends." />
+        </service>
+        <receiver
+            android:name=".timer.TimerActionReceiver"
+            android:exported="false" />
+
+        <!-- Class countdowns scheduled locally (liveupdates/ClassAlarmScheduler.kt). -->
+        <receiver
+            android:name=".liveupdates.ClassAlarmReceiver"
+            android:exported="false" />
+        <receiver
+            android:name=".push.BootReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+                <action android:name="android.intent.action.TIME_SET" />
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+                <action android:name="android.app.action.SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED" />
+            </intent-filter>
         </receiver>
 
         <!-- Firebase Cloud Messaging (optional; see push/PushManager.kt).
