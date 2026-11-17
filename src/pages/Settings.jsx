@@ -237,7 +237,7 @@ export default function Settings() {
             <p className="text-sm text-muted-foreground">
               Connect your own Google account to import assignments. Each user connects separately — your data stays private to you.
             </p>
-            <SchoolAccessNote service="school Google" />
+            <SchoolAccessNote service="google" />
             <ConnectionRow
               icon={<Calendar className="h-5 w-5 text-blue-500" />}
               title="Google Calendar"

@@ -82,7 +82,7 @@ export default function ServicesStep() {
         Connect your school accounts to import assignments automatically. Each user connects separately — your data stays private.
       </motion.p>
       <motion.div variants={item}>
-        <SchoolAccessNote service="school Google or Blackboard" />
+        <SchoolAccessNote service="both" />
       </motion.div>
       <motion.div variants={item}>
         <ServiceRow

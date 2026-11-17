@@ -86,7 +86,7 @@ export default function BlackboardConnection({ connected, instanceUrl, onChanged
             </Button>
           </div>
           {error && <p className="text-xs text-destructive">{error}</p>}
-          {!hideNote && <SchoolAccessNote service="Blackboard" />}
+          {!hideNote && <SchoolAccessNote service="blackboard" />}
         </div>
       )}
     </div>
