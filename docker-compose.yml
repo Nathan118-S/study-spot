@@ -1,0 +1,62 @@
+# Study Spot on a Linux server.
+#
+#   cp .env.docker.example .env      # then fill it in
+#   docker compose up -d --build                       # app on port 8787
+#   docker compose --profile https up -d --build       # + automatic HTTPS (Caddy)
+#
+# See DOCKER.md for the full guide.
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: studyspot
+      POSTGRES_USER: studyspot
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U studyspot -d studyspot"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  app:
+    build: .
+    image: study-spot:latest
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file: .env
+    environment:
+      DATABASE_URL: postgres://studyspot:${POSTGRES_PASSWORD}@db:5432/studyspot
+      FRONTEND_URL: ${PUBLIC_URL:?Set PUBLIC_URL in .env}
+    ports:
+      # Published on all interfaces by default. With the https profile you can
+      # set APP_BIND=127.0.0.1 so only Caddy can reach it.
+      - "${APP_BIND:-0.0.0.0}:${APP_PORT:-8787}:8787"
+
+  # Optional: automatic HTTPS with Let's Encrypt. Needs DOMAIN pointing at
+  # this server and ports 80/443 open.
+  caddy:
+    image: caddy:2-alpine
+    profiles: ["https"]
+    restart: unless-stopped
+    depends_on:
+      - app
+    environment:
+      DOMAIN: ${DOMAIN:-localhost}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./docker/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+
+volumes:
+  db-data:
+  caddy-data:
+  caddy-config:

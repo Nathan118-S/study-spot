@@ -1,0 +1,9 @@
+.git
+**/node_modules
+dist
+ios
+**/.env
+.env.*
+!.env.docker.example
+*.log
+.DS_Store

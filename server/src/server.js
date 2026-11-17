@@ -2,6 +2,9 @@ import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import cron from 'node-cron';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import { attachUser } from './middleware/auth.js';
 import authRoutes from './routes/auth.js';
@@ -32,6 +35,23 @@ app.use('/api/auth', authRoutes);
 app.use('/api', googleAuthRoutes);
 app.use('/api/entities', entityRoutes);
 app.use('/api/functions', functionRoutes);
+
+// Serve the built website (dist/) from the same origin when it's present, as
+// in the Docker image. Assets are fingerprinted, so they can be cached long;
+// every other non-API path gets index.html for client-side routing.
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const distDir = process.env.STATIC_DIR || path.resolve(__dirname, '../../dist');
+if (fs.existsSync(path.join(distDir, 'index.html'))) {
+  app.use('/assets', express.static(path.join(distDir, 'assets'), { immutable: true, maxAge: '1y' }));
+  app.use(express.static(distDir, { index: false, maxAge: '1h' }));
+  app.get(/^\/(?!api\/|\.well-known\/).*/, (req, res) => {
+    res.set('Cache-Control', 'no-cache');
+    res.sendFile(path.join(distDir, 'index.html'));
+  });
+  console.log(`Serving website from ${distDir}`);
+}
+
+app.use('/api', (req, res) => res.status(404).json({ error: 'Not found' }));
 
 app.use((err, req, res, next) => {
   console.error(err);

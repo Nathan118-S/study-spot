@@ -34,6 +34,12 @@ export function getDeployStatus() {
 }
 
 export function startDeploy() {
+  if (process.env.STUDYSPOT_DOCKER === '1') {
+    throw new HttpError(
+      400,
+      'This server runs in Docker, so it updates from the host instead: run `git pull && docker compose up -d --build` in the study-spot folder.'
+    );
+  }
   if (state.status === 'running') {
     throw new HttpError(409, 'A deploy is already in progress');
   }

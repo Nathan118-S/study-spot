@@ -15,6 +15,19 @@ PostgreSQL API — no third-party app platform required.
 - `ios/` — the native iOS/iPadOS app (SwiftUI). It uses the same backend; see
   [`ios/README.md`](ios/README.md).
 
+## Running on a server with Docker
+
+The easiest way to host Study Spot is Docker Compose: one container serves
+the API and the website, next to PostgreSQL, with optional automatic HTTPS.
+See **[DOCKER.md](DOCKER.md)**.
+
+```bash
+cp .env.docker.example .env   # then fill it in
+docker compose --profile https up -d --build
+```
+
+The rest of this file covers running it directly with Node for development.
+
 ## Prerequisites
 
 - Node.js 18+
@@ -111,6 +124,9 @@ if unset, but a dedicated key is recommended so rotating one doesn't affect
 the other).
 
 ## Deploying from the admin panel
+
+(Not available when running in Docker; update with
+`git pull && docker compose up -d --build` instead. See DOCKER.md.)
 
 **Admin → Deploy** lets an admin pull the latest commit on the current
 branch, reinstall dependencies, rebuild the frontend, and restart the app,
