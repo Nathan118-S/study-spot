@@ -48,9 +48,12 @@ import java.time.LocalTime
 
 /** The scrolling body of a settings page. */
 @Composable
-fun SettingsColumn(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
+fun SettingsColumn(modifier: Modifier = Modifier, embedded: Boolean = false, content: @Composable ColumnScope.() -> Unit) {
+    // Embedded (e.g. inside onboarding's own scrolling column): no scroll or
+    // fill of its own, which would conflict with the parent.
     Column(
-        modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 12.dp),
+        if (embedded) modifier.fillMaxWidth()
+        else modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
         content = content,
     )

@@ -49,7 +49,7 @@ import kotlinx.serialization.json.put
  * navigation.DeepLinkHandler exchanges with functions/blackboardCallback.
  */
 @Composable
-fun BlackboardSettingsScreen(modifier: Modifier = Modifier) {
+fun BlackboardSettingsScreen(modifier: Modifier = Modifier, embedded: Boolean = false) {
     val c = LocalAppContainer.current
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -113,7 +113,7 @@ fun BlackboardSettingsScreen(modifier: Modifier = Modifier) {
         }
     }
 
-    SettingsColumn(modifier) {
+    SettingsColumn(modifier, embedded = embedded) {
         SettingsSection {
             Row(Modifier.padding(16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.Top) {
                 Icon(Icons.Outlined.AccountBalance, contentDescription = null, tint = StudySpotTheme.colors.secondary)

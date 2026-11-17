@@ -46,7 +46,7 @@ import kotlinx.serialization.json.put
  * refreshed whenever this screen resumes.
  */
 @Composable
-fun GoogleSettingsScreen(modifier: Modifier = Modifier) {
+fun GoogleSettingsScreen(modifier: Modifier = Modifier, embedded: Boolean = false) {
     val c = LocalAppContainer.current
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -99,7 +99,7 @@ fun GoogleSettingsScreen(modifier: Modifier = Modifier) {
         }
     }
 
-    SettingsColumn(modifier) {
+    SettingsColumn(modifier, embedded = embedded) {
         SettingsSection(footer = { SchoolAccessNote(SchoolITEmail.Service.Google) }) {
             SettingsText("Connect your own Google account to import assignments. Each user connects separately — your data stays private to you.")
         }
