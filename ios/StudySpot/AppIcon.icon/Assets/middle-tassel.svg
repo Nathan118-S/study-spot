@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-3 -2.5 30 30" width="1024" height="1024">
+  <!-- Tassel cord and knot. -->
+  <path d="M21.2 10 V15.6" fill="none" stroke="#F5B23E" stroke-width="1.6" stroke-linecap="round"/>
+  <circle cx="21.2" cy="16.6" r="1.25" fill="#F5B23E"/>
+</svg>

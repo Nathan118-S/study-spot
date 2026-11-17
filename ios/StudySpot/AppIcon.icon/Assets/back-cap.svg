@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-3 -2.5 30 30" width="1024" height="1024">
+  <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#F19D37"/><stop offset="1" stop-color="#E07F22"/>
+  </linearGradient></defs>
+  <!-- Cap body below the mortarboard (graduation-cap glyph, filled). -->
+  <path d="M6 12.2 V16 a6 3 0 0 0 12 0 V12.2 L12.83 14.6 a2 2 0 0 1 -1.66 0 Z" fill="url(#g)"/>
+</svg>

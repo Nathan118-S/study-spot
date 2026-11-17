@@ -88,6 +88,21 @@ Everything in the web app is available natively:
   integration secrets, and deploy
 - **Demo role:** the same demo data as the web app
 
+## App icon (Liquid Glass)
+
+`StudySpot/AppIcon.icon` is an Icon Composer icon: the website's yellow
+graduation cap on a light background, split into three glass layers (cap
+body at the back, tassel in the middle, mortarboard in front). On iOS 26 and
+later, the system renders it with Liquid Glass and creates the dark, clear
+and tinted variants. Open it in **Icon Composer** (bundled with Xcode 26) to
+adjust the glass, shadows or colors; the layer artwork is the SVGs in
+`AppIcon.icon/Assets/`.
+
+`Assets.xcassets/AppIcon.appiconset` holds a flat render of the same design
+for Xcode versions without Icon Composer support. If Xcode 26 warns about
+two icons named `AppIcon`, delete the `.appiconset`; Xcode 26 generates the
+icons for older iOS versions from the `.icon` file.
+
 ## Widgets, Lock Screen widgets and Live Activities
 
 The **StudySpotWidgets** extension adds:
