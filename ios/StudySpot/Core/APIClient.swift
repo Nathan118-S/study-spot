@@ -33,7 +33,7 @@ final class APIClient: @unchecked Sendable {
 
     // MARK: Core request
 
-    func requestData(_ path: String, method: String = "GET", body: JSONValue? = nil) async throws -> Data {
+    func requestData(_ path: String, method: String = "GET", body: JSONValue? = nil, bearer: String? = nil) async throws -> Data {
         guard let url = URL(string: AppConfig.apiBaseURL + path) else {
             throw APIError(status: 0, message: "Invalid server URL. Check the server address in Settings.")
         }
@@ -44,7 +44,7 @@ final class APIClient: @unchecked Sendable {
             req.setValue("application/json", forHTTPHeaderField: "Content-Type")
             req.httpBody = try encoder.encode(body)
         }
-        if let token { req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization") }
+        if let auth = bearer ?? token { req.setValue("Bearer \(auth)", forHTTPHeaderField: "Authorization") }
 
         let data: Data
         let response: URLResponse
@@ -72,8 +72,9 @@ final class APIClient: @unchecked Sendable {
     }
 
     @discardableResult
-    func send(_ path: String, method: String = "POST", body: JSONValue? = nil) async throws -> JSONValue {
-        let data = try await requestData(path, method: method, body: body)
+    /// `bearer` overrides the stored session (e.g. to unregister while signing out).
+    func send(_ path: String, method: String = "POST", body: JSONValue? = nil, bearer: String? = nil) async throws -> JSONValue {
+        let data = try await requestData(path, method: method, body: body, bearer: bearer)
         if data.isEmpty { return .null }
         return (try? decoder.decode(JSONValue.self, from: data)) ?? .null
     }

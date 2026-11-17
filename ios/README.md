@@ -103,6 +103,30 @@ turned off in Settings or Reduce Motion is on. The helpers live in
 `StudySpot/Components/Glass.swift`. On iOS 17–18, or when built with
 Xcode 16, they fall back to frosted materials.
 
+## Class Live Activities
+
+Give a class its **meeting times** (and optionally a subject and room) in
+the app or on the website. Five minutes before each class, a Live Activity
+appears on the Lock Screen and in the Dynamic Island. It shows the class,
+subject and room, a circular countdown to the start, and anything due that
+day. It ends shortly after class starts. Users can turn it off under
+*Settings → Reminders*.
+
+There are two ways it can start:
+
+- **When the app is closed:** the server starts it with an ActivityKit
+  push. This needs a paid Apple Developer account:
+  1. In the Apple Developer portal, under *Keys*, create a key with **Apple
+     Push Notifications service (APNs)** enabled, and download the `.p8`
+     file.
+  2. In **Admin → Integration Secrets → Apple Push**, paste the `.p8`
+     file's contents, the key ID and your team ID.
+  3. Build the app with the Push Notifications capability:
+     `python3 scripts/configure.py --push` (`--no-push` turns it off).
+- **Without push:** the app schedules a notification 5 minutes before each
+  class. Opening it, or having the app open at that time, starts the Live
+  Activity.
+
 ## App icon (Liquid Glass)
 
 `StudySpot/AppIcon.icon` is an Icon Composer icon: the website's yellow

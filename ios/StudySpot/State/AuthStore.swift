@@ -85,6 +85,8 @@ final class AuthStore {
     }
 
     func signOut() {
+        let outgoing = api.token
+        Task { await ClassActivityManager.unregister(bearer: outgoing) }
         api.setToken(nil)
         user = nil
         phase = .signedOut

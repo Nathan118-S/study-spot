@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { api } from '@/api/client';
-import ClassForm from '@/components/ClassForm';
+import ClassForm, { WEEKDAYS } from '@/components/ClassForm';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Plus, Pencil, Trash2, Loader2, BookOpen } from 'lucide-react';
@@ -84,7 +84,16 @@ export default function Classes() {
                 </div>
                 {c.source !== 'manual' && <Badge variant="secondary" className="text-xs">Google</Badge>}
               </div>
-              {c.teacher_name && <p className="text-sm text-muted-foreground mt-1">Teacher: {c.teacher_name}</p>}
+              {[c.subject, c.room && `Room ${c.room}`, c.teacher_name].filter(Boolean).length > 0 && (
+                <p className="text-sm text-muted-foreground mt-1">
+                  {[c.subject, c.room && `Room ${c.room}`, c.teacher_name].filter(Boolean).join(' · ')}
+                </p>
+              )}
+              {Array.isArray(c.schedule) && c.schedule.length > 0 && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  {c.schedule.map((m) => `${WEEKDAYS[m.day]?.slice(0, 3)} ${m.start}`).join(', ')}
+                </p>
+              )}
               <p className="text-sm text-muted-foreground mt-2">{countFor(c.id)} assignment(s)</p>
               <div className="flex gap-1 mt-3 justify-end">
                 <Button variant="ghost" size="icon" onClick={() => { setEditing(c); setShowForm(true); }} title="Edit">

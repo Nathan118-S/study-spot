@@ -27,8 +27,14 @@ struct ClassesView: View {
                                             Pill(text: c.source == .blackboard ? "Blackboard" : "Google")
                                         }
                                     }
-                                    if let t = c.teacherName, !t.isEmpty {
-                                        Text("Teacher: \(t)").font(.subheadline).foregroundStyle(.secondary)
+                                    let details = [c.subject, c.room.map { $0.isEmpty ? "" : "Room \($0)" }, c.teacherName]
+                                        .compactMap { $0 }.filter { !$0.isEmpty }
+                                    if !details.isEmpty {
+                                        Text(details.joined(separator: " · ")).font(.subheadline).foregroundStyle(.secondary)
+                                    }
+                                    if let next = c.schedule.compactMap({ $0.nextStart(after: Date()) }).min() {
+                                        Label(next.formatted(.dateTime.weekday(.abbreviated).hour().minute()), systemImage: "clock")
+                                            .font(.caption).foregroundStyle(.secondary)
                                     }
                                     Text("\(count) assignment(s)").font(.caption).foregroundStyle(.secondary)
                                 }
@@ -79,7 +85,18 @@ struct ClassFormView: View {
     @State private var name = ""
     @State private var color = ClassFormView.colors[0]
     @State private var teacher = ""
+    @State private var subject = ""
+    @State private var room = ""
+    @State private var meetings: [EditableMeeting] = []
     @State private var saving = false
+
+    /// A meeting time being edited (times as Dates for the pickers).
+    struct EditableMeeting: Identifiable {
+        let id = UUID()
+        var day: Int
+        var start: Date
+        var end: Date
+    }
 
     var body: some View {
         NavigationStack {
@@ -101,8 +118,44 @@ struct ClassFormView: View {
                     }
                     .padding(.vertical, 6)
                 }
-                Section("Teacher Name (optional)") {
-                    TextField("e.g. Mr. Smith", text: $teacher)
+                Section("Details (optional)") {
+                    TextField("Subject, e.g. Math", text: $subject)
+                    TextField("Room, e.g. 204", text: $room)
+                    TextField("Teacher, e.g. Mr. Smith", text: $teacher)
+                }
+                Section {
+                    ForEach($meetings) { $m in
+                        VStack(alignment: .leading, spacing: 8) {
+                            Picker("Day", selection: $m.day) {
+                                ForEach(0..<7, id: \.self) { Text(ClassMeeting.weekdayNames[$0]).tag($0) }
+                            }
+                            HStack {
+                                DatePicker("Starts", selection: $m.start, displayedComponents: .hourAndMinute)
+                                    .labelsHidden()
+                                Text("to").foregroundStyle(.secondary)
+                                DatePicker("Ends", selection: $m.end, displayedComponents: .hourAndMinute)
+                                    .labelsHidden()
+                                Spacer(minLength: 0)
+                            }
+                        }
+                        .padding(.vertical, 4)
+                    }
+                    .onDelete { meetings.remove(atOffsets: $0) }
+                    Button {
+                        // Same time as the last meeting, on the next day.
+                        let last = meetings.last
+                        meetings.append(EditableMeeting(
+                            day: last.map { ($0.day + 1) % 7 } ?? 1,
+                            start: last?.start ?? ReminderSettings.time("09:00"),
+                            end: last?.end ?? ReminderSettings.time("09:50")
+                        ))
+                    } label: {
+                        Label("Add meeting time", systemImage: "plus.circle.fill")
+                    }
+                } header: {
+                    Text("Meeting times")
+                } footer: {
+                    Text("Study Spot shows a Live Activity with a countdown 5 minutes before each class.")
                 }
             }
             .navigationTitle(schoolClass == nil ? "Add Class" : "Edit Class")
@@ -117,6 +170,10 @@ struct ClassFormView: View {
             .onAppear {
                 if let c = schoolClass {
                     name = c.name; color = c.color; teacher = c.teacherName ?? ""
+                    subject = c.subject ?? ""; room = c.room ?? ""
+                    meetings = c.schedule.map {
+                        EditableMeeting(day: $0.day, start: ReminderSettings.time($0.start), end: ReminderSettings.time($0.end))
+                    }
                 }
             }
         }
@@ -130,6 +187,11 @@ struct ClassFormView: View {
             "name": .string(name.trimmingCharacters(in: .whitespaces)),
             "color": .string(color),
             "teacher_name": .string(teacher.trimmingCharacters(in: .whitespaces)),
+            "subject": .string(subject.trimmingCharacters(in: .whitespaces)),
+            "room": .string(room.trimmingCharacters(in: .whitespaces)),
+            "schedule": .array(meetings.sorted { ($0.day, ReminderSettings.hhmm($0.start)) < ($1.day, ReminderSettings.hhmm($1.start)) }.map {
+                ["day": .number(Double($0.day)), "start": .string(ReminderSettings.hhmm($0.start)), "end": .string(ReminderSettings.hhmm($0.end))]
+            }),
         ]
         do {
             if let c = schoolClass {

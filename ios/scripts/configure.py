@@ -46,6 +46,10 @@ def main():
     ap.add_argument("--web", help="Website address where users log in. Defaults to the server "
                                   "address (right when one address serves both, as with Docker). Only needed "
                                   "for local development, e.g. http://<mac-ip>:5173")
+    ap.add_argument("--push", action=argparse.BooleanOptionalAction, default=None,
+                    help="Enable (--push) or disable (--no-push) the Push Notifications capability, used by the "
+                         "server to start class Live Activities when the app is closed. Needs a paid Apple "
+                         "Developer account and the APNs key set on the server.")
     args = ap.parse_args()
 
     gen = read(GEN)
@@ -81,6 +85,16 @@ def main():
         # One address serves the API and the website (e.g. Docker).
         gen = re.sub(r'STUDYSPOT_WEB_URL = "[^"]*";', 'STUDYSPOT_WEB_URL = "";', gen)
         print(f"Default website: same as server ({args.server})")
+
+    if args.push is not None:
+        app_ent = ENTITLEMENTS[0]
+        s = read(app_ent)
+        block = "\t<key>aps-environment</key>\n\t<string>development</string>\n"
+        s = s.replace(block, "")
+        if args.push:
+            s = s.replace("</dict>\n</plist>", block + "</dict>\n</plist>")
+        write(app_ent, s)
+        print("Push Notifications:", "on (aps-environment)" if args.push else "off")
 
     write(GEN, gen)
     subprocess.run([sys.executable, GEN], cwd=IOS, check=True)

@@ -169,3 +169,35 @@ CREATE TABLE IF NOT EXISTS app_secrets (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+
+-- Class meeting times (for the iOS "class starts soon" Live Activity).
+-- schedule: [{ "day": 0-6 (Sunday = 0), "start": "HH:MM", "end": "HH:MM" }]
+ALTER TABLE classes ADD COLUMN IF NOT EXISTS subject TEXT;
+ALTER TABLE classes ADD COLUMN IF NOT EXISTS room TEXT;
+ALTER TABLE classes ADD COLUMN IF NOT EXISTS schedule JSONB NOT NULL DEFAULT '[]';
+
+-- iOS push-to-start tokens (ActivityKit), one per device install.
+CREATE TABLE IF NOT EXISTS device_push_tokens (
+  token TEXT PRIMARY KEY,
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  kind TEXT NOT NULL DEFAULT 'live-activity-start',
+  environment TEXT NOT NULL DEFAULT 'production' CHECK (environment IN ('production', 'development')),
+  bundle_id TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_push_tokens_user ON device_push_tokens(user_id);
+
+-- One row per class meeting a "class starts soon" Live Activity was sent
+-- for; update_token is the started activity's own push token, used to end it.
+CREATE TABLE IF NOT EXISTS class_activity_sends (
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  class_id UUID NOT NULL REFERENCES classes(id) ON DELETE CASCADE,
+  starts_at TIMESTAMPTZ NOT NULL,
+  update_token TEXT,
+  environment TEXT,
+  bundle_id TEXT,
+  sent_at TIMESTAMPTZ,
+  ended_at TIMESTAMPTZ,
+  PRIMARY KEY (user_id, class_id, starts_at)
+);

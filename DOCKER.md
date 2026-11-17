@@ -228,6 +228,15 @@ Skip the `https` profile and proxy your domain to `http://127.0.0.1:8787`.
 Set `APP_BIND=127.0.0.1` in `.env` so the app isn't exposed directly.
 Forward all paths, including `/.well-known/` (used for passkeys).
 
+## iOS class Live Activities (optional)
+
+To let the server start the "class starts soon" Live Activity on iPhones
+even when the app is closed, add an APNs key under **Admin → Integration
+Secrets → Apple Push**: the `.p8` file's contents (paste it as is), its
+key ID and your Apple team ID. No restart is needed. The server checks
+every minute, and needs outbound HTTPS to `api.push.apple.com`. See
+`ios/README.md` for the app side.
+
 ## Google and Blackboard redirect URIs
 
 Register these with Google Cloud / Blackboard, using your domain:

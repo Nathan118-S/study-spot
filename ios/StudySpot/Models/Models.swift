@@ -215,17 +215,50 @@ struct Assignment: Decodable, Identifiable, Hashable, Sendable {
     var isGraded: Bool { score != nil && points > 0 }
 }
 
+/// One weekly meeting of a class: weekday (0 = Sunday … 6 = Saturday) and
+/// local start/end times as "HH:mm".
+struct ClassMeeting: Codable, Hashable, Sendable, Identifiable {
+    var day: Int
+    var start: String
+    var end: String
+    var id: String { "\(day)-\(start)-\(end)" }
+
+    static let weekdayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
+    static let weekdayShort = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+
+    var startComponents: (hour: Int, minute: Int)? { Self.parse(start) }
+
+    static func parse(_ s: String) -> (hour: Int, minute: Int)? {
+        let parts = s.split(separator: ":").compactMap { Int($0) }
+        guard parts.count == 2, (0..<24).contains(parts[0]), (0..<60).contains(parts[1]) else { return nil }
+        return (parts[0], parts[1])
+    }
+
+    /// The next time this meeting starts at or after `date`.
+    func nextStart(after date: Date, calendar: Calendar = .current) -> Date? {
+        guard let t = startComponents else { return nil }
+        var comps = DateComponents()
+        comps.weekday = day + 1 // Calendar weekdays are 1-based (1 = Sunday)
+        comps.hour = t.hour
+        comps.minute = t.minute
+        return calendar.nextDate(after: date.addingTimeInterval(-1), matching: comps, matchingPolicy: .nextTime)
+    }
+}
+
 struct SchoolClass: Decodable, Identifiable, Hashable, Sendable {
     var id: String
     var name: String
     var color: String
     var teacherName: String?
+    var subject: String?
+    var room: String?
+    var schedule: [ClassMeeting]
     var source: Source
     var externalId: String?
     var bestStreak: Int
 
     enum CodingKeys: String, CodingKey {
-        case id, name, color, source
+        case id, name, color, source, subject, room, schedule
         case teacherName = "teacher_name"
         case externalId = "external_id"
         case bestStreak = "best_streak"
@@ -237,6 +270,9 @@ struct SchoolClass: Decodable, Identifiable, Hashable, Sendable {
         name = c.flexString(.name) ?? "Unnamed"
         color = c.flexString(.color) ?? "#6366f1"
         teacherName = c.flexString(.teacherName)
+        subject = c.flexString(.subject)
+        room = c.flexString(.room)
+        schedule = (try? c.decodeIfPresent([ClassMeeting].self, forKey: .schedule)) ?? []
         source = Source(rawValue: c.flexString(.source) ?? "") ?? .manual
         externalId = c.flexString(.externalId)
         bestStreak = Int(c.flexDouble(.bestStreak) ?? 0)
@@ -245,6 +281,7 @@ struct SchoolClass: Decodable, Identifiable, Hashable, Sendable {
     init(id: String, name: String, color: String, teacherName: String?, source: Source, externalId: String? = nil) {
         self.id = id; self.name = name; self.color = color; self.teacherName = teacherName
         self.source = source; self.externalId = externalId; self.bestStreak = 0
+        self.subject = nil; self.room = nil; self.schedule = []
     }
 }
 

@@ -23,6 +23,9 @@ export const KNOWN_SECRETS = [
   { key: 'BLACKBOARD_CLIENT_ID', group: 'Blackboard Learn', label: 'Client ID' },
   { key: 'BLACKBOARD_CLIENT_SECRET', group: 'Blackboard Learn', label: 'Client secret' },
   { key: 'BLACKBOARD_REDIRECT_URI', group: 'Blackboard Learn', label: 'Redirect URI' },
+  { key: 'APNS_KEY', group: 'Apple Push (iOS Live Activities)', label: 'Auth key (.p8 contents)' },
+  { key: 'APNS_KEY_ID', group: 'Apple Push (iOS Live Activities)', label: 'Key ID' },
+  { key: 'APNS_TEAM_ID', group: 'Apple Push (iOS Live Activities)', label: 'Team ID' },
 ];
 const KNOWN_KEYS = new Set(KNOWN_SECRETS.map((s) => s.key));
 

@@ -109,6 +109,7 @@ struct MainTabView: View {
             guard let user = auth.user else { return }
             await data.load(for: user)
             publishWidgets()
+            await ClassActivityManager.configure(user: auth.user, classes: data.classes, assignments: data.assignments)
             await data.loadNotifications()
             maybeGreet()
             await data.autoSyncIfStale(user: user, auth: auth)
@@ -122,7 +123,23 @@ struct MainTabView: View {
         }
         // Keep Home/Lock Screen widgets in step with the app's data.
         .onChange(of: data.assignments) { _, _ in publishWidgets() }
-        .onChange(of: data.classes) { _, _ in publishWidgets() }
+        .onChange(of: data.classes) { _, _ in
+            publishWidgets()
+            Task { await ClassActivityManager.configure(user: auth.user, classes: data.classes, assignments: data.assignments) }
+        }
+        .onChange(of: auth.user?.data["class_live_activities"]) { _, _ in
+            Task { await ClassActivityManager.configure(user: auth.user, classes: data.classes, assignments: data.assignments) }
+        }
+        .task(id: scenePhase) {
+            // While the app is open, start a class's Live Activity right at
+            // 5 minutes before it (and end finished ones).
+            while scenePhase == .active && !Task.isCancelled {
+                if ClassActivityManager.isEnabled(for: auth.user) {
+                    ClassActivityManager.refresh(classes: data.classes, assignments: data.assignments)
+                }
+                try? await Task.sleep(for: .seconds(15))
+            }
+        }
         .onChange(of: data.connections) { _, _ in publishWidgets() }
         .onChange(of: auth.needsOnboarding) { _, needs in if !needs { maybeGreet() } }
         .onChange(of: scenePhase) { _, phase in

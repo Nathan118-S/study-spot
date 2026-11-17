@@ -11,8 +11,10 @@ import authRoutes from './routes/auth.js';
 import googleAuthRoutes from './routes/googleAuth.js';
 import entityRoutes from './routes/entities.js';
 import functionRoutes from './routes/functions.js';
+import deviceRoutes from './routes/devices.js';
 import { sendAssignmentReminders } from './jobs/reminders.js';
 import { checkStreakRecords } from './jobs/streaks.js';
+import { sendClassActivities } from './jobs/classActivities.js';
 
 const app = express();
 app.use(cors({ origin: process.env.FRONTEND_URL, credentials: true }));
@@ -35,6 +37,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api', googleAuthRoutes);
 app.use('/api/entities', entityRoutes);
 app.use('/api/functions', functionRoutes);
+app.use('/api/devices', deviceRoutes);
 
 // Serve the built website (dist/) from the same origin when it's present, as
 // in the Docker image. Assets are fingerprinted, so they can be cached long;
@@ -66,6 +69,10 @@ app.listen(port, () => {
 // Recurring jobs: assignment due-date reminders and streak record alerts.
 cron.schedule('*/15 * * * *', () => {
   sendAssignmentReminders().catch((err) => console.error('sendAssignmentReminders failed', err));
+});
+// iOS "class starts soon" Live Activities (no-op until APNs is configured).
+cron.schedule('* * * * *', () => {
+  sendClassActivities().catch((err) => console.error('sendClassActivities failed', err));
 });
 cron.schedule('0 * * * *', () => {
   checkStreakRecords().catch((err) => console.error('checkStreakRecords failed', err));

@@ -21,8 +21,9 @@ const ENTITIES = {
   Class: {
     table: 'classes',
     ownerColumn: 'created_by_id',
-    columns: ['name', 'color', 'teacher_name', 'source', 'external_id', 'best_streak'],
-    defaults: { color: '#6366f1', source: 'manual', best_streak: 0 },
+    columns: ['name', 'color', 'teacher_name', 'subject', 'room', 'schedule', 'source', 'external_id', 'best_streak'],
+    jsonColumns: ['schedule'],
+    defaults: { color: '#6366f1', source: 'manual', best_streak: 0, schedule: [] },
   },
   AssignmentTemplate: {
     table: 'assignment_templates',

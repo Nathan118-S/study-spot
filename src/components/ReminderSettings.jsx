@@ -5,7 +5,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Loader2, Bell, Moon, X, Plus, Clock } from 'lucide-react';
+import { Loader2, Bell, Moon, X, Plus, Clock, Smartphone } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const PRESETS = [1, 6, 12, 24, 48, 72];
@@ -30,6 +30,7 @@ export default function ReminderSettings() {
   const [enabled, setEnabled] = useState(user?.data?.reminders_enabled !== false);
   const [leads, setLeads] = useState(readLeads(user?.data?.reminder_lead_hours));
   const [dndEnabled, setDndEnabled] = useState(user?.data?.dnd_enabled === true);
+  const [classActivities, setClassActivities] = useState(user?.data?.class_live_activities !== false);
   const [dndStart, setDndStart] = useState(user?.data?.dnd_start || '22:00');
   const [dndEnd, setDndEnd] = useState(user?.data?.dnd_end || '07:00');
   const [newLead, setNewLead] = useState('');
@@ -201,6 +202,27 @@ export default function ReminderSettings() {
             />
           </div>
         </div>
+      </div>
+
+      <div className="rounded-lg border p-4 flex items-center justify-between gap-4">
+        <div className="flex items-start gap-3">
+          <div className="mt-0.5 text-primary"><Smartphone className="h-5 w-5" /></div>
+          <div>
+            <p className="font-medium">Live Activity before class (iOS)</p>
+            <p className="text-sm text-muted-foreground">
+              5 minutes before each class, the iPhone app shows a countdown on the Lock Screen with anything due that day.
+              Add meeting times to your classes to use it.
+            </p>
+          </div>
+        </div>
+        <Switch
+          checked={classActivities}
+          onCheckedChange={async (v) => {
+            setClassActivities(v);
+            await persist({ class_live_activities: v });
+          }}
+          aria-label="Toggle class Live Activities"
+        />
       </div>
     </div>
   );

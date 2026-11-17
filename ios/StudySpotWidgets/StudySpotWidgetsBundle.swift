@@ -7,6 +7,7 @@ struct StudySpotWidgetsBundle: WidgetBundle {
         UpNextWidget()
         StreakWidget()
         StudyTimerLiveActivity()
+        ClassStartLiveActivity()
     }
 }
 

@@ -20,7 +20,7 @@ struct SettingsView: View {
         Item(id: "leaderboard", label: "Leaderboard", desc: "Show study-streak rankings", symbol: "trophy"),
         Item(id: "onboarding", label: "Onboarding", desc: "Run the setup wizard again", symbol: "arrow.counterclockwise"),
         Item(id: "data", label: "Data", desc: "Export your assignments", symbol: "externaldrive"),
-        Item(id: "reminders", label: "Reminders", desc: "Email reminder timing", symbol: "alarm"),
+        Item(id: "reminders", label: "Reminders", desc: "Email reminders and class Live Activities", symbol: "alarm"),
         Item(id: "grading", label: "Grading", desc: "Letter-grade thresholds", symbol: "graduationcap"),
         Item(id: "security", label: "Security", desc: "Two-factor authentication", symbol: "lock"),
         Item(id: "account", label: "Account", desc: "Your name and email", symbol: "person"),
@@ -574,6 +574,18 @@ struct ReminderSettings: View {
                 .onChange(of: dndEnd) { _, v in save(["dnd_end": .string(Self.hhmm(v))]) }
         }
         .disabled(!enabled)
+
+        Section {
+            Toggle(isOn: Binding(
+                get: { auth.user?.data["class_live_activities"]?.boolValue != false },
+                set: { v in Task { try? await auth.update(["class_live_activities": .bool(v)]) } }
+            )) {
+                SettingLabel(title: "Live Activity before class",
+                             desc: "5 minutes before each class, show a countdown on the Lock Screen and in the Dynamic Island, with anything due that day. Add meeting times to your classes to use it.",
+                             symbol: "clock.badge")
+            }
+            .disabled(auth.user?.isDemo == true)
+        }
         .onAppear(perform: load)
     }
 
