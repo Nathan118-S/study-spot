@@ -39,3 +39,6 @@ ios/**/xcuserdata/
 ios/**/DerivedData/
 ios/build/
 *.xcuserstate
+
+# Temporary agent worktrees
+.claude/worktrees/
