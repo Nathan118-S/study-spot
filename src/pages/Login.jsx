@@ -6,7 +6,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { LogIn, Mail, Lock, Loader2, KeyRound } from "lucide-react";
 import AuthLayout from "@/components/AuthLayout";
-import GoogleIcon from "@/components/GoogleIcon";
 import { safeReturnTo } from "@/lib/authReturnTo";
 import { completeIosHandoff, isIosHandoff } from "@/lib/iosHandoff";
 
@@ -61,10 +60,6 @@ export default function Login() {
     }
   };
 
-  const handleGoogle = () => {
-    api.auth.loginWithProvider("google", returnTo);
-  };
-
   return (
     <AuthLayout
       icon={LogIn}
@@ -82,35 +77,28 @@ export default function Login() {
         </>
       }
     >
-      <Button
-        variant="outline"
-        className="w-full h-12 text-sm font-medium mb-6"
-        onClick={handleGoogle}
-      >
-        <GoogleIcon className="w-5 h-5 mr-2" />
-        Continue with Google
-      </Button>
-
       {api.auth.passkeySupported() && (
-        <Button
-          variant="outline"
-          className="w-full h-12 text-sm font-medium -mt-3 mb-6"
-          onClick={handlePasskey}
-          disabled={passkeyLoading}
-        >
-          {passkeyLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <KeyRound className="w-5 h-5" />}
-          Sign in with a passkey
-        </Button>
-      )}
+        <>
+          <Button
+            variant="outline"
+            className="w-full h-12 text-sm font-medium mb-6"
+            onClick={handlePasskey}
+            disabled={passkeyLoading}
+          >
+            {passkeyLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <KeyRound className="w-5 h-5" />}
+            Sign in with a passkey
+          </Button>
 
-      <div className="relative mb-6">
-        <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-border" />
-        </div>
-        <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-card px-3 text-muted-foreground">or</span>
-        </div>
-      </div>
+          <div className="relative mb-6">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-border" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-card px-3 text-muted-foreground">or</span>
+            </div>
+          </div>
+        </>
+      )}
 
       {disabledReason && (
         <div className="mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/40 text-red-700 dark:text-red-300 text-sm">
