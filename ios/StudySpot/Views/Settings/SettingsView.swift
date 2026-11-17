@@ -169,6 +169,22 @@ struct WelcomeStylePicker: View {
 
 // MARK: - Google
 
+/// Shown before connecting Google or Blackboard: many schools restrict which
+/// third-party apps can access school accounts.
+struct SchoolAccessNote: View {
+    var service: String
+
+    var body: some View {
+        Label {
+            Text("Some schools block connecting third-party apps like Study Spot to \(service) accounts. If the connection is blocked or fails, ask your school's IT team, or add your assignments manually.")
+        } icon: {
+            Image(systemName: "info.circle")
+        }
+        .font(.footnote)
+        .foregroundStyle(Palette.secondary)
+    }
+}
+
 struct GoogleSettings: View {
     @Environment(AuthStore.self) private var auth
     @Environment(DataStore.self) private var data
@@ -180,6 +196,8 @@ struct GoogleSettings: View {
         Section {
             Text("Connect your own Google account to import assignments. Each user connects separately — your data stays private to you.")
                 .font(.subheadline).foregroundStyle(.secondary)
+        } footer: {
+            SchoolAccessNote(service: "school Google")
         }
         Section {
             ConnectionRow(title: "Google Calendar", desc: "Import calendar events labeled as assignments.", symbol: "calendar",
@@ -320,7 +338,10 @@ struct BlackboardSettings: View {
                 }
                 .disabled(busy)
             } footer: {
-                if !error.isEmpty { Text(error).foregroundStyle(.red) }
+                VStack(alignment: .leading, spacing: 6) {
+                    if !error.isEmpty { Text(error).foregroundStyle(.red) }
+                    SchoolAccessNote(service: "Blackboard")
+                }
             }
         }
     }

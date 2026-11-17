@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Calendar, BookOpen, Loader2, Link2, Unlink } from 'lucide-react';
 import BlackboardConnection from '@/components/BlackboardConnection';
 import { isDemoUser } from '@/lib/demoData';
+import SchoolAccessNote from '@/components/SchoolAccessNote';
 
 const CALENDAR_ID = 'google_calendar';
 const CLASSROOM_ID = 'google_classroom';
@@ -81,6 +82,9 @@ export default function ServicesStep() {
         Connect your school accounts to import assignments automatically. Each user connects separately — your data stays private.
       </motion.p>
       <motion.div variants={item}>
+        <SchoolAccessNote service="school Google or Blackboard" />
+      </motion.div>
+      <motion.div variants={item}>
         <ServiceRow
           icon={<Calendar className="h-5 w-5 text-blue-500" />}
           title="Google Calendar"
@@ -106,6 +110,7 @@ export default function ServicesStep() {
       </motion.div>
       <motion.div variants={item}>
         <BlackboardConnection
+          hideNote
           connected={status.blackboard}
           instanceUrl={user?.data?.blackboard_instance_url}
           onChanged={check}

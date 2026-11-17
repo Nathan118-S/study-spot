@@ -12,6 +12,7 @@ import ReminderSettings from '@/components/ReminderSettings';
 import DataExport from '@/components/DataExport';
 import AccountName from '@/components/AccountName';
 import ChangePassword from '@/components/ChangePassword';
+import SchoolAccessNote from '@/components/SchoolAccessNote';
 import { WelcomeStyleSelect } from '@/components/ThemeControls';
 import { Switch } from '@/components/ui/switch';
 import {
@@ -236,6 +237,7 @@ export default function Settings() {
             <p className="text-sm text-muted-foreground">
               Connect your own Google account to import assignments. Each user connects separately — your data stays private to you.
             </p>
+            <SchoolAccessNote service="school Google" />
             <ConnectionRow
               icon={<Calendar className="h-5 w-5 text-blue-500" />}
               title="Google Calendar"

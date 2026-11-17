@@ -4,8 +4,9 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { School, Link2, Unlink, Loader2 } from 'lucide-react';
+import SchoolAccessNote from '@/components/SchoolAccessNote';
 
-export default function BlackboardConnection({ connected, instanceUrl, onChanged }) {
+export default function BlackboardConnection({ connected, instanceUrl, onChanged, hideNote = false }) {
   const [url, setUrl] = useState(instanceUrl || '');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -85,6 +86,7 @@ export default function BlackboardConnection({ connected, instanceUrl, onChanged
             </Button>
           </div>
           {error && <p className="text-xs text-destructive">{error}</p>}
+          {!hideNote && <SchoolAccessNote service="Blackboard" />}
         </div>
       )}
     </div>
