@@ -72,6 +72,13 @@ object FlexStringSerializer : KSerializer<String?> {
         (encoder as JsonEncoder).encodeJsonElement(value?.let(::JsonPrimitive) ?: JsonNull)
 }
 
+/** Like [FlexStringSerializer] but never null: missing/null -> "". */
+object FlexTextSerializer : KSerializer<String> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("FlexText", PrimitiveKind.STRING)
+    override fun deserialize(decoder: Decoder): String = decoder.element().flexString() ?: ""
+    override fun serialize(encoder: Encoder, value: String) = encoder.encodeString(value)
+}
+
 /** Numbers or numeric strings; null/garbage -> 0.0. */
 object FlexDoubleSerializer : KSerializer<Double> {
     override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("FlexDouble", PrimitiveKind.DOUBLE)

@@ -1,0 +1,503 @@
+package education.studyspot.app.data
+
+import education.studyspot.app.core.ApiClient
+import education.studyspot.app.core.Dates
+import education.studyspot.app.core.Entities
+import education.studyspot.app.core.doubleValue
+import education.studyspot.app.core.get
+import education.studyspot.app.core.userMessage
+import education.studyspot.app.model.AppNotification
+import education.studyspot.app.model.Assignment
+import education.studyspot.app.model.AssignmentTemplate
+import education.studyspot.app.model.Connections
+import education.studyspot.app.model.Priority
+import education.studyspot.app.model.SchoolClass
+import education.studyspot.app.model.Source
+import education.studyspot.app.model.StudySession
+import education.studyspot.app.model.User
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.booleanOrNull
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.put
+import java.time.Instant
+import java.time.ZoneId
+import java.time.ZonedDateTime
+
+/**
+ * The single source of truth for the signed-in user's data, shared by every
+ * screen (mirrors ios/StudySpot/State/DataStore.swift). Feature screens read
+ * the [StateFlow]s and call the mutation methods here instead of talking to
+ * [ApiClient] themselves.
+ *
+ * Mutations are optimistic like the web and iOS apps: the flow updates at once
+ * and rolls back (with an error message via [MessageCenter]) if the server refuses.
+ * Demo accounts never write to the server.
+ */
+class DataRepository(
+    private val api: ApiClient,
+    private val messages: MessageCenter,
+    private val scope: CoroutineScope,
+) {
+    private val _user = MutableStateFlow<User?>(null)
+    /** The signed-in user (GET /api/auth/me). Written by AuthStore and [updateUser]. */
+    val user: StateFlow<User?> = _user.asStateFlow()
+
+    private val _assignments = MutableStateFlow<List<Assignment>>(emptyList())
+    val assignments: StateFlow<List<Assignment>> = _assignments.asStateFlow()
+
+    private val _classes = MutableStateFlow<List<SchoolClass>>(emptyList())
+    val classes: StateFlow<List<SchoolClass>> = _classes.asStateFlow()
+
+    private val _templates = MutableStateFlow<List<AssignmentTemplate>>(emptyList())
+    val templates: StateFlow<List<AssignmentTemplate>> = _templates.asStateFlow()
+
+    private val _studySessions = MutableStateFlow<List<StudySession>>(emptyList())
+    val studySessions: StateFlow<List<StudySession>> = _studySessions.asStateFlow()
+
+    private val _notifications = MutableStateFlow<List<AppNotification>>(emptyList())
+    val notifications: StateFlow<List<AppNotification>> = _notifications.asStateFlow()
+
+    private val _connections = MutableStateFlow(Connections())
+    val connections: StateFlow<Connections> = _connections.asStateFlow()
+
+    private val _isLoading = MutableStateFlow(false)
+    /** True during the first load (before [hasLoaded]). */
+    val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
+
+    private val _hasLoaded = MutableStateFlow(false)
+    val hasLoaded: StateFlow<Boolean> = _hasLoaded.asStateFlow()
+
+    private val _isRefreshing = MutableStateFlow(false)
+    /** Pull-to-refresh / sync in progress. */
+    val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
+
+    private val _isSyncing = MutableStateFlow(false)
+    val isSyncing: StateFlow<Boolean> = _isSyncing.asStateFlow()
+
+    private val _syncMessage = MutableStateFlow("")
+    val syncMessage: StateFlow<String> = _syncMessage.asStateFlow()
+
+    private val _lastError = MutableStateFlow<String?>(null)
+    val lastError: StateFlow<String?> = _lastError.asStateFlow()
+
+    val unreadCount: StateFlow<Int> = notifications
+        .map { list -> list.count { !it.read } }
+        .stateIn(scope, SharingStarted.Eagerly, 0)
+
+    private val isDemo: Boolean get() = _user.value?.isDemo == true
+
+    // region Lookups
+
+    fun classFor(classId: String?): SchoolClass? = classId?.let { id -> _classes.value.firstOrNull { it.id == id } }
+
+    /** The class color ("#rrggbb") for an assignment's class, or a neutral grey. */
+    fun colorFor(classId: String?): String = classFor(classId)?.color ?: SchoolClass.UNCATEGORIZED_COLOR
+
+    fun assignment(id: String): Assignment? = _assignments.value.firstOrNull { it.id == id }
+
+    // endregion
+
+    // region Session
+
+    /** Called by AuthStore. */
+    fun setUser(user: User?) {
+        _user.value = user
+    }
+
+    fun reset() {
+        _user.value = null
+        _assignments.value = emptyList()
+        _classes.value = emptyList()
+        _templates.value = emptyList()
+        _studySessions.value = emptyList()
+        _notifications.value = emptyList()
+        _connections.value = Connections()
+        _hasLoaded.value = false
+        _syncMessage.value = ""
+        _lastError.value = null
+    }
+
+    /** PATCH /api/auth/me (settings live in user.data; unknown keys go there). */
+    suspend fun updateUser(patch: JsonObject): User {
+        val updated = api.updateMe(patch)
+        _user.value = updated
+        return updated
+    }
+
+    suspend fun refreshUser() {
+        runCatching { api.me() }.onSuccess { _user.value = it }
+    }
+
+    // endregion
+
+    // region Loading
+
+    /** Initial load after sign-in: assignments, classes, then connections, notifications and templates. */
+    suspend fun load() {
+        if (isDemo) {
+            _assignments.value = DemoData.assignments
+            _classes.value = DemoData.classes
+            _connections.value = DemoData.connections
+            _hasLoaded.value = true
+            return
+        }
+        if (!_hasLoaded.value) _isLoading.value = true
+        try {
+            coroutineScope {
+                val a = async { api.assignments() }
+                val c = async { api.classes() }
+                _assignments.value = a.await()
+                _classes.value = c.await()
+            }
+            _hasLoaded.value = true
+            _lastError.value = null
+        } catch (e: Exception) {
+            if (e is kotlinx.coroutines.CancellationException) throw e
+            _lastError.value = e.userMessage
+        } finally {
+            _isLoading.value = false
+        }
+        coroutineScope {
+            listOf(
+                async { refreshConnections() },
+                async { loadNotifications() },
+                async { loadTemplates() },
+            ).awaitAll()
+        }
+    }
+
+    /** Re-fetch assignments and classes (pull to refresh without connected services). */
+    suspend fun reloadData() {
+        if (isDemo) return
+        coroutineScope {
+            launch { runCatching { api.assignments() }.onSuccess { _assignments.value = it } }
+            launch { runCatching { api.classes() }.onSuccess { _classes.value = it } }
+        }
+    }
+
+    /** Pull to refresh: syncs connected services first, like iOS. */
+    suspend fun refresh() {
+        _isRefreshing.value = true
+        try {
+            if (_connections.value.any) runSync(silent = false) else reloadData()
+        } finally {
+            _isRefreshing.value = false
+        }
+    }
+
+    suspend fun refreshConnections() {
+        if (isDemo) { _connections.value = DemoData.connections; return }
+        runCatching { api.connections() }.onSuccess { _connections.value = it }
+    }
+
+    suspend fun loadNotifications() {
+        if (isDemo) return
+        runCatching { api.notifications() }.onSuccess { _notifications.value = it }
+    }
+
+    suspend fun loadTemplates() {
+        if (isDemo) return
+        runCatching { api.templates() }.onSuccess { _templates.value = it }
+    }
+
+    suspend fun loadStudySessions() {
+        if (isDemo) return
+        runCatching { api.studySessions() }.onSuccess { _studySessions.value = it }
+    }
+
+    // endregion
+
+    // region Sync (Google Calendar / Classroom / Blackboard)
+
+    /** Auto-refresh synced data when the last sync was more than 6 hours ago. */
+    suspend fun autoSyncIfStale() {
+        val u = _user.value ?: return
+        if (u.isDemo || !_connections.value.any) return
+        val last = u.lastSync
+        if (last != null && Instant.now().epochSecond - last.epochSecond < 6 * 3600) return
+        runSync(silent = true)
+    }
+
+    suspend fun runSync(silent: Boolean) {
+        if (isDemo) return
+        _isSyncing.value = true
+        if (!silent) _syncMessage.value = "Syncing..."
+        try {
+            val c = _connections.value
+            val services = buildList {
+                if (c.calendar) add("Calendar" to "syncGoogleCalendar")
+                if (c.classroom) add("Classroom" to "syncGoogleClassroom")
+                if (c.blackboard) add("Blackboard" to "syncBlackboard")
+            }
+            val results = coroutineScope {
+                services.map { (label, fn) ->
+                    async {
+                        try {
+                            val r = api.invoke(fn)
+                            "$label: ${(r["imported"].doubleValue ?: 0.0).toInt()} new"
+                        } catch (e: Exception) {
+                            if (e is kotlinx.coroutines.CancellationException) throw e
+                            "$label: ${e.userMessage}"
+                        }
+                    }
+                }.awaitAll()
+            }
+            if (!silent) _syncMessage.value = results.joinToString(" · ")
+            reloadData()
+            if (services.isNotEmpty()) {
+                runCatching { updateUser(buildJsonObject { put("last_sync", Dates.format(Instant.now())) }) }
+            }
+        } finally {
+            _isSyncing.value = false
+        }
+    }
+
+    // endregion
+
+    // region Assignments
+
+    /** POST /api/entities/Assignment. [fields] uses server column names (title, class_id, due_date, …). */
+    suspend fun createAssignment(fields: JsonObject): Assignment? {
+        if (isDemo) return null
+        return try {
+            api.create<Assignment>(Entities.ASSIGNMENT, fields).also { created ->
+                _assignments.update { listOf(created) + it }
+            }
+        } catch (e: Exception) {
+            if (e is kotlinx.coroutines.CancellationException) throw e
+            messages.show("Couldn't add the assignment", e.userMessage, error = true)
+            null
+        }
+    }
+
+    /**
+     * PATCH an assignment. [optimistic] (if given) is shown immediately and
+     * rolled back on failure. Returns the server's copy, or null on failure.
+     */
+    suspend fun updateAssignment(id: String, patch: JsonObject, optimistic: Assignment? = null): Assignment? {
+        val prev = _assignments.value
+        optimistic?.let(::apply)
+        if (isDemo) return optimistic
+        return try {
+            api.updateAssignment(id, patch).also(::apply)
+        } catch (e: Exception) {
+            if (e is kotlinx.coroutines.CancellationException) throw e
+            _assignments.value = prev
+            messages.show("Couldn't save the assignment", e.userMessage, error = true)
+            null
+        }
+    }
+
+    suspend fun toggleComplete(a: Assignment) {
+        val next = a.copy(completed = !a.completed)
+        val saved = updateAssignment(a.id, buildJsonObject { put("completed", next.completed) }, next)
+        if (saved != null && next.completed && a.source == Source.GoogleClassroom && a.externalId != null &&
+            _user.value?.syncCompletionToClassroom != false && !isDemo
+        ) {
+            scope.launch {
+                runCatching { api.invoke("syncCompletionToClassroom", buildJsonObject { put("assignment_id", a.id) }) }
+            }
+        }
+    }
+
+    suspend fun deleteAssignment(a: Assignment): Boolean {
+        val prev = _assignments.value
+        _assignments.update { list -> list.filterNot { it.id == a.id } }
+        if (isDemo) return true
+        return try {
+            api.delete(Entities.ASSIGNMENT, a.id)
+            true
+        } catch (e: Exception) {
+            if (e is kotlinx.coroutines.CancellationException) throw e
+            _assignments.value = prev
+            messages.show("Couldn't delete the assignment", e.userMessage, error = true)
+            false
+        }
+    }
+
+    /** Bulk edit (priority / completed), like the dashboard's select mode. */
+    suspend fun bulkUpdate(ids: Set<String>, patch: JsonObject) {
+        if (ids.isEmpty()) return
+        val prev = _assignments.value
+        val priority = (patch["priority"] as? JsonPrimitive)?.contentOrNull?.let(Priority::from)
+        val completed = (patch["completed"] as? JsonPrimitive)?.booleanOrNull
+        _assignments.update { list ->
+            list.map { a ->
+                if (a.id !in ids) a else a.copy(
+                    priority = priority ?: a.priority,
+                    completed = completed ?: a.completed,
+                )
+            }
+        }
+        if (isDemo) return
+        try {
+            coroutineScope { ids.map { id -> async { api.updateAssignment(id, patch) } }.awaitAll() }
+        } catch (e: Exception) {
+            if (e is kotlinx.coroutines.CancellationException) throw e
+            _assignments.value = prev
+            messages.show("Couldn't update the assignments", e.userMessage, error = true)
+        }
+    }
+
+    /** Moves an assignment to another day, keeping its time of day (calendar drag and drop). */
+    suspend fun reschedule(id: String, day: java.time.LocalDate, zone: ZoneId = ZoneId.systemDefault()) {
+        val a = assignment(id) ?: return
+        val old = a.dueDate?.atZone(zone) ?: return
+        val newDate = ZonedDateTime.of(day, old.toLocalTime(), zone).toInstant()
+        updateAssignment(id, buildJsonObject { put("due_date", Dates.format(newDate)) }, a.copy(dueDate = newDate))
+    }
+
+    private fun apply(updated: Assignment) {
+        _assignments.update { list -> list.map { if (it.id == updated.id) updated else it } }
+    }
+
+    // endregion
+
+    // region Classes
+
+    suspend fun createClass(fields: JsonObject): SchoolClass? {
+        if (isDemo) return null
+        return try {
+            api.create<SchoolClass>(Entities.CLASS, fields).also { c -> _classes.update { it + c } }
+        } catch (e: Exception) {
+            if (e is kotlinx.coroutines.CancellationException) throw e
+            messages.show("Couldn't add the class", e.userMessage, error = true)
+            null
+        }
+    }
+
+    suspend fun updateClass(id: String, patch: JsonObject): SchoolClass? {
+        if (isDemo) return null
+        return try {
+            api.update<SchoolClass>(Entities.CLASS, id, patch).also { c ->
+                _classes.update { list -> list.map { if (it.id == id) c else it } }
+            }
+        } catch (e: Exception) {
+            if (e is kotlinx.coroutines.CancellationException) throw e
+            messages.show("Couldn't save the class", e.userMessage, error = true)
+            null
+        }
+    }
+
+    suspend fun deleteClass(c: SchoolClass): Boolean {
+        val prev = _classes.value
+        _classes.update { list -> list.filterNot { it.id == c.id } }
+        if (isDemo) return true
+        return try {
+            api.delete(Entities.CLASS, c.id)
+            true
+        } catch (e: Exception) {
+            if (e is kotlinx.coroutines.CancellationException) throw e
+            _classes.value = prev
+            messages.show("Couldn't delete the class", e.userMessage, error = true)
+            false
+        }
+    }
+
+    // endregion
+
+    // region Templates
+
+    suspend fun createTemplate(fields: JsonObject): AssignmentTemplate? {
+        if (isDemo) return null
+        return try {
+            api.create<AssignmentTemplate>(Entities.TEMPLATE, fields).also { t -> _templates.update { listOf(t) + it } }
+        } catch (e: Exception) {
+            if (e is kotlinx.coroutines.CancellationException) throw e
+            messages.show("Couldn't save the template", e.userMessage, error = true)
+            null
+        }
+    }
+
+    suspend fun updateTemplate(id: String, patch: JsonObject): AssignmentTemplate? {
+        if (isDemo) return null
+        return try {
+            api.update<AssignmentTemplate>(Entities.TEMPLATE, id, patch).also { t ->
+                _templates.update { list -> list.map { if (it.id == id) t else it } }
+            }
+        } catch (e: Exception) {
+            if (e is kotlinx.coroutines.CancellationException) throw e
+            messages.show("Couldn't save the template", e.userMessage, error = true)
+            null
+        }
+    }
+
+    suspend fun deleteTemplate(t: AssignmentTemplate) {
+        val prev = _templates.value
+        _templates.update { list -> list.filterNot { it.id == t.id } }
+        if (isDemo) return
+        try {
+            api.delete(Entities.TEMPLATE, t.id)
+        } catch (e: Exception) {
+            if (e is kotlinx.coroutines.CancellationException) throw e
+            _templates.value = prev
+            messages.show("Couldn't delete the template", e.userMessage, error = true)
+        }
+    }
+
+    // endregion
+
+    // region Study sessions
+
+    suspend fun createStudySession(fields: JsonObject): StudySession? {
+        if (isDemo) return null
+        return try {
+            api.create<StudySession>(Entities.STUDY_SESSION, fields).also { s -> _studySessions.update { listOf(s) + it } }
+        } catch (e: Exception) {
+            if (e is kotlinx.coroutines.CancellationException) throw e
+            messages.show("Couldn't save the study session", e.userMessage, error = true)
+            null
+        }
+    }
+
+    // endregion
+
+    // region Notifications
+
+    suspend fun markRead(n: AppNotification) {
+        if (n.read) return
+        _notifications.update { list -> list.map { if (it.id == n.id) it.copy(read = true) else it } }
+        if (isDemo) return
+        runCatching { api.update<AppNotification>(Entities.NOTIFICATION, n.id, buildJsonObject { put("read", true) }) }
+    }
+
+    suspend fun markAllRead() {
+        val unread = _notifications.value.filter { !it.read }
+        _notifications.update { list -> list.map { it.copy(read = true) } }
+        if (isDemo) return
+        coroutineScope {
+            unread.forEach { n ->
+                launch { runCatching { api.update<AppNotification>(Entities.NOTIFICATION, n.id, buildJsonObject { put("read", true) }) } }
+            }
+        }
+    }
+
+    suspend fun deleteNotification(n: AppNotification) {
+        _notifications.update { list -> list.filterNot { it.id == n.id } }
+        if (isDemo) return
+        runCatching { api.delete(Entities.NOTIFICATION, n.id) }
+    }
+
+    suspend fun clearNotifications() {
+        val all = _notifications.value
+        _notifications.value = emptyList()
+        if (isDemo) return
+        coroutineScope { all.forEach { n -> launch { runCatching { api.delete(Entities.NOTIFICATION, n.id) } } } }
+    }
+
+    // endregion
+}
