@@ -47,7 +47,7 @@ for k in POSTGRES_PASSWORD SESSION_SECRET ENCRYPTION_KEY; do sed -i "s|^$k=.*|$k
 Then edit `.env` (`nano .env`) and set at least:
 
 - `DOMAIN`: your domain, e.g. `studyspot.example.com`
-- `PUBLIC_URL`: `https://` plus that domain (used in emailed links)
+- `PUBLIC_URL`: `https://` plus that domain
 
 Keep `.env` private; it holds your secrets. Back it up: losing
 `ENCRYPTION_KEY` makes secrets stored in the admin panel unreadable.
@@ -153,20 +153,18 @@ Use the same `--profile tunnel` in the update and stop commands below
 
 ## 4. Create your account and make it admin
 
-Sign up on the website. Until email is set up, the 6-digit code is printed in
-the logs:
+Sign up on the website with a username and password, then make your account
+an admin (replace the username):
 
 ```bash
-docker compose logs app | grep "code is"
+docker compose exec db psql -U studyspot -d studyspot -c "UPDATE users SET role='admin' WHERE username='yourname';"
 ```
 
-Make your account an admin (replace the email):
+If you're updating an older install, accounts that used email sign-in now sign
+in with their email address as the username. They can change it in
+*Settings → Account*.
 
-```bash
-docker compose exec db psql -U studyspot -d studyspot -c "UPDATE users SET role='admin' WHERE email='you@example.com';"
-```
-
-You can then set up email, Google and Blackboard under **Admin → Integration
+You can then set up Google, Blackboard and Apple Push under **Admin → Integration
 Secrets** without restarting anything.
 
 ## Point the iOS app at it
@@ -228,19 +226,28 @@ Skip the `https` profile and proxy your domain to `http://127.0.0.1:8787`.
 Set `APP_BIND=127.0.0.1` in `.env` so the app isn't exposed directly.
 Forward all paths, including `/.well-known/` (used for passkeys).
 
-## iOS class Live Activities (optional)
+## iOS push notifications and class Live Activities (optional)
 
-To let the server start the "class starts soon" Live Activity on iPhones
-even when the app is closed, add an APNs key under **Admin → Integration
+To send assignment reminders as iPhone notifications, and let the server
+start the "class starts soon" Live Activity even when the app is closed, add an APNs key under **Admin → Integration
 Secrets → Apple Push**: the `.p8` file's contents (paste it as is), its
 key ID and your Apple team ID. No restart is needed. The server checks
 every minute, and needs outbound HTTPS to `api.push.apple.com`. See
 `ios/README.md` for the app side.
 
+## Forgotten passwords
+
+There's no email, so an admin resets passwords: **Admin → People → the
+person → Reset password** shows a temporary password to give them. From the
+console:
+
+```bash
+docker compose exec app node -e "import('bcryptjs').then(async b=>{const p=process.argv[1];const {pool}=await import('./src/db.js');await pool.query('UPDATE users SET password_hash=\$1 WHERE lower(username)=lower(\$2)',[await b.default.hash(p,10),process.argv[2]]);console.log('ok');process.exit(0)})" 'new-password-here' yourname
+```
+
 ## Google and Blackboard redirect URIs
 
 Register these with Google Cloud / Blackboard, using your domain:
 
-- `https://<domain>/api/auth/google/callback` (Google sign-in)
 - `https://<domain>/api/connectors/google/callback` (Calendar / Classroom)
 - `https://<domain>/blackboard/callback` (Blackboard)

@@ -2,8 +2,7 @@ import { pool } from '../db.js';
 import { signSession, updateUser } from '../lib/users.js';
 import { originAllowed, verifyPasskeyAssertion } from '../lib/passkeys.js';
 import { verifyTotp, generateSecret } from '../lib/totp.js';
-import { getMethods, withMethod, withoutMethod, displayName } from '../lib/twofa.js';
-import { sendEmail } from '../lib/mailer.js';
+import { getMethods, withMethod, withoutMethod } from '../lib/twofa.js';
 import { HttpError } from '../lib/httpError.js';
 import {
   b64uDecode, b64uEncode, concatBytes, bufsEqual, decodeCbor, parseAuthData, coseToJwk, crypto,
@@ -11,7 +10,7 @@ import {
 
 export async function setup2fa(user) {
   const secret = generateSecret();
-  const label = encodeURIComponent(user.email || 'user');
+  const label = encodeURIComponent(user.username || 'user');
   const issuer = encodeURIComponent('Study Spot');
   const otpauth_url = `otpauth://totp/StudySpot:${label}?secret=${secret}&issuer=${issuer}&algorithm=SHA1&digits=6&period=30`;
   return { secret, otpauth_url };
@@ -48,40 +47,9 @@ export async function verify2fa(user, body) {
   return { ok: true, access_token: signSession(user.id) };
 }
 
-export async function email2faSend(user) {
-  const code = String(Math.floor(100000 + Math.random() * 900000));
-  const expires = Date.now() + 10 * 60 * 1000;
-  await updateUser(user.id, { email_2fa_code: code, email_2fa_expires: expires });
-  await sendEmail({
-    to: user.email,
-    subject: 'Your Study Spot verification code',
-    body: `Hi ${displayName(user)},\n\nYour verification code is ${code}. It expires in 10 minutes. If you didn't request this, you can ignore this email.\n\n— Study Spot`,
-  });
-  return { ok: true };
-}
-
-export async function email2faVerify(user, body) {
-  const { code, enable } = body || {};
-  if (!code) throw new HttpError(400, 'Code required');
-  const d = user.data || {};
-  if (!d.email_2fa_code || !d.email_2fa_expires) throw new HttpError(400, 'No code sent. Request a new one.');
-  if (Date.now() > Number(d.email_2fa_expires)) throw new HttpError(400, 'Code expired. Request a new one.');
-  if (String(code) !== String(d.email_2fa_code)) throw new HttpError(400, 'Invalid code');
-
-  const update = { email_2fa_code: '', email_2fa_expires: 0 };
-  if (enable) {
-    const methods = withMethod(getMethods(user), 'email');
-    update.twofa_method = 'email';
-    update.twofa_enabled = true;
-    update.twofa_methods = methods;
-  }
-  await updateUser(user.id, update);
-  return { ok: true, access_token: signSession(user.id) };
-}
-
 export async function remove2faMethod(user, body) {
   const { method } = body || {};
-  if (!['totp', 'email', 'passkey'].includes(method)) throw new HttpError(400, 'Invalid method');
+  if (!['totp', 'passkey'].includes(method)) throw new HttpError(400, 'Invalid method');
   const current = getMethods(user);
   if (!current.includes(method)) throw new HttpError(400, 'Method not enabled');
   const methods = withoutMethod(current, method);
@@ -114,7 +82,7 @@ export async function passkeyRegisterStart(user) {
 
   return {
     rp: { name: 'Study Spot' },
-    user: { id: userHandle, name: user.email, displayName: user.full_name || user.email },
+    user: { id: userHandle, name: user.username, displayName: user.full_name || user.name || user.username },
     challenge,
     pubKeyCredParams: [
       { type: 'public-key', alg: -7 },

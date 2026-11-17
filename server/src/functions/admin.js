@@ -1,7 +1,8 @@
+import bcrypt from 'bcryptjs';
+import crypto from 'node:crypto';
 import { pool } from '../db.js';
-import { updateUser, toPublicUser } from '../lib/users.js';
-import { displayName } from '../lib/twofa.js';
-import { sendEmail } from '../lib/mailer.js';
+import { updateUser } from '../lib/users.js';
+import { sendUserPush } from '../lib/notify.js';
 import { HttpError } from '../lib/httpError.js';
 
 export async function adminListUsers() {
@@ -9,7 +10,7 @@ export async function adminListUsers() {
   return {
     users: res.rows.map((u) => ({
       id: u.id,
-      email: u.email,
+      username: u.username,
       full_name: u.full_name,
       role: u.role,
       name: u.name || null,
@@ -87,14 +88,28 @@ export async function adminRestoreStreak(caller, body) {
   return { restored: res.rows.length };
 }
 
-export async function adminVerifyUser(caller, body, sendOtp) {
+export async function adminVerifyUser(caller, body) {
   const { userId } = body || {};
   if (!userId) throw new HttpError(400, 'userId is required');
-  const res = await pool.query('SELECT * FROM users WHERE id = $1', [userId]);
-  const target = res.rows[0];
+  const target = await updateUser(userId, { is_verified: true });
   if (!target) throw new HttpError(404, 'User not found');
-  await sendOtp(target.email);
-  return { ok: true, email: target.email };
+  return { ok: true };
+}
+
+// There's no email to send a reset link to, so an admin sets a temporary
+// password and gives it to the person, who changes it in Settings.
+export async function adminResetPassword(caller, body) {
+  const { userId } = body || {};
+  if (!userId) throw new HttpError(400, 'userId is required');
+  const alphabet = 'abcdefghjkmnpqrstuvwxyz23456789';
+  const temp = Array.from(crypto.randomBytes(12), (b) => alphabet[b % alphabet.length]).join('').replace(/(.{4})(?!$)/g, '$1-');
+  const target = await updateUser(userId, {
+    password_hash: await bcrypt.hash(temp, 10),
+    // Sign the account out everywhere.
+    sessions_invalidated_at: new Date().toISOString(),
+  });
+  if (!target) throw new HttpError(404, 'User not found');
+  return { ok: true, password: temp };
 }
 
 export async function adminSendNotification(caller, body) {
@@ -127,32 +142,20 @@ export async function adminSendNotification(caller, body) {
 }
 
 export async function adminSendTestNotification(caller, body) {
-  const { userId, type } = body || {};
+  const { userId } = body || {};
   if (!userId) throw new HttpError(400, 'User id required');
-  if (!['push', 'email'].includes(type)) throw new HttpError(400, 'Invalid type');
+  const res = await pool.query('SELECT id FROM users WHERE id = $1', [userId]);
+  if (!res.rows[0]) throw new HttpError(404, 'User not found');
 
-  const res = await pool.query('SELECT * FROM users WHERE id = $1', [userId]);
-  const target = res.rows[0];
-  if (!target) throw new HttpError(404, 'User not found');
-
-  if (type === 'push') {
-    try {
-      await pool.query(
-        'INSERT INTO notifications (user_id, title, content, type, read, action_label, action_url) VALUES ($1, $2, $3, $4, false, $5, $6)',
-        [userId, 'Test notification', 'This is a test notification from Study Spot admin.', 'test', 'Open Study Spot', '/']
-      );
-    } catch { /* in-app create failed; still report push attempted */ }
-    // No native mobile push infrastructure in the self-hosted build — the
-    // in-app notification above is the delivered channel.
-    return { ok: true, sent: 'push', push_delivered: false };
-  }
-
-  await sendEmail({
-    to: target.email,
-    subject: 'Test notification from Study Spot',
-    body: `Hi ${displayName(target)},\n\nThis is a test email sent from the Study Spot admin dashboard to confirm email delivery is working.\n\n— Study Spot`,
+  await pool.query(
+    'INSERT INTO notifications (user_id, title, content, type, read, action_label, action_url) VALUES ($1, $2, $3, $4, false, $5, $6)',
+    [userId, 'Test notification', 'This is a test notification from Study Spot admin.', 'test', 'Open Study Spot', '/']
+  );
+  const pushed = await sendUserPush(userId, {
+    title: 'Test notification',
+    body: 'This is a test notification from Study Spot admin.',
   });
-  return { ok: true, sent: 'email' };
+  return { ok: true, sent: 'push', push_delivered: pushed > 0, devices: pushed };
 }
 
 async function reassignOwner(table, sourceId, targetId, column = 'created_by_id') {

@@ -1,4 +1,5 @@
-// iOS device registration for Live Activities (ActivityKit push tokens).
+// iOS device registration: notification tokens for assignment reminders, and
+// ActivityKit push tokens for class Live Activities.
 import { Router } from 'express';
 import { pool } from '../db.js';
 import { requireAuth } from '../middleware/auth.js';
@@ -21,7 +22,30 @@ function validDevice(body) {
 
 // Whether the server can start Live Activities itself (APNs configured).
 router.get('/config', async (req, res) => {
-  res.json({ classActivitiesPush: await apnsConfigured() });
+  const push = await apnsConfigured();
+  res.json({ classActivitiesPush: push, alertPush: push });
+});
+
+// The app's notification device token (assignment reminders).
+router.post('/alerts', async (req, res) => {
+  const error = validDevice(req.body);
+  if (error) return res.status(400).json({ error });
+  const { token, environment = 'production', bundleId } = req.body;
+  await pool.query(
+    `INSERT INTO device_push_tokens (token, user_id, kind, environment, bundle_id)
+     VALUES ($1, $2, 'alert', $3, $4)
+     ON CONFLICT (token) DO UPDATE SET user_id = EXCLUDED.user_id, kind = 'alert',
+       environment = EXCLUDED.environment, bundle_id = EXCLUDED.bundle_id, updated_at = now()`,
+    [token, req.user.id, environment, bundleId]
+  );
+  res.json({ ok: true });
+});
+
+// Sign-out: stop sending this device reminders.
+router.delete('/alerts', async (req, res) => {
+  const token = req.body?.token;
+  if (token) await pool.query('DELETE FROM device_push_tokens WHERE token = $1 AND user_id = $2', [token, req.user.id]);
+  res.json({ ok: true });
 });
 
 // The app's push-to-start token (Activity<ClassStartAttributes>.pushToStartToken).
@@ -30,9 +54,9 @@ router.post('/push-to-start', async (req, res) => {
   if (error) return res.status(400).json({ error });
   const { token, environment = 'production', bundleId } = req.body;
   await pool.query(
-    `INSERT INTO device_push_tokens (token, user_id, environment, bundle_id)
-     VALUES ($1, $2, $3, $4)
-     ON CONFLICT (token) DO UPDATE SET user_id = EXCLUDED.user_id, environment = EXCLUDED.environment,
+    `INSERT INTO device_push_tokens (token, user_id, kind, environment, bundle_id)
+     VALUES ($1, $2, 'live-activity-start', $3, $4)
+     ON CONFLICT (token) DO UPDATE SET user_id = EXCLUDED.user_id, kind = 'live-activity-start', environment = EXCLUDED.environment,
        bundle_id = EXCLUDED.bundle_id, updated_at = now()`,
     [token, req.user.id, environment, bundleId]
   );

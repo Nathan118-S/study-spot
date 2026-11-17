@@ -4,7 +4,7 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 CREATE TABLE IF NOT EXISTS users (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  email TEXT UNIQUE NOT NULL,
+  username TEXT UNIQUE NOT NULL,
   password_hash TEXT,
   name TEXT,
   full_name TEXT,
@@ -25,31 +25,33 @@ CREATE TABLE IF NOT EXISTS users (
   -- Free-form app-specific settings/state (stored in the "data" JSONB bag):
   -- onboarding_completed, welcome_style, leaderboard_enabled, reminders_enabled,
   -- reminder_lead_hours, dnd_enabled/start/end, sync_completion_to_classroom,
-  -- grading_scale, last_sync, blackboard_*, email_2fa_code/expires, etc.
+  -- grading_scale, last_sync, blackboard_*, etc.
   data JSONB NOT NULL DEFAULT '{}',
 
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-CREATE TABLE IF NOT EXISTS email_otps (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  email TEXT NOT NULL,
-  code_hash TEXT NOT NULL,
-  purpose TEXT NOT NULL DEFAULT 'register',
-  pending_password_hash TEXT,
-  expires_at TIMESTAMPTZ NOT NULL,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
-);
-
-CREATE TABLE IF NOT EXISTS password_resets (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  token_hash TEXT NOT NULL,
-  expires_at TIMESTAMPTZ NOT NULL,
-  used_at TIMESTAMPTZ,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
-);
+-- Accounts use usernames; email was removed. Older databases had an email
+-- column: it becomes the username, so existing accounts sign in with their
+-- email address as their username (they can change it in Settings).
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'email') THEN
+    ALTER TABLE users RENAME COLUMN email TO username;
+    -- Email verification no longer exists; every remaining account is usable.
+    UPDATE users SET is_verified = true WHERE is_verified = false;
+    -- Email two-factor no longer exists.
+    UPDATE users SET twofa_methods = array_remove(twofa_methods, 'email') WHERE 'email' = ANY(twofa_methods);
+    UPDATE users SET twofa_method = twofa_methods[1] WHERE twofa_method = 'email';
+    UPDATE users SET twofa_enabled = false, twofa_method = NULL WHERE twofa_enabled AND cardinality(twofa_methods) = 0
+      AND totp_secret IS NULL AND passkey_cred_id IS NULL;
+    UPDATE users SET data = data - 'email_2fa_code' - 'email_2fa_expires' - 'email_reminders';
+  END IF;
+END $$;
+CREATE UNIQUE INDEX IF NOT EXISTS idx_users_username_lower ON users (lower(username));
+DROP TABLE IF EXISTS email_otps;
+DROP TABLE IF EXISTS password_resets;
 
 CREATE TABLE IF NOT EXISTS classes (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

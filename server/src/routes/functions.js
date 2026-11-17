@@ -8,7 +8,6 @@ import * as google from '../functions/google.js';
 import { getLeaderboard } from '../functions/leaderboard.js';
 import * as secrets from '../functions/secrets.js';
 import * as deploy from '../functions/deploy.js';
-import { sendOtpEmailFor } from './authHelpers.js';
 
 const router = Router();
 router.use(requireAuth);
@@ -19,8 +18,6 @@ const HANDLERS = {
   enable2fa: { handler: twofa.enable2fa },
   disable2fa: { handler: twofa.disable2fa },
   verify2fa: { handler: twofa.verify2fa },
-  email2faSend: { handler: twofa.email2faSend },
-  email2faVerify: { handler: twofa.email2faVerify },
   remove2faMethod: { handler: twofa.remove2faMethod },
   passkeyRegisterStart: { handler: twofa.passkeyRegisterStart },
   passkeyRegisterFinish: { handler: twofa.passkeyRegisterFinish },
@@ -47,7 +44,8 @@ const HANDLERS = {
   adminResetOnboarding: { handler: admin.adminResetOnboarding, admin: true },
   adminReset2fa: { handler: admin.adminReset2fa, admin: true },
   adminRestoreStreak: { handler: admin.adminRestoreStreak, admin: true },
-  adminVerifyUser: { handler: (user, body) => admin.adminVerifyUser(user, body, sendOtpEmailFor), admin: true },
+  adminVerifyUser: { handler: admin.adminVerifyUser, admin: true },
+  adminResetPassword: { handler: admin.adminResetPassword, admin: true },
   adminSendNotification: { handler: admin.adminSendNotification, admin: true },
   adminSendTestNotification: { handler: admin.adminSendTestNotification, admin: true },
   adminMergeAccounts: { handler: admin.adminMergeAccounts, admin: true },
@@ -55,7 +53,6 @@ const HANDLERS = {
   adminListSecrets: { handler: secrets.adminListSecrets, admin: true },
   adminSetSecrets: { handler: secrets.adminSetSecrets, admin: true },
   adminClearSecret: { handler: secrets.adminClearSecret, admin: true },
-  adminSendTestEmail: { handler: secrets.adminSendTestEmail, admin: true },
 
   adminDeployLatest: { handler: deploy.adminDeployLatest, admin: true },
   adminDeployStatus: { handler: deploy.adminDeployStatus, admin: true },

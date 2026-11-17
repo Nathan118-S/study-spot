@@ -1,6 +1,6 @@
 import { pool } from '../db.js';
-import { sendEmail } from '../lib/mailer.js';
-import { displayName } from '../lib/twofa.js';
+import { apnsConfigured } from '../lib/apns.js';
+import { sendUserPush } from '../lib/notify.js';
 
 // Users can pick custom lead times, so look well ahead; per-lead checks below
 // decide what is actually due a reminder.
@@ -51,7 +51,26 @@ function normalizeLeads(raw) {
   return [24];
 }
 
-// Scheduled job: emails users about assignments due soon, per-lead-time, honoring do-not-disturb windows.
+// "in 2 hours", "tomorrow at 9:00 AM", "Friday at 9:00 AM" in the user's time zone.
+export function duePhrase(due, now, tz) {
+  const minutes = Math.round((due.getTime() - now.getTime()) / 60000);
+  if (minutes < 60) return `in ${Math.max(minutes, 1)} minute${minutes === 1 ? '' : 's'}`;
+  if (minutes < 6 * 60) {
+    const h = Math.round(minutes / 60);
+    return `in ${h} hour${h === 1 ? '' : 's'}`;
+  }
+  const time = new Intl.DateTimeFormat('en-US', { timeZone: tz, hour: 'numeric', minute: '2-digit' }).format(due);
+  const day = (d) => new Intl.DateTimeFormat('en-CA', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit' }).format(d);
+  const dayDiff = Math.round((Date.parse(day(due)) - Date.parse(day(now))) / 86400000);
+  if (dayDiff === 0) return `today at ${time}`;
+  if (dayDiff === 1) return `tomorrow at ${time}`;
+  if (dayDiff < 7) return `${new Intl.DateTimeFormat('en-US', { timeZone: tz, weekday: 'long' }).format(due)} at ${time}`;
+  return new Intl.DateTimeFormat('en-US', { timeZone: tz, month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }).format(due);
+}
+
+// Scheduled job: reminds users about assignments due soon, per-lead-time,
+// honoring do-not-disturb windows, with a notification on each of the user's
+// iPhones and in the in-app notification center.
 export async function sendAssignmentReminders() {
   const now = new Date();
   const fetchHorizon = new Date(now.getTime() + FETCH_HORIZON_HOURS * 60 * 60 * 1000);
@@ -71,12 +90,14 @@ export async function sendAssignmentReminders() {
     return o;
   };
 
+  const pushReady = await apnsConfigured();
+
   let reminded = 0;
   let skipped = 0;
   for (const a of assignments) {
     if (!a.due_date || !a.created_by_id) { skipped++; continue; }
     const owner = await getOwner(a.created_by_id);
-    if (!owner || !owner.email) { skipped++; continue; }
+    if (!owner) { skipped++; continue; }
 
     const settings = owner.data || {};
     if (settings.reminders_enabled === false) { skipped++; continue; }
@@ -96,30 +117,38 @@ export async function sendAssignmentReminders() {
     }
 
     const lead = pendingLeads[0];
-    const classPart = a.class_name ? ` for ${a.class_name}` : '';
-    const subject = `Reminder: "${a.title}" is due soon`;
-    const body = [
-      `Hi ${displayName(owner)},`,
-      '',
-      `This is a reminder that "${a.title}"${classPart} is due ${due.toLocaleString()}.`,
-      '',
-      'Open Study Spot to view the details.',
-      '',
-      '— Study Spot',
-    ].join('\n');
+    const when = duePhrase(due, now, userTimeZone(settings));
+    const title = a.class_name ? a.title : 'Assignment due soon';
+    const body = a.class_name ? `Due ${when}` : `"${a.title}" is due ${when}`;
 
+    let delivered = false;
     try {
-      await sendEmail({ to: owner.email, subject, body });
-      const newSent = [...sentHours, lead];
-      const allSent = leads.every((l) => newSent.includes(l));
+      // In-app notification center (shown on the website and in the app).
       await pool.query(
-        'UPDATE assignments SET reminder_sent_hours = $1, reminder_sent = $2, updated_at = now() WHERE id = $3',
-        [newSent, allSent ? true : a.reminder_sent || false, a.id]
+        `INSERT INTO notifications (user_id, title, content, type, read, action_label, action_url)
+         VALUES ($1, $2, $3, 'reminder', false, 'Open assignment', $4)`,
+        [owner.id, `"${a.title}" is due ${when}`, a.class_name || '', '/']
       );
-      reminded++;
-    } catch {
-      skipped++;
+      delivered = true;
+      if (pushReady && settings.push_reminders !== false) {
+        await sendUserPush(owner.id, {
+          title, subtitle: a.class_name || undefined, body,
+          data: { assignmentId: a.id, url: `studyspot://assignment/${a.id}` },
+          collapseId: `asg-${a.id}`, threadId: 'assignment-reminders',
+        });
+      }
+    } catch (err) {
+      console.warn('Reminder failed:', err.message);
     }
+
+    if (!delivered) { skipped++; continue; }
+    const newSent = [...sentHours, lead];
+    const allSent = leads.every((l) => newSent.includes(l));
+    await pool.query(
+      'UPDATE assignments SET reminder_sent_hours = $1, reminder_sent = $2, updated_at = now() WHERE id = $3',
+      [newSent, allSent ? true : a.reminder_sent || false, a.id]
+    );
+    reminded++;
   }
 
   return { reminded, skipped, checked: assignments.length };

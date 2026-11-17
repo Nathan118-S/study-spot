@@ -1,7 +1,6 @@
 import { Router } from 'express';
 import crypto from 'node:crypto';
 import { pool } from '../db.js';
-import { getUserByEmail, needsSecondFactor, signSession } from '../lib/users.js';
 import { requireAuth } from '../middleware/auth.js';
 import { resolveSecret } from '../lib/secrets.js';
 
@@ -15,89 +14,6 @@ const GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token';
 // the web frontend. Only this fixed scheme is ever redirected to.
 const IOS_RETURN_MARKER = '__ios_app__';
 const IOS_SCHEME = process.env.IOS_URL_SCHEME || 'studyspot';
-
-// "Sign in with Google" — issues an app session, no Calendar/Classroom scopes.
-router.get('/auth/google/start', async (req, res) => {
-  const state = crypto.randomUUID();
-  const returnTo = req.query.client === 'ios'
-    ? IOS_RETURN_MARKER
-    : typeof req.query.returnTo === 'string' ? req.query.returnTo : '/';
-  await pool.query(
-    'INSERT INTO oauth_states (state, purpose, return_to) VALUES ($1, $2, $3)',
-    [state, 'login', returnTo]
-  );
-  const [clientId, redirectUri] = await Promise.all([
-    resolveSecret('GOOGLE_CLIENT_ID'),
-    resolveSecret('GOOGLE_LOGIN_REDIRECT_URI'),
-  ]);
-  const params = new URLSearchParams({
-    client_id: clientId,
-    redirect_uri: redirectUri,
-    response_type: 'code',
-    scope: 'openid email profile',
-    state,
-    prompt: 'select_account',
-  });
-  res.redirect(`${GOOGLE_AUTH_URL}?${params.toString()}`);
-});
-
-router.get('/auth/google/callback', async (req, res) => {
-  try {
-    const { code, state } = req.query;
-    const stateRes = await pool.query('SELECT * FROM oauth_states WHERE state = $1 AND purpose = $2', [state, 'login']);
-    const stateRow = stateRes.rows[0];
-    if (!stateRow) return res.status(400).send('Invalid or expired login link.');
-    await pool.query('DELETE FROM oauth_states WHERE state = $1', [state]);
-
-    const [clientId, clientSecret, redirectUri] = await Promise.all([
-      resolveSecret('GOOGLE_CLIENT_ID'),
-      resolveSecret('GOOGLE_CLIENT_SECRET'),
-      resolveSecret('GOOGLE_LOGIN_REDIRECT_URI'),
-    ]);
-    const tokenRes = await fetch(GOOGLE_TOKEN_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({
-        code,
-        client_id: clientId,
-        client_secret: clientSecret,
-        redirect_uri: redirectUri,
-        grant_type: 'authorization_code',
-      }),
-    });
-    if (!tokenRes.ok) return res.status(502).send('Google sign-in failed.');
-    const tokens = await tokenRes.json();
-
-    const profileRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
-      headers: { Authorization: `Bearer ${tokens.access_token}` },
-    });
-    if (!profileRes.ok) return res.status(502).send('Google sign-in failed.');
-    const profile = await profileRes.json();
-    if (!profile.email) return res.status(400).send('Google account has no email.');
-
-    let user = await getUserByEmail(profile.email);
-    if (!user) {
-      const insertRes = await pool.query(
-        'INSERT INTO users (email, name, full_name, role, is_verified) VALUES ($1, $2, $3, $4, true) RETURNING *',
-        [profile.email.toLowerCase(), profile.given_name || profile.name || null, profile.name || null, 'user']
-      );
-      user = insertRes.rows[0];
-    } else if (user.role === 'disabled') {
-      return res.status(403).send('This account has been disabled.');
-    } else if (!user.is_verified) {
-      await pool.query('UPDATE users SET is_verified = true WHERE id = $1', [user.id]);
-    }
-
-    const token = signSession(user.id, { mfaPending: needsSecondFactor(user) });
-    if (stateRow.return_to === IOS_RETURN_MARKER) {
-      return res.redirect(`${IOS_SCHEME}://oauth/callback#token=${token}`);
-    }
-    const returnTo = encodeURIComponent(stateRow.return_to || '/');
-    res.redirect(`${process.env.FRONTEND_URL}/oauth/callback#token=${token}&returnTo=${returnTo}`);
-  } catch (error) {
-    res.status(500).send('Google sign-in failed: ' + error.message);
-  }
-});
 
 // Google Calendar / Classroom connectors — separate OAuth grant with
 // read-only scopes, stored per user so sync routes can use them.

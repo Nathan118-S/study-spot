@@ -1,6 +1,5 @@
 import { listSecretStatus, setSecret, clearSecret } from '../lib/secrets.js';
 import { HttpError } from '../lib/httpError.js';
-import { sendEmail } from '../lib/mailer.js';
 
 // Status only (key, group, label, isSet, setAt) — never a value.
 export async function adminListSecrets() {
@@ -33,26 +32,4 @@ export async function adminClearSecret(caller, body) {
   if (!key) throw new HttpError(400, 'key is required');
   await clearSecret(key);
   return { ok: true, secrets: await listSecretStatus() };
-}
-
-// Sends a real test email through whatever SMTP config is currently active
-// (vault or server/.env) so an admin can confirm delivery — including the
-// OTP/verification path new users go through at signup — actually works
-// before relying on it.
-export async function adminSendTestEmail(caller, body) {
-  const to = (body?.to || '').trim();
-  if (!to) throw new HttpError(400, 'A recipient email is required');
-  await sendEmail({
-    to,
-    subject: 'Study Spot test email',
-    body: [
-      'This is a test email from the Study Spot admin panel.',
-      '',
-      'If you received this, outbound email (used for sign-up verification codes,',
-      'password resets, assignment reminders, and admin notifications) is working.',
-      '',
-      '— Study Spot',
-    ].join('\n'),
-  });
-  return { ok: true };
 }

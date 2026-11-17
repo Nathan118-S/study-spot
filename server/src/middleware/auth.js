@@ -33,8 +33,6 @@ export async function attachUser(req, res, next) {
 const PENDING_ALLOWED = new Set([
   'GET /api/auth/me',
   'POST /api/functions/verify2fa',
-  'POST /api/functions/email2faSend',
-  'POST /api/functions/email2faVerify',
   'POST /api/functions/passkeyLoginStart',
   'POST /api/functions/passkeyLoginFinish',
 ]);

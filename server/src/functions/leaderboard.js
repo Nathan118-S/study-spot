@@ -6,7 +6,7 @@ import { pool } from '../db.js';
 // on in Settings are listed; disabled and demo accounts are excluded.
 export async function getLeaderboard(user) {
   const [usersRes, classesRes] = await Promise.all([
-    pool.query("SELECT id, email, name, full_name, role FROM users WHERE (data->>'leaderboard_enabled') = 'true' ORDER BY created_at DESC LIMIT 5000"),
+    pool.query("SELECT id, username, name, full_name, role FROM users WHERE (data->>'leaderboard_enabled') = 'true' ORDER BY created_at DESC LIMIT 5000"),
     pool.query('SELECT created_by_id, best_streak FROM classes ORDER BY created_at DESC LIMIT 5000'),
   ]);
 
@@ -22,7 +22,7 @@ export async function getLeaderboard(user) {
     .filter((u) => u.role !== 'disabled' && u.role !== 'demo')
     .map((u) => {
       const best = bestByOwner.get(u.id) || 0;
-      const name = u.name || u.full_name || (u.email ? u.email.split('@')[0] : 'Anonymous');
+      const name = u.name || u.full_name || (u.username ? u.username.split('@')[0] : 'Anonymous');
       return { userId: u.id, name, bestStreak: best };
     })
     .filter((e) => e.bestStreak > 0)

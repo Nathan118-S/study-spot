@@ -156,7 +156,7 @@ export async function sendClassActivities(now = new Date()) {
             'relevance-score': 100,
           },
         };
-        const tokens = await pool.query('SELECT * FROM device_push_tokens WHERE user_id = $1', [user.id]);
+        const tokens = await pool.query("SELECT * FROM device_push_tokens WHERE user_id = $1 AND kind = 'live-activity-start'", [user.id]);
         for (const t of tokens.rows) {
           const result = await sendLiveActivityPush({ token: t.token, environment: t.environment, bundleId: t.bundle_id, payload });
           if (result.ok) started++;

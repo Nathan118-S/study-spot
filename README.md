@@ -79,16 +79,23 @@ The rest of this file covers running it directly with Node for development.
    The frontend dev server proxies `/api` requests to the backend
    (`http://localhost:8787` by default — see `vite.config.js`).
 
+## Accounts
+
+People sign up with a **username** and password; Study Spot doesn't collect
+email addresses. Accounts created before usernames existed use their old
+email address as their username, and can change it in *Settings → Account*.
+There's no emailed password reset: an admin resets a forgotten password in
+*Admin → People* (it shows a temporary password to pass on), and people change
+their password in *Settings → Account*.
+
 ## Configuration
 
 All backend configuration lives in `server/.env` (see `server/.env.example`
 for the full list). At minimum you need `DATABASE_URL` and `SESSION_SECRET`.
 Everything else is optional and only needed if you want that feature:
 
-- **Email** (OTP codes, password resets, reminders) — set `SMTP_*`. Without
-  it, emails are logged to the server console instead of sent.
-- **Google sign-in / Calendar / Classroom sync** — set `GOOGLE_CLIENT_ID`,
-  `GOOGLE_CLIENT_SECRET`, and the two redirect URIs. Create credentials at
+- **Google Calendar / Classroom sync** — set `GOOGLE_CLIENT_ID`,
+  `GOOGLE_CLIENT_SECRET`, and `GOOGLE_CONNECT_REDIRECT_URI`. Create credentials at
   the [Google Cloud console](https://console.cloud.google.com/apis/credentials).
 - **Blackboard Learn sync** — set `BLACKBOARD_CLIENT_ID`,
   `BLACKBOARD_CLIENT_SECRET`, and `BLACKBOARD_REDIRECT_URI`. Requires a
@@ -108,14 +115,15 @@ Serve `dist/` behind the same domain/reverse proxy as the API (or set
 ## Scheduled jobs
 
 `server/src/server.js` runs two recurring jobs in-process via `node-cron`:
-assignment due-date reminder emails and study-streak record notifications.
+assignment due-date reminders (in-app notifications, plus iPhone push
+notifications when an APNs key is set) and study-streak record notifications.
 For a multi-instance deployment, run these as a separate worker instead of
 inside every API instance.
 
 ## Integration Secrets (admin panel)
 
-Instead of (or in addition to) `server/.env`, an admin can configure SMTP,
-Google OAuth, and Blackboard OAuth credentials from **Admin → Integration
+Instead of (or in addition to) `server/.env`, an admin can configure
+Google OAuth, Blackboard OAuth and Apple Push credentials from **Admin → Integration
 Secrets**. Each value is pasted once, encrypted at rest (AES-256-GCM, keyed
 by `ENCRYPTION_KEY`), and cannot be viewed again through the app — only
 cleared, so a new value can be pasted in. Set `ENCRYPTION_KEY` in

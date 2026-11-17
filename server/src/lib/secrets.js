@@ -1,5 +1,5 @@
 // Encrypted, write-once vault for third-party integration credentials
-// (SMTP, Google OAuth, Blackboard OAuth). An admin pastes each value once
+// (Google OAuth, Blackboard OAuth, Apple Push). An admin pastes each value once
 // through the admin panel; after that it is encrypted at rest and there is
 // no API path that ever returns the plaintext again — only resolveSecret()
 // (used internally by the server itself) can decrypt it. To change a value,
@@ -11,21 +11,15 @@ import { HttpError } from './httpError.js';
 // key -> { group, label } — the only keys the vault will accept. Anything
 // not listed here is rejected by setSecret/clearSecret.
 export const KNOWN_SECRETS = [
-  { key: 'SMTP_HOST', group: 'Email (SMTP)', label: 'SMTP host' },
-  { key: 'SMTP_PORT', group: 'Email (SMTP)', label: 'SMTP port' },
-  { key: 'SMTP_USER', group: 'Email (SMTP)', label: 'SMTP username' },
-  { key: 'SMTP_PASS', group: 'Email (SMTP)', label: 'SMTP password' },
-  { key: 'SMTP_FROM', group: 'Email (SMTP)', label: 'From address' },
   { key: 'GOOGLE_CLIENT_ID', group: 'Google', label: 'Client ID' },
   { key: 'GOOGLE_CLIENT_SECRET', group: 'Google', label: 'Client secret' },
-  { key: 'GOOGLE_LOGIN_REDIRECT_URI', group: 'Google', label: 'Sign-in redirect URI' },
   { key: 'GOOGLE_CONNECT_REDIRECT_URI', group: 'Google', label: 'Connector redirect URI' },
   { key: 'BLACKBOARD_CLIENT_ID', group: 'Blackboard Learn', label: 'Client ID' },
   { key: 'BLACKBOARD_CLIENT_SECRET', group: 'Blackboard Learn', label: 'Client secret' },
   { key: 'BLACKBOARD_REDIRECT_URI', group: 'Blackboard Learn', label: 'Redirect URI' },
-  { key: 'APNS_KEY', group: 'Apple Push (iOS Live Activities)', label: 'Auth key (.p8 contents)' },
-  { key: 'APNS_KEY_ID', group: 'Apple Push (iOS Live Activities)', label: 'Key ID' },
-  { key: 'APNS_TEAM_ID', group: 'Apple Push (iOS Live Activities)', label: 'Team ID' },
+  { key: 'APNS_KEY', group: 'Apple Push (iOS notifications)', label: 'Auth key (.p8 contents)' },
+  { key: 'APNS_KEY_ID', group: 'Apple Push (iOS notifications)', label: 'Key ID' },
+  { key: 'APNS_TEAM_ID', group: 'Apple Push (iOS notifications)', label: 'Team ID' },
 ];
 const KNOWN_KEYS = new Set(KNOWN_SECRETS.map((s) => s.key));
 

@@ -6,6 +6,8 @@ import { pool } from '../db.js';
 // this mirrors the app's `user.field ?? user.data?.field` read pattern used
 // throughout the frontend for custom/extended settings.
 const KNOWN_COLUMNS = new Set([
+  'username',
+  'password_hash',
   'name',
   'full_name',
   'role',
@@ -51,7 +53,6 @@ export function needsSecondFactor(user) {
 // Server-only fields that must never be sent to the client.
 const PRIVATE_COLUMNS = ['password_hash', 'totp_secret', 'webauthn_challenge', 'passkey_pub_key'];
 const PRIVATE_DATA_KEYS = [
-  'email_2fa_code', 'email_2fa_expires',
   'blackboard_access_token', 'blackboard_refresh_token', 'blackboard_state',
   'blackboard_expires_at', 'blackboard_user_id',
 ];
@@ -64,7 +65,7 @@ const SELF_EDITABLE_DATA_KEYS = new Set([
   'onboarding_completed', 'welcome_style', 'leaderboard_enabled',
   'reminders_enabled', 'reminder_lead_hours', 'dnd_enabled', 'dnd_start', 'dnd_end',
   'sync_completion_to_classroom', 'grading_scale', 'last_sync', 'sessions_invalidated_at',
-  'timezone', 'class_live_activities',
+  'timezone', 'class_live_activities', 'push_reminders',
 ]);
 
 export function pickSelfEditable(patch) {
@@ -84,9 +85,24 @@ export async function getUserById(id) {
   return res.rows[0] || null;
 }
 
-export async function getUserByEmail(email) {
-  const res = await pool.query('SELECT * FROM users WHERE lower(email) = lower($1)', [email]);
+export async function getUserByUsername(username) {
+  const res = await pool.query('SELECT * FROM users WHERE lower(username) = lower($1)', [String(username || '').trim()]);
   return res.rows[0] || null;
+}
+
+// New usernames: 3–30 characters, letters, numbers, dots, dashes and
+// underscores, starting with a letter or number. (Accounts moved over from
+// email sign-in keep their email address as the username until they change it.)
+const USERNAME_RE = /^[a-z0-9][a-z0-9._-]{2,29}$/;
+
+/** Returns the cleaned username, or throws a message suitable for the user. */
+export function normalizeUsername(raw) {
+  const u = String(raw || '').trim().toLowerCase();
+  if (!u) throw new Error('Choose a username');
+  if (u.length < 3) throw new Error('Usernames must be at least 3 characters');
+  if (u.length > 30) throw new Error('Usernames can be at most 30 characters');
+  if (!USERNAME_RE.test(u)) throw new Error('Use only letters, numbers, dots, dashes and underscores');
+  return u;
 }
 
 // Shapes a DB row into the object the frontend expects: known fields at the

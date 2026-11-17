@@ -1,5 +1,5 @@
-// Minimal Apple Push Notification service client for ActivityKit pushes
-// (Live Activity push-to-start / update / end). Token-based auth with a .p8
+// Minimal Apple Push Notification service client: ActivityKit pushes (Live
+// Activity push-to-start / update / end) and regular alert notifications. Token-based auth with a .p8
 // key; no dependencies (node:http2 + node:crypto).
 //
 // Configure in Admin -> Integration Secrets (or server env):
@@ -57,7 +57,25 @@ async function providerToken(cfg) {
  * Sends one ActivityKit push.
  * @returns {Promise<{ ok: boolean, status: number, reason?: string }>}
  */
-export async function sendLiveActivityPush({ token, environment = 'production', bundleId, payload }) {
+export function sendLiveActivityPush({ token, environment = 'production', bundleId, payload }) {
+  return sendPush({ token, environment, topic: `${bundleId}.push-type.liveactivity`, pushType: 'liveactivity', payload });
+}
+
+/**
+ * Sends a regular notification (banner, sound) to an app's device token.
+ * @returns {Promise<{ ok: boolean, status: number, reason?: string }>}
+ */
+export function sendAlertPush({ token, environment = 'production', bundleId, payload, collapseId }) {
+  return sendPush({ token, environment, topic: bundleId, pushType: 'alert', payload, collapseId });
+}
+
+/** Whether APNs says this token will never work again (delete it). */
+export function isDeadToken(result) {
+  return result.status === 410 || result.reason === 'BadDeviceToken' || result.reason === 'Unregistered'
+    || result.reason === 'DeviceTokenNotForTopic';
+}
+
+async function sendPush({ token, environment, topic, pushType, payload, collapseId }) {
   const cfg = await config();
   if (!cfg) return { ok: false, status: 0, reason: 'APNs not configured' };
   // APNS_HOST overrides the Apple endpoint (testing against a local server).
@@ -72,10 +90,11 @@ export async function sendLiveActivityPush({ token, environment = 'production', 
       ':method': 'POST',
       ':path': `/3/device/${token}`,
       authorization: `bearer ${jwt}`,
-      'apns-topic': `${bundleId}.push-type.liveactivity`,
-      'apns-push-type': 'liveactivity',
+      'apns-topic': topic,
+      'apns-push-type': pushType,
       'apns-priority': '10',
       'content-type': 'application/json',
+      ...(collapseId ? { 'apns-collapse-id': String(collapseId).slice(0, 64) } : {}),
     });
     let status = 0;
     let data = '';

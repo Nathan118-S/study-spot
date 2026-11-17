@@ -1,4 +1,4 @@
-const VALID = ['totp', 'email', 'passkey'];
+const VALID = ['totp', 'passkey'];
 
 // Returns the list of enabled 2FA methods for a user row.
 export function getMethods(user) {
