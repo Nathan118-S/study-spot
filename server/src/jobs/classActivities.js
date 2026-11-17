@@ -7,7 +7,7 @@ import { pool } from '../db.js';
 import { apnsConfigured, sendLiveActivityPush } from '../lib/apns.js';
 
 export const LEAD_MINUTES = 5;
-const END_AFTER_MINUTES = 10;
+export const END_AFTER_MINUTES = 10;
 const DEFAULT_TZ = 'America/New_York';
 
 export function userTimeZone(data) {
@@ -68,7 +68,7 @@ export function cleanSchedule(schedule) {
     .filter(Boolean);
 }
 
-function contentState(startsAt, due) {
+export function contentState(startsAt, due) {
   return {
     startsAt: Math.floor(startsAt.getTime() / 1000),
     dueToday: due.slice(0, 3).map((a) => ({ title: a.title, className: a.class_name || '' })),
@@ -76,7 +76,7 @@ function contentState(startsAt, due) {
   };
 }
 
-async function dueToday(userId, tz, now) {
+export async function dueToday(userId, tz, now) {
   const p = zonedParts(now, tz);
   const dayStart = zonedTimeToUtc(p.year, p.month, p.day, 0, 0, tz);
   const next = new Date(Date.UTC(p.year, p.month - 1, p.day + 1));

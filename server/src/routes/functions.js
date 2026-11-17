@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { isElevated } from '../lib/adminElevation.js';
 import * as adminUsers from '../functions/adminUsers.js';
+import * as adminSimulate from '../functions/adminSimulate.js';
 import { requireAuth, requireAdmin } from '../middleware/auth.js';
 import { HttpError } from '../lib/httpError.js';
 import * as twofa from '../functions/twofa.js';
@@ -66,6 +67,9 @@ const HANDLERS = {
   adminClearRecords: { handler: adminUsers.adminClearRecords, admin: true, elevated: true },
   adminSendTestNotification: { handler: admin.adminSendTestNotification, admin: true, elevated: true },
   adminMergeAccounts: { handler: admin.adminMergeAccounts, admin: true, elevated: true },
+  adminSimulateOptions: { handler: adminSimulate.adminSimulateOptions, admin: true, elevated: true },
+  adminSimulateNotification: { handler: adminSimulate.adminSimulateNotification, admin: true, elevated: true },
+  adminSimulateLiveActivity: { handler: adminSimulate.adminSimulateLiveActivity, admin: true, elevated: true },
 
   adminListSecrets: { handler: secrets.adminListSecrets, admin: true },
   adminSetSecrets: { handler: secrets.adminSetSecrets, admin: true },

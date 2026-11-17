@@ -53,12 +53,14 @@ router.post('/push-to-start', async (req, res) => {
   const error = validDevice(req.body);
   if (error) return res.status(400).json({ error });
   const { token, environment = 'production', bundleId } = req.body;
+  // activity: 'class' (ClassStartAttributes, default) or 'timer' (StudyTimerAttributes).
+  const kind = req.body.activity === 'timer' ? 'timer-activity-start' : 'live-activity-start';
   await pool.query(
     `INSERT INTO device_push_tokens (token, user_id, kind, environment, bundle_id)
-     VALUES ($1, $2, 'live-activity-start', $3, $4)
-     ON CONFLICT (token) DO UPDATE SET user_id = EXCLUDED.user_id, kind = 'live-activity-start', environment = EXCLUDED.environment,
+     VALUES ($1, $2, $5, $3, $4)
+     ON CONFLICT (token) DO UPDATE SET user_id = EXCLUDED.user_id, kind = EXCLUDED.kind, environment = EXCLUDED.environment,
        bundle_id = EXCLUDED.bundle_id, updated_at = now()`,
-    [token, req.user.id, environment, bundleId]
+    [token, req.user.id, environment, bundleId, kind]
   );
   res.json({ ok: true });
 });
