@@ -139,11 +139,6 @@ function RecordEditor({ type, record, classes, onClose, onSave }) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [newSubtask, setNewSubtask] = useState('');
-  useEffect(() => {
-    if (record) setForm(initialForm(type, record));
-    setError('');
-  }, [record, type]);
-
   if (!record) return null;
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
   const meta = RECORD_TYPES.find((t) => t.value === type);
@@ -408,6 +403,7 @@ export default function AdminUserRecords({ userId, stats, onChanged }) {
       </div>
 
       <RecordEditor
+        key={editing ? `${type}-${editing.id}` : 'none'}
         type={type}
         record={editing}
         classes={classes}
