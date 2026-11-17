@@ -92,7 +92,8 @@ Everything in the web app is available natively:
   and username, role and disabling, 2FA methods, temporary or chosen
   passwords, signing out everywhere, every setting, connections, push
   devices, and browsing, editing and deleting their assignments, classes,
-  templates, study sessions and notifications), plus test notifications,
+  templates, study sessions and notifications), plus simulating notifications
+  and Live Activities on their iPhones (*Simulate on iPhone*), test notifications,
   merging, sending notifications, integration secrets, and deploy. Opening
   anyone's account needs a two-factor confirmation (authenticator code or
   passkey) that stays unlocked for 15 minutes; admins must have 2FA turned on
@@ -167,6 +168,10 @@ There are two ways it can start:
 
 - **When the app is closed:** with the push setup above, the server starts
   it with an ActivityKit push.
+
+The study timer's Live Activity can also be started by push (iOS 17.2+), which
+admins use from *Admin → People → an account → Simulate on iPhone* to test
+notifications and both Live Activities on a real device.
 - **Without push:** the app schedules a notification 5 minutes before each
   class. Opening it, or having the app open at that time, starts the Live
   Activity.

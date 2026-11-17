@@ -6,6 +6,23 @@ import Foundation
 enum LiveActivityManager {
     /// The activity this app instance started (others may still be ending).
     private static var currentId: String?
+    private static var cleanedUpThisLaunch = false
+
+    // Push-to-start (iOS 17.2+): lets the server start a timer activity
+    // (used by Admin → Simulate on iPhone).
+    private(set) static var pushToStartToken: String?
+    private static var observingPushToStart = false
+    /// False while signed out or in the demo account, so a token iOS hands
+    /// over then isn't registered.
+    private static var registersPushToStart = false
+    private static var bundleId: String { Bundle.main.bundleIdentifier ?? "" }
+    private static var apsEnvironment: String {
+        #if DEBUG
+        "development"
+        #else
+        "production"
+        #endif
+    }
 
     private static var current: Activity<StudyTimerAttributes>? {
         guard let currentId else { return nil }
@@ -16,8 +33,11 @@ enum LiveActivityManager {
 
     /// Ends activities left over from a previous launch (the timer itself
     /// isn't persisted, so nothing would ever end them).
+    /// Runs once per launch: a later call could end an activity the server
+    /// started by push while the app is open.
     static func endOrphans() {
-        guard currentId == nil else { return }
+        guard !cleanedUpThisLaunch, currentId == nil else { return }
+        cleanedUpThisLaunch = true
         let leftovers = Activity<StudyTimerAttributes>.activities
         guard !leftovers.isEmpty else { return }
         Task { for a in leftovers { await a.end(nil, dismissalPolicy: .immediate) } }
@@ -47,6 +67,43 @@ enum LiveActivityManager {
         Task {
             for a in old { await a.end(nil, dismissalPolicy: .immediate) }
         }
+    }
+
+    /// Registers this device's timer push-to-start token with the server
+    /// (signed in, not demo). Call after sign-in.
+    static func configurePush(user: User?) async {
+        guard let user, !user.isDemo else {
+            registersPushToStart = false
+            return
+        }
+        registersPushToStart = true
+        if let token = pushToStartToken { await registerPushToStart(token) }
+        guard !observingPushToStart else { return }
+        observingPushToStart = true
+        if #available(iOS 17.2, *) {
+            Task {
+                for await data in Activity<StudyTimerAttributes>.pushToStartTokenUpdates {
+                    let token = data.map { String(format: "%02x", $0) }.joined()
+                    pushToStartToken = token
+                    if registersPushToStart { await registerPushToStart(token) }
+                }
+            }
+        }
+    }
+
+    private static func registerPushToStart(_ token: String) async {
+        _ = try? await APIClient.shared.send("/devices/push-to-start", body: [
+            "token": .string(token), "environment": .string(apsEnvironment), "bundleId": .string(bundleId),
+            "activity": "timer",
+        ])
+    }
+
+    /// Stops the server starting timer activities here (call before signing out).
+    static func unregisterPush(bearer: String?) async {
+        registersPushToStart = false
+        guard let token = pushToStartToken, let bearer else { return }
+        _ = try? await APIClient.shared.send("/devices/push-to-start", method: "DELETE",
+                                             body: ["token": .string(token)], bearer: bearer)
     }
 
     /// Ends every timer activity. With a label, the final state stays briefly

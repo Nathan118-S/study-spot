@@ -196,6 +196,14 @@ private struct AdminAccountForm: View {
             AdminUserSettingsSection(model: model, user: user)
             AdminConnectionsSection(model: model)
             AdminDevicesSection(model: model)
+            Section {
+                NavigationLink {
+                    AdminSimulateView(model: model)
+                } label: {
+                    SettingLabel(title: "Simulate on iPhone", desc: "Send test notifications and Live Activities to their iPhones.", symbol: "iphone.radiowaves.left.and.right")
+                }
+            }
+            .glassRows()
             AdminDataSection(model: model)
             AdminAccountActionsSection(model: model, people: people, user: user, isSelf: isSelf)
         }

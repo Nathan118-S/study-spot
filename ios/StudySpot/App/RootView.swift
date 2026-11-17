@@ -111,6 +111,7 @@ struct MainTabView: View {
             publishWidgets()
             await ClassActivityManager.configure(user: auth.user, classes: data.classes, assignments: data.assignments)
             await PushNotifications.configure(user: auth.user)
+            await LiveActivityManager.configurePush(user: auth.user)
             await data.loadNotifications()
             maybeGreet()
             await data.autoSyncIfStale(user: user, auth: auth)
