@@ -87,6 +87,7 @@ struct LandingView: View {
         .frame(maxWidth: 500)
         .frame(maxWidth: .infinity)
         .toolbar(.hidden, for: .navigationBar)
+        .appBackground()
         .sheet(isPresented: $showServer) { ServerSettingsView() }
     }
 
@@ -105,9 +106,9 @@ struct LandingView: View {
         .disabled(busy != nil)
 
         if prominent {
-            button.buttonStyle(.borderedProminent)
+            button.glassButtonStyle(prominent: true)
         } else {
-            button.buttonStyle(.bordered)
+            button.glassButtonStyle()
         }
     }
 

@@ -33,6 +33,7 @@ struct SettingsView: View {
                 ForEach(items) { item in
                     NavigationLink {
                         destination(item.id)
+                            .appBackground()
                             .navigationTitle(item.label)
                             .navigationBarTitleDisplayMode(.inline)
                     } label: {
@@ -51,18 +52,22 @@ struct SettingsView: View {
             } footer: {
                 Text("Manage your Google connections and account.")
             }
+            .glassRows()
 
             Section {
                 NavigationLink { ServerInfoView() } label: { Label("Server", systemImage: "server.rack") }
                 NavigationLink { PrivacyPolicyView() } label: { Label("Privacy Policy", systemImage: "hand.raised") }
             }
+            .glassRows()
 
             Section {
                 Button(role: .destructive) { auth.signOut() } label: { Label("Sign out", systemImage: "rectangle.portrait.and.arrow.right") }
             } footer: {
                 Text("Signed in as \(auth.user?.email ?? "")")
             }
+            .glassRows()
         }
+        .appBackground()
         .navigationTitle("Settings")
         .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
     }
@@ -260,12 +265,12 @@ struct ConnectionRow: View {
                     Button(action: onDisconnect) {
                         if busy { ProgressView() } else { Text("Disconnect") }
                     }
-                    .buttonStyle(.bordered)
+                    .glassButtonStyle()
                 } else {
                     Button(action: onConnect) {
                         if busy { ProgressView() } else { Label("Connect", systemImage: "link") }
                     }
-                    .buttonStyle(.borderedProminent)
+                    .glassButtonStyle(prominent: true)
                 }
             }
             .disabled(busy || loading)
@@ -542,7 +547,7 @@ struct ReminderSettings: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack {
                     ForEach(Self.presets.filter { !leads.contains($0) }, id: \.self) { p in
-                        Button("+ \(Self.label(p))") { add(p) }.buttonStyle(.bordered).controlSize(.small)
+                        Button("+ \(Self.label(p))") { add(p) }.glassButtonStyle().controlSize(.small)
                     }
                 }
             }

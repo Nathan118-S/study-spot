@@ -62,6 +62,7 @@ struct Verify2FAView: View {
                     Button("Sign out", role: .destructive) { auth.signOut() }
                 }
             }
+            .appBackground()
             .navigationTitle("Two-factor authentication")
             .navigationBarTitleDisplayMode(.inline)
         }

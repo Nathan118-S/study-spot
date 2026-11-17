@@ -55,7 +55,6 @@ struct InsightsView: View {
             }
             .padding()
         }
-        .background(Color(.systemGroupedBackground))
         .navigationTitle("Insights")
         .refreshable { await data.reloadData() }
     }

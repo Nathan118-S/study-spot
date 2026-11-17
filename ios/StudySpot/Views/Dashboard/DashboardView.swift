@@ -86,7 +86,7 @@ struct DashboardView: View {
             }
 
             if showTimer {
-                Section { StudyTimerView(assignments: data.assignments) }
+                Section { StudyTimerView(assignments: data.assignments) }.glassRows()
             }
 
             Section {
@@ -140,6 +140,7 @@ struct DashboardView: View {
                         }
                     }
                 }
+                .glassRows()
             }
         }
         .listStyle(.insetGrouped)
@@ -251,10 +252,13 @@ struct DashboardView: View {
             Button("Incomplete") { bulk(["completed": false]) }
             Button { selected = [] } label: { Image(systemName: "xmark") }
         }
-        .buttonStyle(.bordered)
+        .glassButtonStyle()
         .controlSize(.small)
-        .padding(12)
-        .background(.bar)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
+        .glassCapsule()
+        .padding(.horizontal, 12)
+        .padding(.bottom, 8)
     }
 
     private func bulk(_ patch: [String: JSONValue]) {
@@ -323,7 +327,12 @@ struct AssignmentRow: View {
             }
         }
         .padding(.vertical, 2)
-        .listRowBackground(a.isOverdue ? Color.red.opacity(0.06) : nil)
+        .listRowBackground(
+            ZStack {
+                Rectangle().fill(.thinMaterial)
+                if a.isOverdue { Color.red.opacity(0.08) }
+            }
+        )
     }
 }
 
@@ -366,5 +375,6 @@ struct GradedListView: View {
                 }
             }
         }
+        .glassRows()
     }
 }

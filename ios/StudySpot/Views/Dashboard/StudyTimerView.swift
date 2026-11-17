@@ -191,7 +191,7 @@ struct StudyTimerView: View {
                     Button("Other") { customOpen.toggle() }
                         .tint(StudyTimerModel.presets.contains(model.focusMinutes) ? .secondary : .accentColor)
                 }
-                .buttonStyle(.bordered)
+                .glassButtonStyle()
                 .controlSize(.small)
                 .frame(maxWidth: .infinity)
                 .disabled(model.running)
@@ -205,7 +205,7 @@ struct StudyTimerView: View {
                             model.setFocus(Int(customText) ?? 25)
                             customOpen = false
                         }
-                        .buttonStyle(.borderedProminent)
+                        .glassButtonStyle(prominent: true)
                         .controlSize(.small)
                     }
                 }
@@ -225,10 +225,10 @@ struct StudyTimerView: View {
                     Label(model.running ? "Pause" : "Start", systemImage: model.running ? "pause.fill" : "play.fill")
                         .frame(maxWidth: .infinity)
                 }
-                .buttonStyle(.borderedProminent)
+                .glassButtonStyle(prominent: true)
                 .disabled(model.logging)
                 Button { model.reset() } label: { Label("Reset", systemImage: "arrow.counterclockwise") }
-                    .buttonStyle(.bordered)
+                    .glassButtonStyle()
                     .disabled(model.running || model.logging)
             }
         }

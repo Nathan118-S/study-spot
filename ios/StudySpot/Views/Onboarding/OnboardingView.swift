@@ -77,18 +77,19 @@ struct OnboardingView: View {
                         Button { Task { await finish() } } label: {
                             if finishing { ProgressView() } else { Label("Finish", systemImage: "checkmark") }
                         }
-                        .buttonStyle(.borderedProminent)
+                        .glassButtonStyle(prominent: true)
                     } else {
                         Button { go(1) } label: {
                             if step == .welcome { Label("Get started", systemImage: "sparkles") }
                             else { Label("Next", systemImage: "arrow.right") }
                         }
-                        .buttonStyle(.borderedProminent)
+                        .glassButtonStyle(prominent: true)
                     }
                 }
                 .padding()
                 .disabled(finishing)
             }
+            .appBackground()
             .navigationTitle(step.title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

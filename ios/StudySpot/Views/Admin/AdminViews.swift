@@ -32,6 +32,7 @@ struct AdminView: View {
                 ContentUnavailableView("Admins only", systemImage: "lock")
             }
         }
+        .appBackground()
         .navigationTitle("Admin")
         .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
     }

@@ -76,7 +76,7 @@ struct ToastOverlay: View {
                     Spacer(minLength: 0)
                 }
                 .padding(12)
-                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14))
+                .glassCard(cornerRadius: 18)
                 .shadow(radius: 8, y: 4)
                 .padding(.horizontal)
                 .transition(.move(edge: .top).combined(with: .opacity))
@@ -108,7 +108,7 @@ struct StatCard: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(14)
-        .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 12))
+        .glassCard(cornerRadius: 16)
     }
 }
 
@@ -144,7 +144,7 @@ struct Card<Content: View>: View {
         VStack(alignment: .leading, spacing: 10) { content }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(padding)
-            .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 12))
+            .glassCard(cornerRadius: 18)
     }
 }
 

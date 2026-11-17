@@ -62,7 +62,7 @@ struct UnreachableView: View {
             Text(message)
         } actions: {
             Button("Try again") { Task { await auth.check() } }
-                .buttonStyle(.borderedProminent)
+                .glassButtonStyle(prominent: true)
             Button("Change server") { showServer = true }
             Button("Sign out", role: .destructive) { auth.signOut() }
         }
@@ -148,7 +148,7 @@ struct AppToolbarModifier: ViewModifier {
     @Environment(Router.self) private var router
 
     func body(content: Content) -> some View {
-        content.toolbar {
+        content.appBackground().toolbar {
             ToolbarItemGroup(placement: .topBarTrailing) {
                 Button { router.showNotifications = true } label: {
                     Image(systemName: data.unreadCount > 0 ? "bell.badge" : "bell")
@@ -215,7 +215,7 @@ struct WelcomeOverlay: View {
                         }
                     }
                     .padding()
-                    .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14))
+                    .glassCard(cornerRadius: 20)
                     .shadow(radius: 10)
                     .offset(y: appeared ? 0 : -40)
                     .opacity(appeared ? 1 : 0)

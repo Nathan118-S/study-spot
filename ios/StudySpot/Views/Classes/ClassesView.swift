@@ -45,6 +45,7 @@ struct ClassesView: View {
                 } footer: {
                     Text("Google Classroom and Blackboard classes are imported automatically when connected.")
                 }
+                .glassRows()
             }
         }
         .navigationTitle("Classes")

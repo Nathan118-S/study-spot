@@ -35,9 +35,15 @@ struct NotificationsView: View {
                     }
                 }
                 .foregroundStyle(.primary)
-                .listRowBackground(n.read ? nil : Color.accentColor.opacity(0.06))
+                .listRowBackground(
+                    ZStack {
+                        Rectangle().fill(.thinMaterial)
+                        if !n.read { Color.accentColor.opacity(0.08) }
+                    }
+                )
             }
         }
+        .appBackground()
         .navigationTitle("Notifications")
         .navigationBarTitleDisplayMode(.inline)
         .refreshable { await data.loadNotifications() }

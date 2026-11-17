@@ -43,7 +43,7 @@ struct CalendarScreen: View {
                     Spacer()
                     Button { shiftMonth(1) } label: { Image(systemName: "chevron.right") }
                 }
-                .buttonStyle(.bordered)
+                .glassButtonStyle()
 
                 LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 2), count: 7), spacing: 2) {
                     ForEach(weekdays, id: \.self) { Text($0).font(.caption2.weight(.semibold)).foregroundStyle(.secondary) }
@@ -74,7 +74,7 @@ struct CalendarScreen: View {
                                 Spacer()
                             }
                             .padding(10)
-                            .background(Color(hex: data.color(for: a.classId)).opacity(0.13), in: RoundedRectangle(cornerRadius: 8))
+                            .glassCard(cornerRadius: 14, tint: Color(hex: data.color(for: a.classId)))
                         }
                         .foregroundStyle(.primary)
                         .draggable(a.id)
@@ -84,7 +84,6 @@ struct CalendarScreen: View {
             }
             .padding()
         }
-        .background(Color(.systemGroupedBackground))
         .navigationTitle("Calendar")
         .refreshable { await data.reloadData() }
         .toolbar {
@@ -131,12 +130,9 @@ struct CalendarScreen: View {
         }
         .padding(3)
         .frame(maxWidth: .infinity, minHeight: 72, alignment: .topLeading)
-        .background(
-            RoundedRectangle(cornerRadius: 6)
-                .fill(dropTarget == day ? Color.accentColor.opacity(0.18) : Color(.secondarySystemGroupedBackground))
-        )
+        .glassCard(cornerRadius: 8, tint: dropTarget == day ? .accentColor : nil)
         .overlay(
-            RoundedRectangle(cornerRadius: 6)
+            RoundedRectangle(cornerRadius: 8)
                 .stroke(Color.accentColor, lineWidth: isToday || isSelected || dropTarget == day ? (isSelected ? 2 : 1) : 0)
         )
         .opacity(inMonth ? 1 : 0.4)

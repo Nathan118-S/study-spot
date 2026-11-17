@@ -259,7 +259,7 @@ struct PasskeySetupView: View {
             if busy { ProgressView("Follow your device prompts…") }
             if !error.isEmpty { Text(error).foregroundStyle(.red).font(.footnote).multilineTextAlignment(.center) }
             Button { Task { await register() } } label: { Text(error.isEmpty ? "Create passkey" : "Retry").frame(maxWidth: .infinity) }
-                .buttonStyle(.borderedProminent).disabled(busy)
+                .glassButtonStyle(prominent: true).disabled(busy)
         }
         .padding()
         .navigationTitle("Set up a passkey")

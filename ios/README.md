@@ -91,6 +91,18 @@ Everything in the web app is available natively:
   integration secrets, and deploy
 - **Demo role:** the same demo data as the web app
 
+## Liquid Glass
+
+Built with **Xcode 26**, the whole app uses Liquid Glass on iOS 26: the tab
+bar, toolbars, sheets and menus adopt it automatically, and the app's own
+cards, stat tiles, buttons, toasts, calendar days and the floating bulk-edit
+bar use `glassEffect` and the `.glass` / `.glassProminent` button styles.
+Behind every screen is a live background of slowly drifting brand-colored
+glows (the same as the website's). It stops moving when animations are
+turned off in Settings or Reduce Motion is on. The helpers live in
+`StudySpot/Components/Glass.swift`. On iOS 17–18, or when built with
+Xcode 16, they fall back to frosted materials.
+
 ## App icon (Liquid Glass)
 
 `StudySpot/AppIcon.icon` is an Icon Composer icon: the website's yellow

@@ -21,6 +21,7 @@ struct StreaksView: View {
                     .foregroundStyle(.secondary)
                     .padding(.bottom, 6)
             }
+            .glassRows()
 
             Section {
                 LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
@@ -40,15 +41,16 @@ struct StreaksView: View {
                     } description: {
                         Text("Add a class to start a streak.")
                     } actions: {
-                        Button("Add a class") { router.tab = .classes }.buttonStyle(.borderedProminent)
+                        Button("Add a class") { router.tab = .classes }.glassButtonStyle(prominent: true)
                     }
                 } else {
                     ForEach(streaks) { StreakCardView(streak: $0) }
                 }
             }
+            .glassRows()
 
             if auth.user?.leaderboardEnabled == true {
-                Section { LeaderboardView() } header: { Label("Leaderboard", systemImage: "trophy") }
+                Section { LeaderboardView() } header: { Label("Leaderboard", systemImage: "trophy") }.glassRows()
             }
         }
         .navigationTitle("Streaks")
@@ -148,7 +150,12 @@ struct LeaderboardView: View {
                         Label("\(e.bestStreak)", systemImage: "flame.fill").labelStyle(.titleAndIcon)
                             .foregroundStyle(.orange).font(.subheadline.weight(.semibold))
                     }
-                    .listRowBackground(isMe ? Color.accentColor.opacity(0.12) : nil)
+                    .listRowBackground(
+                        ZStack {
+                            Rectangle().fill(.thinMaterial)
+                            if isMe { Color.accentColor.opacity(0.12) }
+                        }
+                    )
                 }
             } else {
                 Text("No streaks yet. Complete assignments to climb the board!").foregroundStyle(.secondary)
