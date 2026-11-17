@@ -34,13 +34,14 @@ struct AppBackground: View {
 
     var body: some View {
         let animate = theme.animations && !reduceMotion
-        let strength = colorScheme == .dark ? 0.30 : 0.55
+        // Kept subtle so the base stays dominant.
+        let strength = colorScheme == .dark ? 0.18 : 0.30
         GeometryReader { geo in
             let size = max(geo.size.width, geo.size.height) * 1.1
             TimelineView(.animation(minimumInterval: 1.0 / 30, paused: !animate)) { context in
                 let t = animate ? context.date.timeIntervalSinceReferenceDate : 0
                 ZStack {
-                    Color(.systemGroupedBackground)
+                    Palette.base  // 60%: the dominant color
                     ForEach(glows.indices, id: \.self) { i in
                         let g = glows[i]
                         // Smooth back-and-forth drift (like CSS alternate easing).
@@ -127,17 +128,17 @@ extension View {
     func glassButtonStyle(prominent: Bool = false) -> some View {
         #if compiler(>=6.2)
         if #available(iOS 26.0, *) {
-            if prominent { self.buttonStyle(.glassProminent) } else { self.buttonStyle(.glass) }
+            if prominent { self.buttonStyle(.glassProminent) } else { self.buttonStyle(.glass).tint(Palette.secondary) }
         } else {
-            if prominent { self.buttonStyle(.borderedProminent) } else { self.buttonStyle(.bordered) }
+            if prominent { self.buttonStyle(.borderedProminent) } else { self.buttonStyle(.bordered).tint(Palette.secondary) }
         }
         #else
-        if prominent { self.buttonStyle(.borderedProminent) } else { self.buttonStyle(.bordered) }
+        if prominent { self.buttonStyle(.borderedProminent) } else { self.buttonStyle(.bordered).tint(Palette.secondary) }
         #endif
     }
 
     /// Frosted list rows so the live background shows through grouped lists.
     func glassRows() -> some View {
-        listRowBackground(Rectangle().fill(.thinMaterial))
+        listRowBackground(Rectangle().fill(.thinMaterial).overlay(Palette.surface.opacity(0.35)))
     }
 }

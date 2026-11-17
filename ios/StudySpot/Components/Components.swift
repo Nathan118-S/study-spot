@@ -94,9 +94,9 @@ struct ToastOverlay: View {
 struct StatCard: View {
     var label: String
     var value: String
-    var tint: Color = .primary
+    var tint: Color = Palette.secondary
     var symbol: String?
-    var symbolTint: Color = .secondary
+    var symbolTint: Color = Palette.secondary.opacity(0.7)
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
@@ -114,7 +114,7 @@ struct StatCard: View {
 
 struct Pill: View {
     var text: String
-    var color: Color = .secondary
+    var color: Color = Palette.secondary
     var symbol: String?
     var filled = false
 
@@ -154,7 +154,7 @@ struct ProgressBar: View {
     var body: some View {
         GeometryReader { geo in
             ZStack(alignment: .leading) {
-                Capsule().fill(Color(.tertiarySystemFill))
+                Capsule().fill(Palette.secondary.opacity(0.12))
                 Capsule().fill(tint).frame(width: geo.size.width * max(0, min(1, value / 100)))
             }
         }
@@ -173,7 +173,7 @@ struct CodeField: View {
             .font(.title2.monospacedDigit())
             .multilineTextAlignment(.center)
             .padding(12)
-            .background(Color(.tertiarySystemFill), in: RoundedRectangle(cornerRadius: 10))
+            .background(Palette.secondary.opacity(0.12), in: RoundedRectangle(cornerRadius: 10))
             .onChange(of: code) { _, new in
                 let digits = String(new.filter(\.isNumber).prefix(6))
                 if digits != new { code = digits }

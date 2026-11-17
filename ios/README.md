@@ -91,6 +91,23 @@ Everything in the web app is available natively:
   integration secrets, and deploy
 - **Demo role:** the same demo data as the web app
 
+## Colors (60 / 20 / 20)
+
+The app's colors follow the 60/20/20 rule, defined in `Palette`
+(`StudySpot/State/ThemeStore.swift`), with light and dark variants:
+
+- **60% base:** a warm cream canvas (`#FBF6EE`; `#15120F` in dark mode)
+  behind every screen. The live background's glows are kept faint so it
+  stays dominant.
+- **20% secondary:** deep navy (`#1F2B47`; `#A9B8DC` in dark mode) for
+  structure: navigation titles, unselected tabs, settings icons, stat
+  values, chips, secondary buttons and progress tracks.
+- **20% accent:** Study Spot orange (`#F19D37`) for actions and highlights:
+  main buttons, the selected tab, toggles, progress, today and selection.
+
+Red, green and orange status colors (overdue, done, due today) keep their
+meaning and sit outside the split.
+
 ## Liquid Glass
 
 Built with **Xcode 26**, the whole app uses Liquid Glass on iOS 26: the tab

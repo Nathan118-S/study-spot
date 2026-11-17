@@ -10,6 +10,10 @@ struct StudySpotApp: App {
     @State private var router = Router()
     @State private var timer = StudyTimerModel()
 
+    init() {
+        Palette.applyAppearance()
+    }
+
     var body: some Scene {
         WindowGroup {
             RootView()

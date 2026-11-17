@@ -39,9 +39,9 @@ struct SettingsView: View {
                     } label: {
                         HStack(spacing: 12) {
                             Image(systemName: item.symbol)
-                                .foregroundStyle(item.danger ? Color.red : Color.accentColor)
+                                .foregroundStyle(item.danger ? Color.red : Palette.secondary)
                                 .frame(width: 34, height: 34)
-                                .background((item.danger ? Color.red : Color.accentColor).opacity(0.12), in: Circle())
+                                .background((item.danger ? Color.red : Palette.secondary).opacity(0.12), in: Circle())
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(item.label).foregroundStyle(item.danger ? .red : .primary)
                                 Text(item.desc).font(.caption).foregroundStyle(.secondary)
@@ -248,7 +248,7 @@ struct ConnectionRow: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(alignment: .top, spacing: 12) {
-                Image(systemName: symbol).foregroundStyle(.tint).frame(width: 24)
+                Image(systemName: symbol).foregroundStyle(Palette.secondary).frame(width: 24)
                 VStack(alignment: .leading, spacing: 4) {
                     HStack {
                         Text(title).font(.body.weight(.medium))
@@ -292,7 +292,7 @@ struct BlackboardSettings: View {
     var body: some View {
         Section {
             HStack(alignment: .top, spacing: 12) {
-                Image(systemName: "building.columns").foregroundStyle(.tint)
+                Image(systemName: "building.columns").foregroundStyle(Palette.secondary)
                 VStack(alignment: .leading, spacing: 4) {
                     HStack {
                         Text("Blackboard Learn").font(.body.weight(.medium))

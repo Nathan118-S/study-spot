@@ -39,7 +39,7 @@ struct OnboardingView: View {
             VStack(spacing: 0) {
                 HStack(spacing: 4) {
                     ForEach(Step.allCases, id: \.self) { s in
-                        Capsule().fill(s.rawValue <= step.rawValue ? Color.accentColor : Color(.tertiarySystemFill))
+                        Capsule().fill(s.rawValue <= step.rawValue ? Color.accentColor : Palette.secondary.opacity(0.15))
                             .frame(height: 5)
                     }
                 }

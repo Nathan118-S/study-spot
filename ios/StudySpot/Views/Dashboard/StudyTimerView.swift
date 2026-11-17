@@ -157,7 +157,7 @@ struct StudyTimerView: View {
 
             HStack(spacing: 18) {
                 ZStack {
-                    Circle().stroke(Color(.tertiarySystemFill), lineWidth: 8)
+                    Circle().stroke(Palette.secondary.opacity(0.12), lineWidth: 8)
                     Circle()
                         .trim(from: 0, to: model.progress)
                         .stroke(model.phase.tint, style: StrokeStyle(lineWidth: 8, lineCap: .round))
