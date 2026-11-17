@@ -83,6 +83,8 @@ import education.studyspot.app.timer.TimerPhase
 import education.studyspot.app.timer.TimerState
 import education.studyspot.app.ui.components.Pill
 import education.studyspot.app.ui.components.SubScreenScaffold
+import education.studyspot.app.ui.components.brandFilterChipColors
+import education.studyspot.app.ui.components.brandSegmentedColors
 import education.studyspot.app.ui.theme.StudySpotTheme
 import kotlinx.coroutines.delay
 import java.time.LocalDate
@@ -170,6 +172,7 @@ fun StudyTimerScreen(navigator: AppNavigator) {
                                 onClick = { controller.switchPhase(p) },
                                 enabled = !state.running,
                                 shape = SegmentedButtonDefaults.itemShape(i, TimerPhase.entries.size),
+                                colors = brandSegmentedColors(),
                             ) { Text(p.shortLabel) }
                         }
                     }
@@ -318,13 +321,14 @@ private fun LengthChips(state: TimerState, enabled: Boolean, onPick: (Int) -> Un
     val current = state.minutesFor(state.phase)
     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
         presets.forEach { m ->
-            FilterChip(selected = current == m, onClick = { onPick(m) }, enabled = enabled, label = { Text("$m min") })
+            FilterChip(selected = current == m, onClick = { onPick(m) }, enabled = enabled, label = { Text("$m min") }, colors = brandFilterChipColors())
         }
         FilterChip(
             selected = current !in presets,
             onClick = onOther,
             enabled = enabled,
             label = { Text(if (current in presets) "Other" else "Custom: $current min") },
+            colors = brandFilterChipColors(),
         )
     }
 }

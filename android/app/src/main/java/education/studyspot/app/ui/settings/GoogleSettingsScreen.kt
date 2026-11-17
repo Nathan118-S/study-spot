@@ -2,6 +2,7 @@ package education.studyspot.app.ui.settings
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -168,7 +169,12 @@ fun ConnectionRow(
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.Top) {
             Icon(icon, contentDescription = null, tint = StudySpotTheme.colors.secondary, modifier = Modifier.padding(top = 2.dp))
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                // Title and status pill wrap rather than clip the pill on narrow screens.
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                    itemVerticalAlignment = Alignment.CenterVertically,
+                ) {
                     Text(title, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
                     when {
                         loading -> CircularProgressIndicator(Modifier.size(14.dp), strokeWidth = 2.dp)

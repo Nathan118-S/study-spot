@@ -166,14 +166,17 @@ fun ClassesScreen(navigator: AppNavigator, contentPadding: PaddingValues) {
                 }
             }
         }
-        ExtendedFloatingActionButton(
-            onClick = { creating = true },
-            containerColor = colors.accent,
-            contentColor = colors.onAccent,
-            icon = { Icon(Icons.Filled.Add, contentDescription = null) },
-            text = { Text("Add class") },
-            modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp),
-        )
+        // The empty state has its own "Add a class" button; don't show two.
+        if (classes.isNotEmpty()) {
+            ExtendedFloatingActionButton(
+                onClick = { creating = true },
+                containerColor = colors.accent,
+                contentColor = colors.onAccent,
+                icon = { Icon(Icons.Filled.Add, contentDescription = null) },
+                text = { Text("Add class") },
+                modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp),
+            )
+        }
     }
 
     if (creating || editing != null) {

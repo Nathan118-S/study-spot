@@ -25,6 +25,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -116,7 +117,12 @@ fun Pill(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(3.dp),
     ) {
-        val fg = if (filled) Color.White else color
+        // Bright fills (green, yellow) need dark text to stay readable.
+        val fg = when {
+            !filled -> color
+            color.luminance() > 0.4f -> Color(0xFF10151F)
+            else -> Color.White
+        }
         if (icon != null) Icon(icon, contentDescription = null, tint = fg, modifier = Modifier.size(11.dp))
         Text(text, style = MaterialTheme.typography.labelSmall, color = fg, fontWeight = FontWeight.SemiBold, maxLines = 1)
     }
@@ -141,3 +147,20 @@ fun StatTile(label: String, value: String, modifier: Modifier = Modifier, tint: 
         }
     }
 }
+
+/** Segmented buttons in brand colors: orange-tinted selection, navy labels (dashboard tabs, priority, timer phase). */
+@Composable
+fun brandSegmentedColors() = androidx.compose.material3.SegmentedButtonDefaults.colors(
+    activeContainerColor = StudySpotTheme.colors.accent.copy(alpha = 0.16f),
+    activeContentColor = StudySpotTheme.colors.secondary,
+    inactiveContentColor = StudySpotTheme.colors.secondary,
+)
+
+/** Filter chips in brand colors, matching [brandSegmentedColors]. */
+@Composable
+fun brandFilterChipColors() = androidx.compose.material3.FilterChipDefaults.filterChipColors(
+    selectedContainerColor = StudySpotTheme.colors.accent.copy(alpha = 0.16f),
+    selectedLabelColor = StudySpotTheme.colors.secondary,
+    selectedLeadingIconColor = StudySpotTheme.colors.accent,
+    labelColor = StudySpotTheme.colors.secondary,
+)

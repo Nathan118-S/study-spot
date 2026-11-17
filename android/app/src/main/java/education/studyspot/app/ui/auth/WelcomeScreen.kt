@@ -1,5 +1,6 @@
 package education.studyspot.app.ui.auth
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
@@ -122,7 +123,7 @@ fun WelcomeScreen() {
                 modifier = Modifier.fillMaxWidth().height(52.dp),
             ) {
                 if (busy == WebSignIn.Page.Login) ButtonSpinner()
-                Text("Log in")
+                Text("Log in", fontWeight = FontWeight.SemiBold)
             }
             Spacer(Modifier.height(12.dp))
             OutlinedButton(
@@ -130,9 +131,11 @@ fun WelcomeScreen() {
                 enabled = busy == null,
                 modifier = Modifier.fillMaxWidth().height(52.dp),
                 colors = ButtonDefaults.outlinedButtonColors(contentColor = StudySpotTheme.colors.secondary),
+                // The default outline nearly disappears on the base color, especially in dark mode.
+                border = BorderStroke(1.dp, StudySpotTheme.colors.secondary.copy(alpha = 0.35f)),
             ) {
                 if (busy == WebSignIn.Page.Register) ButtonSpinner()
-                Text("Sign up")
+                Text("Sign up", fontWeight = FontWeight.SemiBold)
             }
             Spacer(Modifier.height(16.dp))
         }

@@ -5,6 +5,7 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -114,7 +115,12 @@ fun AssignmentRow(
             colors = CheckboxDefaults.colors(checkedColor = colors.accent, uncheckedColor = colors.mutedText),
         )
         Column(Modifier.weight(1f).padding(vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            // Pills wrap under the title instead of squeezing it onto two lines.
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+                itemVerticalAlignment = Alignment.CenterVertically,
+            ) {
                 Text(
                     a.displayTitle,
                     style = MaterialTheme.typography.bodyLarge,
@@ -123,26 +129,34 @@ fun AssignmentRow(
                     textDecoration = if (a.completed) TextDecoration.LineThrough else null,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f, fill = false),
                 )
                 if (a.source != Source.Manual) Pill(a.source.label)
                 if (overdue) Pill("Overdue", color = colors.danger, filled = true, icon = Icons.Filled.Warning)
             }
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                ColorDot(classColor, size = 7.dp)
+            Row(verticalAlignment = Alignment.CenterVertically) {
                 val meta = MaterialTheme.typography.bodySmall
-                Text(
-                    "${a.className?.takeIf { it.isNotBlank() } ?: "Uncategorized"} · ${a.type.label} · ",
-                    style = meta,
-                    color = colors.mutedText,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f, fill = false),
-                )
-                Text(DateText.short(a.dueDate), style = meta, color = if (overdue) colors.danger else colors.mutedText, maxLines = 1)
+                // Class · type truncate only when the date needs the room.
+                Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    ColorDot(classColor, size = 7.dp)
+                    Text(
+                        "${a.className?.takeIf { it.isNotBlank() } ?: "Uncategorized"} · ${a.type.label}",
+                        style = meta,
+                        color = colors.mutedText,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f, fill = false),
+                    )
+                    Text("·", style = meta, color = colors.mutedText)
+                    Text(DateText.short(a.dueDate), style = meta, color = if (overdue) colors.danger else colors.mutedText, maxLines = 1)
+                }
                 if (a.progress > 0) {
-                    Spacer(Modifier.weight(1f))
-                    Text(if (a.progress >= 100) "✓" else "${a.progress.toInt()}%", style = meta, fontWeight = FontWeight.Medium, color = colors.mutedText)
+                    Text(
+                        if (a.progress >= 100) "✓" else "${a.progress.toInt()}%",
+                        style = meta,
+                        fontWeight = FontWeight.Medium,
+                        color = colors.mutedText,
+                        modifier = Modifier.padding(start = 8.dp),
+                    )
                 }
             }
         }

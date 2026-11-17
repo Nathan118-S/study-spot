@@ -39,7 +39,9 @@ val BorderDark = Color(0xFF2E3138)
 // Status
 val RedLight = Color(0xFFFF3B30)
 val RedDark = Color(0xFFFF453A)
-val GreenLight = Color(0xFF34C759)
+// iOS's accessible system green: #34C759 is only ~2:1 against the light base,
+// too faint for the "Verified" / "Connected" text and the Completed count.
+val GreenLight = Color(0xFF248A3D)
 val GreenDark = Color(0xFF30D158)
 /** "Due today" — the system orange, distinct from the brand accent. */
 val DueTodayLight = Color(0xFFFF9500)

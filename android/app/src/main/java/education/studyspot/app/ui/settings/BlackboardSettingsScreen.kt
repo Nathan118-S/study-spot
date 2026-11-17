@@ -2,6 +2,7 @@ package education.studyspot.app.ui.settings
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -118,7 +119,12 @@ fun BlackboardSettingsScreen(modifier: Modifier = Modifier, embedded: Boolean = 
             Row(Modifier.padding(16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.Top) {
                 Icon(Icons.Outlined.AccountBalance, contentDescription = null, tint = StudySpotTheme.colors.secondary)
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    // Title and status pill wrap rather than clip the pill on narrow screens.
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                        itemVerticalAlignment = Alignment.CenterVertically,
+                    ) {
                         Text("Blackboard Learn", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
                         if (connections.blackboard) Pill("Connected", color = StudySpotTheme.colors.success, filled = true) else Pill("Not connected")
                     }

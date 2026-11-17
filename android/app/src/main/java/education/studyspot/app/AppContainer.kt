@@ -14,13 +14,18 @@ import education.studyspot.app.navigation.Router
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import okhttp3.OkHttpClient
 
 /**
  * App-wide singletons (manual dependency injection). Created once in
  * [StudySpotApplication]; reach it from Compose with `LocalAppContainer.current`
  * and elsewhere with `context.appContainer`.
  */
-class AppContainer(context: Context) {
+class AppContainer(
+    context: Context,
+    /** Screenshot tests pass a client that answers from canned JSON (no network). */
+    http: OkHttpClient = ApiClient.defaultHttpClient(),
+) {
     val context: Context = context.applicationContext
 
     /** Lives as long as the process; use for work that must outlive a screen. */
@@ -28,7 +33,7 @@ class AppContainer(context: Context) {
 
     val config = AppConfig(this.context)
     val tokens = TokenStore(this.context)
-    val api = ApiClient(config, tokens)
+    val api = ApiClient(config, tokens, http)
     val messages = MessageCenter()
     val repository = DataRepository(api, messages, scope)
     val auth = AuthStore(this.context, api, repository, scope)

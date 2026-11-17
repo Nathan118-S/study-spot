@@ -214,6 +214,34 @@ rewrites whenever assignments, classes or the user change, and clears on
 sign-out. The widget picker shows previews (generated ones on Android 15+,
 static layouts on 12–14).
 
+## Screenshot tests
+
+JVM screenshot tests (Robolectric + [Roborazzi](https://github.com/takahirom/roborazzi),
+test-only dependencies) render the real screens with the demo data on a
+Pixel 8–sized screen, light and dark, with a drawn status bar and gesture
+handle so edge-to-edge problems show. No emulator or network is needed:
+`ScreenshotApp` gives the real `AppContainer` an HTTP client that answers from
+canned JSON (`FakeBackend`), and `DataRepository.seed(…)` fills the data.
+
+```sh
+./gradlew :app:recordRoborazziDebug     # write PNGs to app/build/outputs/roborazzi/
+./gradlew :app:testDebugUnitTest        # renders every screen, writes/compares nothing
+```
+
+- Tests live in `app/src/test/java/education/studyspot/app/screenshots/`:
+  `AppScreenshotTest` (welcome, the five tabs, empty states, assignment detail
+  and form, class sheet, notifications, settings pages, timer, onboarding,
+  admin people), `WidgetScreenshotTest` (Up Next widget at its three sizes,
+  through Glance's RemoteViews) and `AppIconScreenshotTest` (adaptive icon
+  layers with the 72 dp visible area and 66 dp safe-zone guides).
+- No reference images are committed, so the normal test run never fails for
+  lack of them. To use them as regression tests, record once, commit the PNGs
+  somewhere stable (set `roborazzi.outputDir`), then run
+  `./gradlew :app:verifyRoborazziDebug` / `compareRoborazziDebug`.
+- Robolectric renders bottom sheets and dialogs in their own window without the
+  fake insets, and widget corner radii (outline clipping) aren't drawn; check
+  those on a device.
+
 ## Project layout
 
 All code lives in `app/src/main/java/education/studyspot/app/`:

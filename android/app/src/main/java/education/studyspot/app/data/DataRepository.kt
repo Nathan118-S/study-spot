@@ -1,5 +1,6 @@
 package education.studyspot.app.data
 
+import androidx.annotation.VisibleForTesting
 import education.studyspot.app.core.ApiClient
 import education.studyspot.app.core.Dates
 import education.studyspot.app.core.Entities
@@ -141,6 +142,28 @@ class DataRepository(
 
     suspend fun refreshUser() {
         runCatching { api.me() }.onSuccess { _user.value = it }
+    }
+
+    /**
+     * Fills the flows directly, as if [load] had run. For screenshot tests and
+     * previews; the app itself never calls it.
+     */
+    @VisibleForTesting
+    internal fun seed(
+        assignments: List<Assignment> = _assignments.value,
+        classes: List<SchoolClass> = _classes.value,
+        connections: Connections = _connections.value,
+        notifications: List<AppNotification> = _notifications.value,
+        templates: List<AssignmentTemplate> = _templates.value,
+        studySessions: List<StudySession> = _studySessions.value,
+    ) {
+        _assignments.value = assignments
+        _classes.value = classes
+        _connections.value = connections
+        _notifications.value = notifications
+        _templates.value = templates
+        _studySessions.value = studySessions
+        _hasLoaded.value = true
     }
 
     // endregion

@@ -42,6 +42,7 @@ import education.studyspot.app.ui.settings.CodeField
 import education.studyspot.app.ui.settings.SettingsFootnote
 import education.studyspot.app.ui.settings.SettingsSection
 import education.studyspot.app.ui.settings.icon
+import education.studyspot.app.ui.components.brandSegmentedColors
 import education.studyspot.app.ui.theme.StudySpotTheme
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.JsonElement
@@ -108,6 +109,7 @@ fun Verify2FAScreen() {
                             selected = selected == m,
                             onClick = { selected = m; code = ""; error = "" },
                             shape = SegmentedButtonDefaults.itemShape(i, methods.size),
+                            colors = brandSegmentedColors(),
                             icon = { SegmentedButtonDefaults.Icon(selected == m) { Icon(m.icon, contentDescription = null, modifier = Modifier.size(18.dp)) } },
                             label = { Text(m.label) },
                         )

@@ -3,6 +3,7 @@ package education.studyspot.app.widget
 import androidx.core.content.edit
 import android.content.Context
 import android.util.Log
+import androidx.annotation.VisibleForTesting
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
@@ -40,7 +41,7 @@ import java.util.Locale
 /**
  * "Up Next" home-screen widget (ios/StudySpotWidgets/UpNextWidget.swift):
  * the next assignments with what's due today and overdue. Small shows the
- * next one, medium three, large six plus weekly stats. Tapping an
+ * next one, medium two, large six plus weekly stats. Tapping an
  * assignment opens it (studyspot://assignment/<id>).
  *
  * (Kept as StudySpotWidget / StudySpotWidgetReceiver, the names the manifest uses.)
@@ -61,7 +62,8 @@ class StudySpotWidget : GlanceAppWidget() {
     }
 
     @Composable
-    private fun Content(context: Context, snap: WidgetSnapshot, now: Long, today: String) {
+    @VisibleForTesting
+    internal fun Content(context: Context, snap: WidgetSnapshot, now: Long, today: String) {
         GlanceTheme(colors = WidgetColors.providers) {
             val size = LocalSize.current
             val root = GlanceModifier.fillMaxSize().background(GlanceTheme.colors.surface).cornerRadius(20.dp).padding(14.dp)
@@ -88,7 +90,8 @@ class StudySpotWidget : GlanceAppWidget() {
                     Spacer(GlanceModifier.width(5.dp))
                     Text(next.className, style = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = 11.sp), maxLines = 1)
                 }
-                Text(next.title, style = TextStyle(color = GlanceTheme.colors.onSurface, fontSize = 15.sp, fontWeight = FontWeight.Bold), maxLines = 2)
+                // One line: at the 110 dp minimum height a second line pushes the counts out of view.
+                Text(next.title, style = TextStyle(color = GlanceTheme.colors.onSurface, fontSize = 15.sp, fontWeight = FontWeight.Bold), maxLines = 1)
                 Text(
                     dueText(next, now),
                     style = TextStyle(
@@ -100,7 +103,7 @@ class StudySpotWidget : GlanceAppWidget() {
             }
             Spacer(GlanceModifier.defaultWeight())
             Text(
-                "${snap.dueToday(now).size} due today · ${snap.overdue(now).size} overdue",
+                "${snap.dueToday(now).size} due · ${snap.overdue(now).size} overdue",
                 style = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = 11.sp),
                 maxLines = 1,
             )
@@ -114,17 +117,22 @@ class StudySpotWidget : GlanceAppWidget() {
                 WidgetHeader("Up Next")
                 Spacer(GlanceModifier.defaultWeight())
                 Stat("${snap.dueToday(now).size}", "Due today", WidgetColors.accent)
-                Spacer(GlanceModifier.height(4.dp))
-                Stat("${snap.overdue(now).size}", "Overdue", WidgetColors.danger)
+                // A compact line: a second big stat doesn't fit the 82 dp of content height.
+                Text(
+                    "${snap.overdue(now).size} overdue",
+                    style = TextStyle(color = WidgetColors.danger, fontSize = 11.sp, fontWeight = FontWeight.Medium),
+                    maxLines = 1,
+                )
             }
             Spacer(GlanceModifier.width(10.dp))
             Column(GlanceModifier.defaultWeight()) {
                 if (snap.upcoming.isEmpty()) {
                     AllCaughtUp()
                 } else {
-                    snap.upcoming.take(3).forEach { a ->
+                    // Two rows fill the medium height; a third would be cut in half.
+                    snap.upcoming.take(2).forEach { a ->
                         AssignmentLine(context, a, now)
-                        Spacer(GlanceModifier.height(6.dp))
+                        Spacer(GlanceModifier.height(8.dp))
                     }
                 }
             }

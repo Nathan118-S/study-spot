@@ -274,21 +274,23 @@ private fun StreakCard(s: ClassStreak) {
     ) {
         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                Box(Modifier.size(10.dp).clip(CircleShape).background(parseHexColor(s.schoolClass.color)))
-                Text(
-                    s.schoolClass.displayName,
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.Medium,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f, fill = false),
-                )
-                if (s.verified) {
-                    Pill("Verified", color = colors.success, icon = Icons.Outlined.Verified)
-                } else {
-                    Pill("Unverified", color = colors.dueToday, icon = Icons.Outlined.GppMaybe)
+                // Name and verified pill take the room left by the status pill; the name truncates last.
+                Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Box(Modifier.size(10.dp).clip(CircleShape).background(parseHexColor(s.schoolClass.color)))
+                    Text(
+                        s.schoolClass.displayName,
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.Medium,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f, fill = false),
+                    )
+                    if (s.verified) {
+                        Pill("Verified", color = colors.success, icon = Icons.Outlined.Verified)
+                    } else {
+                        Pill("Unverified", color = colors.dueToday, icon = Icons.Outlined.GppMaybe)
+                    }
                 }
-                Box(Modifier.weight(1f))
                 Pill(s.status.label, color = s.status.color())
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -392,15 +394,16 @@ private fun LeaderboardCard(isDemo: Boolean, reloadKey: Int) {
                                 color = colors.mutedText,
                                 fontWeight = FontWeight.SemiBold,
                             )
-                            Text(
-                                e.name.ifBlank { "Student" },
-                                fontWeight = if (isMe) FontWeight.SemiBold else FontWeight.Normal,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                                modifier = Modifier.weight(1f, fill = false),
-                            )
-                            if (isMe) Text(" (you)", style = MaterialTheme.typography.labelMedium, color = colors.accent, fontWeight = FontWeight.SemiBold)
-                            Box(Modifier.weight(1f))
+                            Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    e.name.ifBlank { "Student" },
+                                    fontWeight = if (isMe) FontWeight.SemiBold else FontWeight.Normal,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    modifier = Modifier.weight(1f, fill = false),
+                                )
+                                if (isMe) Text(" (you)", style = MaterialTheme.typography.labelMedium, color = colors.accent, fontWeight = FontWeight.SemiBold)
+                            }
                             Icon(Icons.Filled.LocalFireDepartment, contentDescription = null, tint = colors.accent, modifier = Modifier.size(16.dp))
                             Text(" ${e.bestStreak}", color = colors.accent, fontWeight = FontWeight.SemiBold)
                         }
