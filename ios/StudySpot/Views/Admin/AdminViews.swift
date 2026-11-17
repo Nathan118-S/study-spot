@@ -362,7 +362,7 @@ struct MergeView: View {
         }
         .navigationTitle("Merge account")
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } } }
+        .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() }.tint(Palette.secondary) } }
         .alert("Merge accounts?", isPresented: $confirm) {
             Button("Cancel", role: .cancel) {}
             Button("Merge", role: .destructive) {

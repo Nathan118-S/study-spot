@@ -104,7 +104,7 @@ struct MethodChooser: View {
         }
         .navigationTitle(enabled.isEmpty ? "Choose a second factor" : "Add another method")
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } } }
+        .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() }.tint(Palette.secondary) } }
     }
 }
 
@@ -153,7 +153,7 @@ struct TotpSetupView: View {
         .navigationTitle("Authenticator app")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
+            ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() }.tint(Palette.secondary) }
             ToolbarItem(placement: .confirmationAction) {
                 Button("Enable") { Task { await confirm() } }.disabled(busy || code.count != 6)
             }
@@ -216,7 +216,7 @@ struct EmailSetupView: View {
         .navigationTitle("Email verification")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
+            ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() }.tint(Palette.secondary) }
             ToolbarItem(placement: .confirmationAction) {
                 Button("Enable") { Task { await confirm() } }.disabled(busy || code.count != 6)
             }
@@ -264,7 +264,7 @@ struct PasskeySetupView: View {
         .padding()
         .navigationTitle("Set up a passkey")
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } } }
+        .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() }.tint(Palette.secondary) } }
     }
 
     private func register() async {
@@ -323,7 +323,7 @@ struct RemoveMethodView: View {
         }
         .navigationTitle("Remove \(method.label)?")
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } } }
+        .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() }.tint(Palette.secondary) } }
         .task { if method == .email { await sendEmail() } }
     }
 

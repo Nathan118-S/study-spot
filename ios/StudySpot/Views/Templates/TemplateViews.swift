@@ -37,7 +37,7 @@ struct TemplateManagerView: View {
             .navigationTitle("Templates")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Done") { dismiss() } }
+                ToolbarItem(placement: .cancellationAction) { Button("Done") { dismiss() }.tint(Palette.secondary) }
                 ToolbarItem(placement: .primaryAction) {
                     Button { creating = true } label: { Label("New template", systemImage: "plus") }
                 }
@@ -102,7 +102,7 @@ struct TemplateFormView: View {
             .navigationTitle(template == nil ? "New Template" : "Edit Template")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
+                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() }.tint(Palette.secondary) }
                 ToolbarItem(placement: .confirmationAction) {
                     Button(saving ? "Saving..." : "Save") { Task { await save() } }
                         .disabled(saving || name.trimmingCharacters(in: .whitespaces).isEmpty)

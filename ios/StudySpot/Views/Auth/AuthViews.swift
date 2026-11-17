@@ -174,7 +174,7 @@ struct ServerSettingsView: View {
             .navigationTitle("Server")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
+                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() }.tint(Palette.secondary) }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
                         let changed = AppConfig.normalize(url) != AppConfig.serverURL

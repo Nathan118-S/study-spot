@@ -169,6 +169,7 @@ struct AppToolbarModifier: ViewModifier {
             ToolbarItemGroup(placement: .topBarTrailing) {
                 Button { router.showNotifications = true } label: {
                     Image(systemName: data.unreadCount > 0 ? "bell.badge" : "bell")
+                        .foregroundStyle(Palette.secondary)
                 }
                 .accessibilityLabel("Notifications")
                 Menu {
@@ -185,6 +186,7 @@ struct AppToolbarModifier: ViewModifier {
                     Button(role: .destructive) { auth.signOut() } label: { Label("Sign out", systemImage: "rectangle.portrait.and.arrow.right") }
                 } label: {
                     Image(systemName: "person.crop.circle")
+                        .foregroundStyle(Palette.secondary)
                 }
                 .accessibilityLabel("Account")
             }

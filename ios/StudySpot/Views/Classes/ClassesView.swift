@@ -45,7 +45,7 @@ struct ClassesView: View {
                         .foregroundStyle(.primary)
                         .swipeActions {
                             Button(role: .destructive) { confirmDelete = c } label: { Label("Delete", systemImage: "trash") }
-                            Button { editing = c } label: { Label("Edit", systemImage: "pencil") }.tint(.blue)
+                            Button { editing = c } label: { Label("Edit", systemImage: "pencil") }.tint(Palette.secondary)
                         }
                     }
                 } footer: {
@@ -161,7 +161,7 @@ struct ClassFormView: View {
             .navigationTitle(schoolClass == nil ? "Add Class" : "Edit Class")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
+                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() }.tint(Palette.secondary) }
                 ToolbarItem(placement: .confirmationAction) {
                     Button(saving ? "Saving..." : "Save") { Task { await save() } }
                         .disabled(saving || name.trimmingCharacters(in: .whitespaces).isEmpty)

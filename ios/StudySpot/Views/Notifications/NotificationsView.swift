@@ -48,7 +48,7 @@ struct NotificationsView: View {
         .navigationBarTitleDisplayMode(.inline)
         .refreshable { await data.loadNotifications() }
         .toolbar {
-            ToolbarItem(placement: .cancellationAction) { Button("Close") { dismiss() } }
+            ToolbarItem(placement: .cancellationAction) { Button("Close") { dismiss() }.tint(Palette.secondary) }
             ToolbarItem(placement: .primaryAction) {
                 Menu {
                     Button { Task { await data.markAllRead() } } label: { Label("Mark all read", systemImage: "checkmark.circle") }

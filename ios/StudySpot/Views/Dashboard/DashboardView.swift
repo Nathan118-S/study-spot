@@ -129,7 +129,7 @@ struct DashboardView: View {
                             .onTapGesture { if selectMode { toggleSelect(a.id) } else { detail = a } }
                             .swipeActions(edge: .trailing) {
                                 Button(role: .destructive) { Task { await data.delete(a) } } label: { Label("Delete", systemImage: "trash") }
-                                Button { editing = a } label: { Label("Edit", systemImage: "pencil") }.tint(.blue)
+                                Button { editing = a } label: { Label("Edit", systemImage: "pencil") }.tint(Palette.secondary)
                             }
                             .swipeActions(edge: .leading) {
                                 Button { Task { await data.toggleComplete(a, user: auth.user) } } label: {
@@ -152,11 +152,12 @@ struct DashboardView: View {
             ToolbarItemGroup(placement: .topBarLeading) {
                 Button { withAnimation { showTimer.toggle() } } label: {
                     Image(systemName: showTimer ? "timer.circle.fill" : "timer")
+                        .foregroundStyle(Palette.secondary)
                 }
                 .accessibilityLabel("Study timer")
                 if data.connections.any {
                     Button { Task { await data.runSync(silent: false, auth: auth) } } label: {
-                        if data.isSyncing { ProgressView() } else { Image(systemName: "arrow.triangle.2.circlepath") }
+                        if data.isSyncing { ProgressView() } else { Image(systemName: "arrow.triangle.2.circlepath").foregroundStyle(Palette.secondary) }
                     }
                     .disabled(data.isSyncing)
                     .accessibilityLabel("Sync now")
@@ -235,6 +236,7 @@ struct DashboardView: View {
             }
         } label: {
             Image(systemName: filtersActive ? "line.3.horizontal.decrease.circle.fill" : "line.3.horizontal.decrease.circle")
+                .foregroundStyle(Palette.secondary)
         }
         .accessibilityLabel("Filter and sort")
     }
