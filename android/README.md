@@ -98,6 +98,11 @@ own host) before Android passkeys verify.
   instead*. Calls `icalListFeeds` / `icalAddFeed` / `icalUpdateFeed` /
   `icalRemoveFeed` / `icalSyncFeeds` through `DataRepository`, which also runs
   `icalSyncFeeds` in every sync when `connections.ical` is true.
+- **Canvas, Schoology & Brightspace** (`LmsSettingsScreen.kt`, Settings list
+  after Blackboard, and a compact card in onboarding): a row per system opens
+  its 3-step guide in `IcalGuide.kt` (`IcalKind.Canvas` / `Schoology` /
+  `Brightspace`); the links of those kinds are listed with the system's name in
+  the status line (`IcalFeedRows(showKind = true)`).
 - Data export (`data/ExcelExport.kt`) writes SpreadsheetML (`.xls`) to the
   cache and shares it through the `FileProvider` declared in the manifest
   (`res/xml/file_paths.xml`).
