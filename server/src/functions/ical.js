@@ -32,6 +32,24 @@ function publicFeed(row) {
 
 const feedUrl = (row) => decryptValue({ iv: row.url_iv, ciphertext: row.url_ciphertext, authTag: row.url_auth_tag });
 
+/**
+ * The course an event belongs to. Blackboard's calendar link has no course
+ * field; titles are usually "Course name: Item name", so split on the first
+ * ": " when the prefix looks like a course (other feeds may use CATEGORIES).
+ */
+export function splitCourse(ev, kind) {
+  if (ev.category) return { course: ev.category, title: ev.summary };
+  const summary = ev.summary || '';
+  if (kind === 'blackboard') {
+    const i = summary.indexOf(': ');
+    if (i > 1 && i <= 80) {
+      const title = summary.slice(i + 2).trim();
+      if (title) return { course: summary.slice(0, i).trim(), title };
+    }
+  }
+  return { course: undefined, title: summary };
+}
+
 /** Whether an event looks like schoolwork (mode 'auto'), or always (mode 'all'). */
 export function isImportable(ev, mode) {
   if (ev.cancelled) return false;
@@ -78,7 +96,8 @@ async function syncFeed(user, feed) {
       if (!ev.uid || !isImportable(ev, feed.mode)) continue;
       const due = eventDue(ev.start, tz);
       if (!due || due.getTime() < from || due.getTime() > to) continue;
-      wanted.push({ ...ev, due, externalId: `ical:${feed.id}:${ev.uid}${ev.recurrenceId ? `:${ev.recurrenceId}` : ''}` });
+      const { course, title: itemTitle } = splitCourse(ev, kind);
+      wanted.push({ ...ev, course, summary: itemTitle, due, externalId: `ical:${feed.id}:${ev.uid}${ev.recurrenceId ? `:${ev.recurrenceId}` : ''}` });
     }
 
     const classCache = new Map();
@@ -108,7 +127,7 @@ async function syncFeed(user, feed) {
         }
         continue;
       }
-      const cls = await classFor(ev.category);
+      const cls = await classFor(ev.course);
       await pool.query(
         `INSERT INTO assignments (created_by_id, title, class_id, class_name, due_date, priority, type, notes, description, source, external_id, completed)
          VALUES ($1, $2, $3, $4, $5, $6, $7, '', $8, $10, $9, false)`,

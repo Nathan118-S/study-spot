@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { School, Link2, Unlink, Loader2 } from 'lucide-react';
 import SchoolAccessNote from '@/components/SchoolAccessNote';
+import CalendarLinks from '@/components/CalendarLinks';
 
 export default function BlackboardConnection({ connected, instanceUrl, onChanged, hideNote = false }) {
   const [url, setUrl] = useState(instanceUrl || '');
@@ -86,6 +87,7 @@ export default function BlackboardConnection({ connected, instanceUrl, onChanged
           {!hideNote && <SchoolAccessNote service="blackboard" />}
         </div>
       )}
+      {!hideNote && !connected && <CalendarLinks kind="blackboard" />}
     </div>
   );
 }

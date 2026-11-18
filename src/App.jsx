@@ -31,6 +31,7 @@ import Landing from '@/pages/Landing';
 import PrivacyPolicy from '@/pages/PrivacyPolicy';
 import Support from '@/pages/Support';
 import ForSchools from '@/pages/ForSchools';
+import ForTeachers from '@/pages/ForTeachers';
 
 function PageLoader() {
   return (
@@ -67,6 +68,7 @@ const AuthenticatedApp = () => {
       <Route path="/privacy" element={<PrivacyPolicy />} />
       <Route path="/support" element={<Support />} />
       <Route path="/schools" element={<ForSchools />} />
+      <Route path="/teachers" element={<ForTeachers />} />
       <Route element={<ProtectedRoute unauthenticatedElement={<Landing />} />}>
         <Route path="/verify-2fa" element={<Suspense fallback={<PageLoader />}><Verify2FA /></Suspense>} />
         <Route path="/blackboard/callback" element={<Suspense fallback={<PageLoader />}><BlackboardCallback /></Suspense>} />

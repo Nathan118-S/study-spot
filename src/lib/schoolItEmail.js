@@ -56,3 +56,25 @@ export function schoolItEmailUrl(user, service = 'both') {
   ].join('\n');
   return `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 }
+
+// Asks a teacher to make the class's Google Calendar public, so the class can
+// add it to Study Spot with a link (see /teachers). Same text in the iOS and
+// Android apps.
+export const TEACHER_PLACEHOLDER = "[Teacher's name]";
+
+export function teacherEmailUrl(user) {
+  const name = senderName(user);
+  const subject = 'Could you share our class calendar?';
+  const body = [
+    `Hi ${TEACHER_PLACEHOLDER},`,
+    '',
+    "I use Study Spot (https://studyspot.education) to keep track of my assignments, but our school doesn't let me connect my Google account to it.",
+    '',
+    "If you make our class's Google Calendar public, I (and anyone in our class) can add our assignments to Study Spot with a link. It only shares the assignment titles and due dates already on the class calendar, not any student information, and it takes about a minute. The steps are here: https://studyspot.education/teachers",
+    '',
+    'Thank you!',
+    '',
+    name,
+  ].join('\n');
+  return `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+}

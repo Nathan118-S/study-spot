@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { CalendarPlus, Info, Mail } from 'lucide-react';
 import CalendarLinkGuide from '@/components/CalendarLinkGuide';
+import BlackboardLinkGuide from '@/components/BlackboardLinkGuide';
 import { useAuth } from '@/lib/AuthContext';
 import { Button } from '@/components/ui/button';
 import {
@@ -46,13 +47,13 @@ export default function SchoolAccessNote({ service = 'both' }) {
         <Button type="button" variant="outline" size="sm" className="bg-card" onClick={() => setConfirming(true)}>
           <Mail className="h-4 w-4 mr-1.5" /> Email my school&apos;s IT team
         </Button>
-        {service !== 'blackboard' && (
-          <Button type="button" variant="outline" size="sm" className="bg-card" onClick={() => setGuideOpen(true)}>
-            <CalendarPlus className="h-4 w-4 mr-1.5" /> Use a calendar link instead
-          </Button>
-        )}
+        <Button type="button" variant="outline" size="sm" className="bg-card" onClick={() => setGuideOpen(true)}>
+          <CalendarPlus className="h-4 w-4 mr-1.5" /> Use a calendar link instead
+        </Button>
       </div>
-      {service !== 'blackboard' && <CalendarLinkGuide open={guideOpen} onOpenChange={setGuideOpen} />}
+      {service === 'blackboard'
+        ? <BlackboardLinkGuide open={guideOpen} onOpenChange={setGuideOpen} />
+        : <CalendarLinkGuide open={guideOpen} onOpenChange={setGuideOpen} />}
 
       <AlertDialog open={confirming} onOpenChange={setConfirming}>
         <AlertDialogContent>

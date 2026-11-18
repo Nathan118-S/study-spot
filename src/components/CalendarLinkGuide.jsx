@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { schoolItEmailUrl } from '@/lib/schoolItEmail';
+import { AskTeacherButton } from '@/components/AskTeacher';
 import { cn } from '@/lib/utils';
 
 const GOOGLE_SETTINGS_URL = 'https://calendar.google.com/calendar/r/settings';
@@ -120,9 +121,10 @@ export default function CalendarLinkGuide({ open, onOpenChange, onAdded }) {
               </p>
               <SidebarIllustration />
               <Tip>
-                Each Google Classroom class has its own calendar named after the class. Your main calendar has your
-                name. Add each one you want, one at a time.
+                This works for calendars you own, like your own calendar. Google Classroom class calendars belong to
+                your teacher, so only your teacher can share them. Use <strong>Ask your teacher</strong> for those.
               </Tip>
+              <AskTeacherButton />
             </>
           )}
 
@@ -156,6 +158,7 @@ export default function CalendarLinkGuide({ open, onOpenChange, onAdded }) {
                 >
                   <Mail className="h-4 w-4 mr-1.5" /> Email my school’s IT team
                 </Button>
+                <div className="ml-6"><AskTeacherButton /></div>
               </div>
             </>
           )}
@@ -374,7 +377,7 @@ function PublicUrlIllustration() {
       <div className="rounded-md border bg-card px-2 py-1.5 text-xs font-mono text-muted-foreground truncate">c_1a2b3c…@group.calendar.google.com</div>
       <p className="text-xs font-semibold text-foreground">Public URL to this calendar</p>
       <div className="flex items-center gap-2">
-        <div className="flex-1 truncate rounded-md ring-2 ring-primary bg-primary/10 px-2 py-1.5 text-xs font-mono">
+        <div className="min-w-0 flex-1 truncate rounded-md ring-2 ring-primary bg-primary/10 px-2 py-1.5 text-xs font-mono">
           https://calendar.google.com/calendar/embed?src=…
         </div>
         <span className="rounded-full ring-2 ring-primary p-1"><Copy className="h-4 w-4" /></span>
