@@ -229,8 +229,8 @@ DO $$
 BEGIN
   ALTER TABLE classes DROP CONSTRAINT IF EXISTS classes_source_check;
   ALTER TABLE classes ADD CONSTRAINT classes_source_check
-    CHECK (source IN ('manual', 'google_classroom', 'blackboard', 'google_calendar', 'canvas', 'schoology', 'brightspace'));
+    CHECK (source IN ('manual', 'google_classroom', 'blackboard', 'google_calendar', 'canvas', 'schoology', 'brightspace', 'device_calendar'));
   ALTER TABLE assignments DROP CONSTRAINT IF EXISTS assignments_source_check;
   ALTER TABLE assignments ADD CONSTRAINT assignments_source_check
-    CHECK (source IN ('manual', 'google_calendar', 'google_classroom', 'blackboard', 'canvas', 'schoology', 'brightspace'));
+    CHECK (source IN ('manual', 'google_calendar', 'google_classroom', 'blackboard', 'canvas', 'schoology', 'brightspace', 'device_calendar'));
 END $$;

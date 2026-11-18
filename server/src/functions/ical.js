@@ -368,3 +368,95 @@ export async function icalImportFile(user, body) {
   if (!calendars.length) throw new HttpError(400, 'That file isn’t a calendar. Choose the .ics or .zip file you exported.');
   return { ok: true, imported, calendars };
 }
+
+// --- Import from the phone's calendar --------------------------------------
+// Zero school setup: if the student's school Google account is on their phone,
+// Google Classroom due dates sync to the device calendar. The app filters
+// on-device and uploads only the assignments the student confirms (never the
+// raw calendar). Each phone calendar becomes a class.
+
+/**
+ * Body: { platform: 'ios'|'android', items: [{ calendarKey, calendarTitle,
+ *   eventKey, title, due (ISO), description? }] }. Replaces this device's
+ *   imported assignments for the calendars present in `items` (so events the
+ *   student unticks or that are removed go away), then adds/updates the rest.
+ */
+export async function deviceCalendarImport(user, body) {
+  if (user.role === 'demo') throw new HttpError(400, "The demo account can't import calendars");
+  const platform = body?.platform === 'android' ? 'android' : 'ios';
+  const items = Array.isArray(body?.items) ? body.items.slice(0, 2000) : null;
+  if (!items) throw new HttpError(400, 'Nothing to import');
+
+  const prefix = `device:${platform}:`;
+  // Group by calendar; only calendars present in this payload are reconciled.
+  const byCalendar = new Map();
+  for (const it of items) {
+    const calKey = String(it?.calendarKey || '').slice(0, 200);
+    const eventKey = String(it?.eventKey || '').slice(0, 200);
+    const due = it?.due ? new Date(it.due) : null;
+    if (!calKey || !eventKey || !due || isNaN(due.getTime())) continue;
+    if (!byCalendar.has(calKey)) byCalendar.set(calKey, { title: String(it?.calendarTitle || 'Calendar').slice(0, 120), events: new Map() });
+    byCalendar.get(calKey).events.set(eventKey, {
+      title: String(it?.title || 'Untitled').slice(0, 300),
+      due,
+      description: String(it?.description || '').slice(0, 5000),
+    });
+  }
+
+  const existing = await pool.query(
+    'SELECT id, external_id, title, due_date FROM assignments WHERE created_by_id = $1 AND source = $2 AND external_id LIKE $3',
+    [user.id, 'device_calendar', `${prefix}%`]
+  );
+  const byExt = new Map(existing.rows.map((a) => [a.external_id, a]));
+  const wantedExt = new Set();
+  let imported = 0;
+  let updated = 0;
+
+  for (const [calKey, cal] of byCalendar) {
+    const classExt = `${prefix}${calKey}`;
+    let cls = (await pool.query('SELECT * FROM classes WHERE created_by_id = $1 AND external_id = $2 LIMIT 1', [user.id, classExt])).rows[0];
+    if (!cls) {
+      const n = (await pool.query('SELECT count(*)::int n FROM classes WHERE created_by_id = $1', [user.id])).rows[0].n;
+      cls = (await pool.query(
+        `INSERT INTO classes (created_by_id, name, color, source, external_id) VALUES ($1, $2, $3, 'device_calendar', $4) RETURNING *`,
+        [user.id, cal.title, COLORS[n % COLORS.length], classExt]
+      )).rows[0];
+    }
+    for (const [eventKey, ev] of cal.events) {
+      const ext = `${prefix}${calKey}:${eventKey}`.slice(0, 500);
+      wantedExt.add(ext);
+      const prev = byExt.get(ext);
+      if (prev) {
+        if (prev.title !== ev.title || new Date(prev.due_date).getTime() !== ev.due.getTime()) {
+          await pool.query('UPDATE assignments SET title = $1, due_date = $2, updated_at = now() WHERE id = $3', [ev.title, ev.due.toISOString(), prev.id]);
+          updated++;
+        }
+        continue;
+      }
+      await pool.query(
+        `INSERT INTO assignments (created_by_id, title, class_id, class_name, due_date, priority, type, notes, description, source, external_id, completed)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, '', $8, 'device_calendar', $9, false)`,
+        [user.id, ev.title, cls.id, cls.name, ev.due.toISOString(), guessPriority(ev.title), guessType(ev.title), ev.description, ext]
+      );
+      imported++;
+    }
+  }
+
+  // Remove this device's imported items for the included calendars that are no
+  // longer present (unticked, or deleted in the calendar). Keep completed ones.
+  let removed = 0;
+  for (const [ext, a] of byExt) {
+    const calKey = ext.slice(prefix.length, ext.lastIndexOf(':'));
+    if (byCalendar.has(calKey) && !wantedExt.has(ext)) {
+      const del = await pool.query('DELETE FROM assignments WHERE id = $1 AND NOT completed', [a.id]);
+      removed += del.rowCount;
+    }
+  }
+  // Drop empty device classes.
+  await pool.query(
+    `DELETE FROM classes c WHERE c.created_by_id = $1 AND c.source = 'device_calendar'
+       AND NOT EXISTS (SELECT 1 FROM assignments a WHERE a.class_id = c.id)`,
+    [user.id]
+  );
+  return { ok: true, imported, updated, removed };
+}

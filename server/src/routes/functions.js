@@ -42,6 +42,7 @@ const HANDLERS = {
   icalRemoveFeed: { handler: ical.icalRemoveFeed },
   icalSyncFeeds: { handler: ical.icalSyncFeeds },
   icalImportFile: { handler: ical.icalImportFile },
+  deviceCalendarImport: { handler: ical.deviceCalendarImport },
   syncGoogleCalendar: { handler: google.syncGoogleCalendar },
   syncGoogleClassroom: { handler: google.syncGoogleClassroom },
   getClassroomAttachments: { handler: google.getClassroomAttachments },
