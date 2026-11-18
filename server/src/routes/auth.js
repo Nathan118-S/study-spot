@@ -175,6 +175,28 @@ router.patch('/me', requireAuth, async (req, res) => {
   }
 });
 
+// Deletes the signed-in account and everything it owns (assignments,
+// classes, templates, study sessions, notifications, connections and devices
+// all cascade). Accounts with a password must confirm it.
+router.delete('/me', requireAuth, async (req, res) => {
+  try {
+    const u = req.user;
+    if (u.role === 'demo') return res.status(400).json({ error: "The demo account can't be deleted" });
+    if (u.password_hash) {
+      const ok = req.body?.password && await bcrypt.compare(String(req.body.password), u.password_hash);
+      if (!ok) return res.status(400).json({ error: 'Password is incorrect' });
+    }
+    if (u.role === 'admin') {
+      const others = await pool.query("SELECT 1 FROM users WHERE role = 'admin' AND id <> $1 LIMIT 1", [u.id]);
+      if (!others.rows.length) return res.status(400).json({ error: 'Make another account an admin before deleting the only admin account' });
+    }
+    await pool.query('DELETE FROM users WHERE id = $1', [u.id]);
+    res.json({ ok: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 router.post('/logout', (req, res) => {
   // Bearer tokens are stateless; the client discards the token locally.
   res.json({ ok: true });

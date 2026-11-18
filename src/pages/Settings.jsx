@@ -59,6 +59,8 @@ export default function Settings() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(null);
   const [deleting, setDeleting] = useState(false);
+  const [deletePassword, setDeletePassword] = useState('');
+  const [deleteError, setDeleteError] = useState('');
   const [loggingOut, setLoggingOut] = useState(false);
   const [syncCompletion, setSyncCompletion] = useState(user?.data?.sync_completion_to_classroom !== false);
   const [savingSync, setSavingSync] = useState(false);
@@ -144,13 +146,15 @@ export default function Settings() {
     }
   };
 
-  const deleteAccount = async () => {
+  const deleteAccount = async (e) => {
+    e?.preventDefault();
     setDeleting(true);
+    setDeleteError('');
     try {
-      await api.entities.Assignment.deleteMany({});
-      await api.entities.Class.deleteMany({});
+      await api.auth.deleteAccount(deletePassword);
       logout();
-    } catch {
+    } catch (err) {
+      setDeleteError(err.message || "Couldn't delete your account");
       setDeleting(false);
     }
   };
@@ -387,7 +391,7 @@ export default function Settings() {
               <div className="min-w-0">
                 <p className="text-sm font-medium">Delete account</p>
                 <p className="text-xs text-muted-foreground">
-                  Removes your assignments and classes, then signs you out. This can't be undone.
+                  Permanently deletes your account and everything in it. This can't be undone.
                 </p>
               </div>
               <AlertDialog>
@@ -401,15 +405,30 @@ export default function Settings() {
                   <AlertDialogHeader>
                     <AlertDialogTitle>Delete account?</AlertDialogTitle>
                     <AlertDialogDescription>
-                      This permanently deletes all your assignments and classes and signs you out. This action cannot be undone.
+                      This permanently deletes your account, assignments, classes, study history, connections and
+                      settings. This action cannot be undone.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
+                  {user?.has_password !== false && (
+                    <div className="space-y-1.5">
+                      <label htmlFor="delete-password" className="text-sm font-medium">Enter your password to confirm</label>
+                      <input
+                        id="delete-password"
+                        type="password"
+                        autoComplete="current-password"
+                        value={deletePassword}
+                        onChange={(e) => setDeletePassword(e.target.value)}
+                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                      />
+                    </div>
+                  )}
+                  {deleteError && <p className="text-sm text-destructive">{deleteError}</p>}
                   <AlertDialogFooter>
                     <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
                     <AlertDialogAction
                       className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                      onClick={deleteAccount}
-                      disabled={deleting}
+                      onClick={(e) => { e.preventDefault(); deleteAccount(); }}
+                      disabled={deleting || !deletePassword}
                     >
                       {deleting ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : null}
                       Delete

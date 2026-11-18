@@ -32,6 +32,7 @@ export default function AuthLayout({ title, subtitle, footer, children }) {
       <nav className="mt-10 flex items-center gap-6 text-sm text-muted-foreground">
         <Link to="/" className="hover:text-foreground">Home</Link>
         <Link to="/privacy" className="hover:text-foreground">Privacy</Link>
+        <Link to="/support" className="hover:text-foreground">Support</Link>
       </nav>
       <p className="mt-3 text-xs text-muted-foreground">© {new Date().getFullYear()} Study Spot</p>
     </div>

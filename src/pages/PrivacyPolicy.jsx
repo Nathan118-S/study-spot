@@ -2,9 +2,10 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { GraduationCap, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { SUPPORT_EMAIL } from '@/lib/support';
 
 export default function PrivacyPolicy() {
-  const updated = 'November 17, 2026';
+  const updated = 'November 18, 2026';
   return (
     <div className="min-h-screen text-foreground">
       <header className="sticky top-0 z-30 backdrop-blur bg-background/80 border-b border-border">
@@ -38,14 +39,15 @@ export default function PrivacyPolicy() {
             <li><strong className="text-foreground">Account information:</strong> your name, username, and password (stored only as a secure hash), used to create and sign in to your account. We do not collect email addresses.</li>
             <li><strong className="text-foreground">Assignment and class data:</strong> the assignments, classes, scores, notes, and study sessions you create or import from connected services.</li>
             <li><strong className="text-foreground">Connected service data:</strong> when you link Google Calendar, Google Classroom, or Blackboard, we retrieve course work, due dates, and attachments you have access to, on your behalf.</li>
-            <li><strong className="text-foreground">Usage data:</strong> basic analytics about feature usage to improve the app.</li>
+            <li><strong className="text-foreground">Device information:</strong> if you allow notifications in the iPhone or Android app, a push token for that device, used only to deliver your reminders and class countdowns.</li>
+            <li><strong className="text-foreground">No tracking or analytics:</strong> we don&rsquo;t use advertising, analytics or tracking tools, and we don&rsquo;t follow you across other apps or websites.</li>
           </ul>
         </Section>
 
         <Section title="How we use your information">
           <ul className="list-disc pl-5 space-y-2 text-muted-foreground">
             <li>To display and organize your assignments, classes, and progress.</li>
-            <li>To send you reminders about upcoming due dates in the app and as push notifications on your iPhone, based on your reminder settings.</li>
+            <li>To send you reminders about upcoming due dates in the app and as push notifications on your phone, based on your reminder settings.</li>
             <li>To sync completion status back to Google Classroom when you enable that option.</li>
             <li>To provide analytics, streaks, and grading features.</li>
             <li>To maintain, secure, and improve the app.</li>
@@ -72,7 +74,7 @@ export default function PrivacyPolicy() {
         <Section title="Sharing of your information">
           <p className="text-muted-foreground">
             We do not sell your data. We share information only as needed to operate the app (for example, with our
-            hosting provider, and Apple to deliver push notifications), to comply with legal obligations, or to protect our rights. Admin
+            hosting provider, and Apple or Google to deliver push notifications), to comply with legal obligations, or to protect our rights. Admin
             users in your workspace may access limited account information needed to manage the organization.
           </p>
         </Section>
@@ -80,9 +82,10 @@ export default function PrivacyPolicy() {
         <Section title="Your choices">
           <ul className="list-disc pl-5 space-y-2 text-muted-foreground">
             <li>Connect or disconnect Google and Blackboard integrations anytime in Settings.</li>
-            <li>Customize or turn off reminders and iPhone notifications, and set a do-not-disturb window.</li>
+            <li>Customize or turn off reminders and phone notifications, and set a do-not-disturb window.</li>
             <li>Enable or disable two-factor authentication.</li>
-            <li>Export your data, or delete your account and all associated assignments and classes, from Settings.</li>
+            <li>Export your data from Settings.</li>
+            <li>Delete your account from Settings &rarr; Danger Zone. This permanently deletes your account and everything in it, including assignments, classes, study history, connections and devices.</li>
           </ul>
         </Section>
 
@@ -103,7 +106,9 @@ export default function PrivacyPolicy() {
 
         <Section title="Contact">
           <p className="text-muted-foreground">
-            Questions about this policy or your data? Reach out to your workspace administrator for your organization.
+            Questions about this policy or your data? Email{' '}
+            <a className="text-primary font-medium hover:underline" href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a>{' '}
+            or see the <Link className="text-primary font-medium hover:underline" to="/support">Support page</Link>.
           </p>
         </Section>
 

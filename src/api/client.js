@@ -237,6 +237,9 @@ export const api = {
     changePassword: ({ currentPassword, newPassword }) =>
       request('/auth/change-password', { method: 'POST', body: { currentPassword, newPassword } }),
 
+    /** Permanently deletes the signed-in account and all of its data. */
+    deleteAccount: (password) => request('/auth/me', { method: 'DELETE', body: { password } }),
+
     logout(redirectUrl) {
       setToken(null);
       if (redirectUrl) window.location.href = '/login';

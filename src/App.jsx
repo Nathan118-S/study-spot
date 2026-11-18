@@ -29,6 +29,7 @@ const Verify2FA = lazy(() => import('@/pages/Verify2FA'));
 const BlackboardCallback = lazy(() => import('@/pages/BlackboardCallback'));
 import Landing from '@/pages/Landing';
 import PrivacyPolicy from '@/pages/PrivacyPolicy';
+import Support from '@/pages/Support';
 
 function PageLoader() {
   return (
@@ -63,6 +64,7 @@ const AuthenticatedApp = () => {
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/privacy" element={<PrivacyPolicy />} />
+      <Route path="/support" element={<Support />} />
       <Route element={<ProtectedRoute unauthenticatedElement={<Landing />} />}>
         <Route path="/verify-2fa" element={<Suspense fallback={<PageLoader />}><Verify2FA /></Suspense>} />
         <Route path="/blackboard/callback" element={<Suspense fallback={<PageLoader />}><BlackboardCallback /></Suspense>} />

@@ -843,6 +843,8 @@ struct DangerZone: View {
     @State private var confirmLogoutAll = false
     @State private var confirmDelete = false
     @State private var busy = false
+    @State private var password = ""
+    @State private var deleteError: String?
 
     var body: some View {
         Section {
@@ -853,8 +855,10 @@ struct DangerZone: View {
         }
         Section {
             Button(role: .destructive) { confirmDelete = true } label: {
-                SettingLabel(title: "Delete account", desc: "Removes your assignments and classes, then signs you out. This can't be undone.", symbol: "trash")
+                SettingLabel(title: "Delete account", desc: "Permanently deletes your account and everything in it. This can't be undone.", symbol: "trash")
             }
+        } footer: {
+            if let deleteError { Text(deleteError).foregroundStyle(.red) }
         }
         .disabled(busy)
         .alert("Log out of all devices?", isPresented: $confirmLogoutAll) {
@@ -870,24 +874,26 @@ struct DangerZone: View {
             Text("You'll be signed out here, and any other device signed into your account will be signed out the next time it opens the app.")
         }
         .alert("Delete account?", isPresented: $confirmDelete) {
-            Button("Cancel", role: .cancel) {}
+            SecureField("Password", text: $password)
+                .textContentType(.password)
+            Button("Cancel", role: .cancel) { password = "" }
             Button("Delete", role: .destructive) { Task { await deleteAccount() } }
         } message: {
-            Text("This permanently deletes all your assignments and classes and signs you out. This action cannot be undone.")
+            Text("This permanently deletes your account, assignments, classes, study history, connections and settings. Enter your password to confirm. This can't be undone.")
         }
     }
 
     private func deleteAccount() async {
         guard auth.user?.isDemo != true else { return }
         busy = true
-        let api = APIClient.shared
-        if let assignments = (try? await api.assignments(limit: 5000)) {
-            for a in assignments { try? await api.delete("Assignment", id: a.id) }
+        deleteError = nil
+        defer { busy = false; password = "" }
+        do {
+            _ = try await APIClient.shared.send("/auth/me", method: "DELETE", body: ["password": .string(password)])
+            auth.signOut()
+        } catch {
+            deleteError = error.localizedDescription
         }
-        if let classes = (try? await api.classes()) {
-            for c in classes { try? await api.delete("Class", id: c.id) }
-        }
-        auth.signOut()
     }
 }
 

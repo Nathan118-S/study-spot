@@ -23,7 +23,7 @@ fun PrivacySettingsScreen(modifier: Modifier = Modifier) {
                 "Account information" to "your name, username, and password, used to create and sign in to your account.",
                 "Assignment and class data" to "the assignments, classes, scores, notes, and study sessions you create or import from connected services.",
                 "Connected service data" to "when you link Google Calendar, Google Classroom, or Blackboard, we retrieve course work, due dates, and attachments you have access to, on your behalf.",
-                "Usage data" to "basic analytics about feature usage to improve the app.",
+                "Device information" to "if you allow notifications, a push token for this device, used only to deliver your reminders and class countdowns. No advertising, analytics or tracking.",
             ),
         )
         PolicySection(
@@ -42,7 +42,7 @@ fun PrivacySettingsScreen(modifier: Modifier = Modifier) {
                 "Connect or disconnect Google and Blackboard integrations anytime in Settings.",
                 "Customize or turn off reminders and set a do-not-disturb window.",
                 "Enable or disable two-factor authentication.",
-                "Export your data, or delete your account and all associated assignments and classes, from Settings.",
+                "Export your data from Settings, or permanently delete your account and everything in it from Settings → Danger Zone.",
             ).map { null to it },
         )
     }

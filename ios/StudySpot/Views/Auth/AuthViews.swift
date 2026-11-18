@@ -215,7 +215,7 @@ struct PrivacyPolicyView: View {
                 Text("**Account information:** your name, username, and password, used to create and sign in to your account.")
                 Text("**Assignment and class data:** the assignments, classes, scores, notes, and study sessions you create or import from connected services.")
                 Text("**Connected service data:** when you link Google Calendar, Google Classroom, or Blackboard, we retrieve course work, due dates, and attachments you have access to, on your behalf.")
-                Text("**Usage data:** basic analytics about feature usage to improve the app.")
+                Text("**Device information:** if you allow notifications, a push token for this device, used only to deliver your reminders and class countdowns. No advertising, analytics or tracking.")
             }
             Section("How we use it") {
                 Text("To display and organize your assignments, classes, and progress.")
@@ -228,7 +228,7 @@ struct PrivacyPolicyView: View {
                 Text("Connect or disconnect Google and Blackboard integrations anytime in Settings.")
                 Text("Customize or turn off reminders and set a do-not-disturb window.")
                 Text("Enable or disable two-factor authentication.")
-                Text("Export your data, or delete your account and all associated assignments and classes, from Settings.")
+                Text("Export your data from Settings, or permanently delete your account and everything in it from Settings → Danger Zone.")
             }
         }
         .navigationTitle("Privacy Policy")

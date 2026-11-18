@@ -1,5 +1,15 @@
 package education.studyspot.app.ui.settings
 
+import education.studyspot.app.core.userMessage
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.AlertDialog
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
@@ -21,7 +31,6 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import education.studyspot.app.LocalAppContainer
 import education.studyspot.app.core.Dates
-import education.studyspot.app.core.Entities
 import education.studyspot.app.ui.theme.StudySpotTheme
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.buildJsonObject
@@ -30,7 +39,8 @@ import java.time.Instant
 
 /**
  * Settings > Danger Zone (DangerZone in ios/StudySpot/Views/Settings/SettingsView.swift):
- * log out of all devices, delete account (assignments and classes, then sign out).
+ * log out of all devices, and permanently delete the account (DELETE /api/auth/me,
+ * confirmed with the password; the server deletes everything it owns).
  */
 @Composable
 fun DangerSettingsScreen(modifier: Modifier = Modifier) {
@@ -55,7 +65,7 @@ fun DangerSettingsScreen(modifier: Modifier = Modifier) {
         SettingsSection {
             DangerRow(
                 title = "Delete account",
-                description = "Removes your assignments and classes, then signs you out. This can't be undone.",
+                description = "Permanently deletes your account and everything in it. This can't be undone.",
                 icon = Icons.Outlined.Delete,
                 destructive = true,
                 enabled = !busy && !isDemo,
@@ -84,25 +94,48 @@ fun DangerSettingsScreen(modifier: Modifier = Modifier) {
         )
     }
     if (confirmDelete) {
-        ConfirmDialog(
-            title = "Delete account?",
-            message = "This permanently deletes all your assignments and classes and signs you out. This action cannot be undone.",
-            confirmLabel = "Delete",
-            onConfirm = {
-                if (!isDemo) {
-                    c.scope.launch {
-                        busy = true
-                        runCatching { c.api.assignments(limit = 5000) }.getOrNull()?.forEach { a ->
-                            runCatching { c.api.delete(Entities.ASSIGNMENT, a.id) }
-                        }
-                        runCatching { c.api.classes() }.getOrNull()?.forEach { cl ->
-                            runCatching { c.api.delete(Entities.CLASS, cl.id) }
-                        }
-                        c.auth.signOut()
-                    }
+        var password by remember { mutableStateOf("") }
+        var error by remember { mutableStateOf<String?>(null) }
+        AlertDialog(
+            onDismissRequest = { if (!busy) confirmDelete = false },
+            title = { Text("Delete account?") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text("This permanently deletes your account, assignments, classes, study history, connections and settings. This can't be undone.")
+                    OutlinedTextField(
+                        value = password,
+                        onValueChange = { password = it; error = null },
+                        label = { Text("Password") },
+                        singleLine = true,
+                        visualTransformation = PasswordVisualTransformation(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                        isError = error != null,
+                        supportingText = error?.let { { Text(it) } },
+                        modifier = Modifier.fillMaxWidth(),
+                    )
                 }
             },
-            onDismiss = { confirmDelete = false },
+            confirmButton = {
+                TextButton(
+                    enabled = password.isNotEmpty() && !busy && !isDemo,
+                    onClick = {
+                        // App scope: finish even if this screen goes away.
+                        c.scope.launch {
+                            busy = true
+                            try {
+                                c.api.send("/auth/me", method = "DELETE", body = buildJsonObject { put("password", password) })
+                                confirmDelete = false
+                                c.auth.signOut()
+                            } catch (e: Exception) {
+                                error = e.userMessage
+                            } finally {
+                                busy = false
+                            }
+                        }
+                    },
+                ) { Text("Delete", color = MaterialTheme.colorScheme.error) }
+            },
+            dismissButton = { TextButton(enabled = !busy, onClick = { confirmDelete = false }) { Text("Cancel") } },
         )
     }
 }
