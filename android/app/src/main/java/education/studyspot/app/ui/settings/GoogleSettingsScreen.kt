@@ -41,7 +41,8 @@ import kotlinx.serialization.json.put
 
 /**
  * Settings > Google (GoogleSettings in ios/StudySpot/Views/Settings/SettingsView.swift):
- * connect/disconnect Google Calendar and Classroom, and "mark Classroom work done".
+ * connect/disconnect Google Calendar and Classroom, "mark Classroom work done", and
+ * Google Calendar links for when the account can't be connected ([IcalLinksSection]).
  * Connecting opens the server's Google flow in a Custom Tab; it returns to
  * studyspot://connected (navigation.DeepLinkHandler), and the status is also
  * refreshed whenever this screen resumes.
@@ -59,6 +60,7 @@ fun GoogleSettingsScreen(modifier: Modifier = Modifier, embedded: Boolean = fals
 
     LifecycleResumeEffect(Unit) {
         val job = scope.launch {
+            launch { c.repository.refreshIcalFeeds() }
             c.repository.refreshConnections()
             loading = false
             busy = null
@@ -149,6 +151,7 @@ fun GoogleSettingsScreen(modifier: Modifier = Modifier, embedded: Boolean = fals
                 )
             }
         }
+        IcalLinksSection(isDemo = isDemo)
     }
 }
 
