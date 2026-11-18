@@ -5,7 +5,7 @@
 import { pool } from '../db.js';
 import { HttpError } from '../lib/httpError.js';
 import { decryptValue, encryptValue } from '../lib/secrets.js';
-import { eventDue, feedKind, fetchIcal, icalUrlHint, normalizeIcalUrl, parseIcal } from '../lib/ical.js';
+import { eventDue, feedKind, fetchIcal, icalUrlHint, LMS_NAMES, normalizeIcalUrl, parseIcal } from '../lib/ical.js';
 import { guessPriority, guessType, isAssignmentEvent } from '../lib/sync.js';
 import { userTimeZone } from '../jobs/classActivities.js';
 import { readZip } from '../lib/zip.js';
@@ -15,11 +15,23 @@ const COLORS = ['#3b82f6', '#6366f1', '#ec4899', '#f59e0b', '#10b981', '#06b6d4'
 const PAST_DAYS = 14;
 const FUTURE_DAYS = 180;
 
+// The kind is recorded at the end of the non-secret hint, e.g. "school.edu (Canvas)".
+function kindOfRow(row) {
+  const m = /\((Blackboard|Canvas|Schoology|Brightspace)\)$/.exec(String(row.url_hint || ''));
+  return m ? m[1].toLowerCase() : 'google';
+}
+
+/** Assignment/class source for each kind of link. */
+const SOURCE = { google: 'google_calendar', blackboard: 'blackboard', canvas: 'canvas', schoology: 'schoology', brightspace: 'brightspace' };
+/** School systems whose calendars are mostly coursework: import everything by default. */
+const ALL_BY_DEFAULT = new Set(['blackboard', 'schoology']);
+
 function publicFeed(row) {
+  const kind = kindOfRow(row);
   return {
     id: row.id,
-    label: row.label || row.calendar_name || (String(row.url_hint || '').endsWith('(Blackboard)') ? 'Blackboard' : 'Google Calendar'),
-    kind: String(row.url_hint || '').endsWith('(Blackboard)') ? 'blackboard' : 'google',
+    label: row.label || row.calendar_name || (kind === 'google' ? 'Google Calendar' : LMS_NAMES[kind]),
+    kind,
     calendar_name: row.calendar_name,
     url_hint: row.url_hint,
     mode: row.mode,
@@ -40,6 +52,15 @@ const feedUrl = (row) => decryptValue({ iv: row.url_iv, ciphertext: row.url_ciph
 export function splitCourse(ev, kind) {
   if (ev.category) return { course: ev.category, title: ev.summary };
   const summary = ev.summary || '';
+  // Canvas: "Essay 1 [ENGL 101]".
+  if (kind === 'canvas') {
+    const m = /^(.*\S)\s*\[([^\]]{1,120})\]\s*$/.exec(summary);
+    if (m) return { course: m[2].trim(), title: m[1].trim() };
+  }
+  // Brightspace: "Quiz 1 - Due", with the course as the location.
+  if (kind === 'brightspace') {
+    return { course: ev.location || undefined, title: summary.replace(/\s+-\s+Due$/i, '').trim() || summary };
+  }
   if (kind === 'blackboard') {
     const i = summary.indexOf(': ');
     if (i > 1 && i <= 80) {
@@ -51,9 +72,13 @@ export function splitCourse(ev, kind) {
 }
 
 /** Whether an event looks like schoolwork (mode 'auto'), or always (mode 'all'). */
-export function isImportable(ev, mode) {
+export function isImportable(ev, mode, kind = 'google') {
   if (ev.cancelled) return false;
   if (mode === 'all') return true;
+  // Canvas marks assignments in the UID ("event-assignment-123"); Brightspace
+  // titles due dates "… - Due" (other events are availability windows).
+  if (kind === 'canvas' && /assignment/i.test(ev.uid || '')) return true;
+  if (kind === 'brightspace') return /\s-\sDue$/i.test(ev.summary || '');
   // Google Classroom's class calendars link every event to Classroom.
   if (/classroom\.google\.com/i.test(`${ev.description || ''} ${ev.url || ''}`)) return true;
   return isAssignmentEvent({ summary: ev.summary, description: ev.description });
@@ -62,7 +87,7 @@ export function isImportable(ev, mode) {
 async function classForFeed(user, feed, calendarName, category, kind = 'google') {
   // Events that name their course (e.g. Blackboard) get a class per course.
   const ext = category ? `ical:${feed.id}:cat:${category.slice(0, 120)}` : `ical:${feed.id}`;
-  const name = (category || feed.label || calendarName || (kind === 'blackboard' ? 'Blackboard' : 'Google Calendar')).slice(0, 120);
+  const name = (category || feed.label || calendarName || (kind === 'google' ? 'Google Calendar' : LMS_NAMES[kind])).slice(0, 120);
   const existing = await pool.query('SELECT * FROM classes WHERE created_by_id = $1 AND external_id = $2 LIMIT 1', [user.id, ext]);
   if (existing.rows[0]) {
     // Follow a renamed calendar unless the person renamed the class themselves.
@@ -75,7 +100,7 @@ async function classForFeed(user, feed, calendarName, category, kind = 'google')
   const count = (await pool.query('SELECT count(*)::int n FROM classes WHERE created_by_id = $1', [user.id])).rows[0].n;
   const ins = await pool.query(
     `INSERT INTO classes (created_by_id, name, color, source, external_id) VALUES ($1, $2, $3, $5, $4) RETURNING *`,
-    [user.id, name, COLORS[count % COLORS.length], ext, kind === 'blackboard' ? 'blackboard' : 'google_calendar']
+    [user.id, name, COLORS[count % COLORS.length], ext, SOURCE[kind] || 'google_calendar']
   );
   return ins.rows[0];
 }
@@ -93,7 +118,7 @@ async function syncFeed(user, feed) {
     const to = now + FUTURE_DAYS * 86400e3;
     const wanted = [];
     for (const ev of events) {
-      if (!ev.uid || !isImportable(ev, feed.mode)) continue;
+      if (!ev.uid || !isImportable(ev, feed.mode, kind)) continue;
       const due = eventDue(ev.start, tz);
       if (!due || due.getTime() < from || due.getTime() > to) continue;
       const { course, title: itemTitle } = splitCourse(ev, kind);
@@ -132,7 +157,7 @@ async function syncFeed(user, feed) {
         `INSERT INTO assignments (created_by_id, title, class_id, class_name, due_date, priority, type, notes, description, source, external_id, completed)
          VALUES ($1, $2, $3, $4, $5, $6, $7, '', $8, $10, $9, false)`,
         [user.id, title, cls.id, cls.name, ev.due.toISOString(), guessPriority(title), guessType(title),
-          (ev.description || '').slice(0, 5000), ev.externalId, kind === 'blackboard' ? 'blackboard' : 'google_calendar']
+          (ev.description || '').slice(0, 5000), ev.externalId, SOURCE[kind] || 'google_calendar']
       );
       imported++;
     }
@@ -162,7 +187,7 @@ export async function icalAddFeed(user, body) {
     throw new HttpError(400, e.message);
   }
   // Blackboard's calendar is mostly course due dates, so import all of it by default.
-  const mode = body?.mode === 'all' || body?.mode === 'auto' ? body.mode : feedKind(url) === 'blackboard' ? 'all' : 'auto';
+  const mode = body?.mode === 'all' || body?.mode === 'auto' ? body.mode : ALL_BY_DEFAULT.has(feedKind(url)) ? 'all' : 'auto';
   const label = String(body?.label || '').trim().slice(0, 120) || null;
 
   const existing = await pool.query('SELECT * FROM ical_feeds WHERE user_id = $1', [user.id]);

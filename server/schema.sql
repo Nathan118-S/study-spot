@@ -223,3 +223,14 @@ CREATE TABLE IF NOT EXISTS ical_feeds (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS idx_ical_feeds_user ON ical_feeds(user_id);
+
+-- Calendar links from more school systems (Canvas, Schoology, Brightspace).
+DO $$
+BEGIN
+  ALTER TABLE classes DROP CONSTRAINT IF EXISTS classes_source_check;
+  ALTER TABLE classes ADD CONSTRAINT classes_source_check
+    CHECK (source IN ('manual', 'google_classroom', 'blackboard', 'google_calendar', 'canvas', 'schoology', 'brightspace'));
+  ALTER TABLE assignments DROP CONSTRAINT IF EXISTS assignments_source_check;
+  ALTER TABLE assignments ADD CONSTRAINT assignments_source_check
+    CHECK (source IN ('manual', 'google_calendar', 'google_classroom', 'blackboard', 'canvas', 'schoology', 'brightspace'));
+END $$;

@@ -9,11 +9,30 @@ import { zonedTimeToUtc } from '../jobs/classActivities.js';
 // those are allowed by path instead, and only after checking the host
 // resolves to a public address (a pasted link can't reach internal servers).
 const ALLOWED_HOSTS = new Set(['calendar.google.com']);
-const BLACKBOARD_FEED_PATH = /\/webapps\/calendar\/calendarFeed\/[^/]+\/[^/]+\.ics$/i;
+// School learning systems' personal calendar links, recognised by path (each
+// school has its own domain):
+// - Blackboard Learn:  /webapps/calendar/calendarFeed/<id>/learn.ics
+// - Canvas:            /feeds/calendars/user_<token>.ics
+// - Schoology:         /calendar/feed/ical/<id>/<hash>/ical.ics
+// - Brightspace (D2L): /d2l/le/calendar/feed/user/feed.ics?token=…
+const LMS_FEEDS = [
+  { kind: 'blackboard', path: /\/webapps\/calendar\/calendarFeed\/[^/]+\/[^/]+\.ics$/i },
+  { kind: 'canvas', path: /^\/feeds\/calendars\/user_[A-Za-z0-9_-]+\.ics$/i },
+  { kind: 'schoology', path: /\/calendar\/feed\/ical\/.+\.ics$/i },
+  { kind: 'brightspace', path: /^\/d2l\/le\/calendar\/feed\/user\/feed\.ics$/i, needsQuery: 'token' },
+];
+export const LMS_NAMES = { blackboard: 'Blackboard', canvas: 'Canvas', schoology: 'Schoology', brightspace: 'Brightspace' };
 
-/** 'google' or 'blackboard' for a normalized calendar link. */
+function lmsKind(url) {
+  const hit = LMS_FEEDS.find((f) => f.path.test(url.pathname) && (!f.needsQuery || url.searchParams.get(f.needsQuery)));
+  return hit?.kind || null;
+}
+
+/** 'google', 'blackboard', 'canvas', 'schoology' or 'brightspace' for a normalized calendar link. */
 export function feedKind(url) {
-  return ALLOWED_HOSTS.has(new URL(url).hostname.toLowerCase()) ? 'google' : 'blackboard';
+  const u = new URL(url);
+  if (ALLOWED_HOSTS.has(u.hostname.toLowerCase())) return 'google';
+  return lmsKind(u) || 'blackboard';
 }
 
 function isPrivateAddress(ip) {
@@ -80,15 +99,14 @@ export function normalizeIcalUrl(raw) {
   }
   if (url.protocol !== 'https:' && url.protocol !== 'http:') throw new Error('The link should start with https://');
   if (!ALLOWED_HOSTS.has(url.hostname.toLowerCase())) {
-    // Blackboard Learn: Calendar → "Get external calendar link"
-    // (https://<school>/webapps/calendar/calendarFeed/<id>/learn.ics).
-    if (BLACKBOARD_FEED_PATH.test(url.pathname)) {
+    // A school system's own calendar link (Blackboard, Canvas, Schoology, Brightspace).
+    if (lmsKind(url)) {
       url.protocol = 'https:';
       checkBlackboardUrl(url);
       url.hash = '';
       return url.toString();
     }
-    throw new Error('Use a Google Calendar link (https://calendar.google.com/calendar/…) or Blackboard’s external calendar link (…/webapps/calendar/calendarFeed/…/learn.ics).');
+    throw new Error('Use a calendar link from Google Calendar, Blackboard, Canvas, Schoology or Brightspace. See the guide for where to find it.');
   }
 
   // iCal addresses (public or secret) are used as they are.
@@ -127,7 +145,8 @@ export const isPublicFeed = (url) => feedKind(url) === 'google' && /\/public\/ba
 /** A short, non-secret description of a link to show in lists. */
 export function icalUrlHint(url) {
   const u = new URL(url);
-  if (feedKind(url) === 'blackboard') return `${u.hostname} (Blackboard)`;
+  const kind = feedKind(url);
+  if (kind !== 'google') return `${u.hostname} (${LMS_NAMES[kind]})`;
   const id = decodeURIComponent(u.pathname.split('/')[3] || '');
   if (isPublicFeed(url)) return id;
   return id.length > 32 ? `${id.slice(0, 14)}…${id.slice(-14)}` : id;
@@ -140,7 +159,7 @@ export async function fetchIcal(url) {
   let current = url;
   const kind = feedKind(url);
   for (let hop = 0; hop < 4; hop++) {
-    if (feedKind(current) === 'blackboard') await assertPublicHost(new URL(current).hostname);
+    if (feedKind(current) !== 'google' || kind !== 'google') await assertPublicHost(new URL(current).hostname);
     const res = await fetch(current, {
       redirect: 'manual',
       headers: { Accept: 'text/calendar, */*' },
@@ -151,15 +170,15 @@ export async function fetchIcal(url) {
       const googleOk = ALLOWED_HOSTS.has(next.hostname) || next.hostname.endsWith('.googleusercontent.com');
       // Blackboard may redirect within the school's site (e.g. to its CDN); the
       // public-address check runs again before following it.
-      const blackboardOk = kind === 'blackboard' && !next.port && !next.username;
+      const blackboardOk = kind !== 'google' && !next.port && !next.username;
       if (next.protocol !== 'https:' || !(googleOk || blackboardOk)) {
         throw new Error('The calendar link redirected somewhere unexpected');
       }
       current = next.toString();
       continue;
     }
-    if (kind === 'blackboard' && [401, 403, 404].includes(res.status)) {
-      throw new Error('Blackboard didn’t share this calendar. The link may have been reset; get a new one from Blackboard → Calendar → Get external calendar link.');
+    if (kind !== 'google' && [401, 403, 404].includes(res.status)) {
+      throw new Error(`${LMS_NAMES[kind]} didn’t share this calendar. The link may have been reset; copy a new one from ${LMS_NAMES[kind]}’s calendar.`);
     }
     if (res.status === 404 || res.status === 401 || res.status === 403) {
       throw new Error(isPublicFeed(url)
