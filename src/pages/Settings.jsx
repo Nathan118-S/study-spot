@@ -3,7 +3,7 @@ import { api } from '@/api/client';
 import { useAuth } from '@/lib/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, BookOpen, Loader2, Link2, Unlink, RefreshCw, Trash2, LogOut, Trophy, Moon, Sun, Smartphone, Palette, Plug, RefreshCcw, Database, AlarmClock, GraduationCap, Lock, User, AlertTriangle, ChevronRight, Sparkles, RotateCcw, Hand } from 'lucide-react';
+import { CalendarPlus, Calendar, BookOpen, Loader2, Link2, Unlink, RefreshCw, Trash2, LogOut, Trophy, Moon, Sun, Smartphone, Palette, Plug, RefreshCcw, Database, AlarmClock, GraduationCap, Lock, User, AlertTriangle, ChevronRight, Sparkles, RotateCcw, Hand } from 'lucide-react';
 import { useTheme } from '@/lib/theme';
 import GradingScaleEditor from '@/components/GradingScaleEditor';
 import TwoFactorSettings from '@/components/TwoFactorSettings';
@@ -43,6 +43,7 @@ const CARDS = [
   { value: 'appearance', label: 'Appearance', desc: 'Light/dark mode and device sync', icon: Palette },
   { value: 'google', label: 'Google', desc: 'Calendar and Classroom connections', icon: Plug },
   { value: 'blackboard', label: 'Blackboard', desc: 'Connect your school’s Blackboard', icon: BookOpen },
+  { value: 'lms', label: 'Canvas, Schoology & Brightspace', desc: 'Add your school’s calendar by link', icon: CalendarPlus },
   { value: 'sync', label: 'Sync', desc: 'Refresh synced data', icon: RefreshCcw },
   { value: 'leaderboard', label: 'Leaderboard', desc: 'Show study-streak rankings', icon: Trophy },
   { value: 'onboarding', label: 'Onboarding', desc: 'Run the setup wizard again', icon: RotateCcw },
@@ -285,6 +286,8 @@ export default function Settings() {
             onChanged={check}
           />
         );
+      case 'lms':
+        return <CalendarLinks kind="lms" />;
       case 'sync':
         return (
           <div className="rounded-lg border bg-card p-4 flex items-center justify-between">

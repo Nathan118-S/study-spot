@@ -3,27 +3,58 @@ import SwiftUI
 // Calendar links: for students whose school blocks connecting their Google
 // account (or hasn't approved Study Spot in Blackboard), Study Spot can import
 // a calendar from its public URL / secret iCal address, or from Blackboard's
-// external calendar link, instead (server/src/functions/ical.js). This file
-// has the Settings → Google / Blackboard sections that list the links, and the
-// step-by-step guides for adding one.
+// external calendar link, instead (server/src/functions/ical.js). Canvas,
+// Schoology and Brightspace calendar feed links work the same way. This file
+// has the Settings → Google / Blackboard sections that list the links, the
+// step-by-step guides for adding one, and the Canvas, Schoology & Brightspace
+// page (LMSCalendarLinks.swift).
 
 private let googleCalendarSettingsURL = URL(string: "https://calendar.google.com/calendar/r/settings")!
 
 /// Which service a calendar link comes from (ICalFeed.kind).
-enum CalendarLinkKind: String {
-    case google, blackboard
+enum CalendarLinkKind: String, CaseIterable, Identifiable {
+    case google, blackboard, canvas, schoology, brightspace
+
+    /// The kinds on the Settings → Canvas, Schoology & Brightspace page.
+    static let lms: [CalendarLinkKind] = [.canvas, .schoology, .brightspace]
+
+    var id: String { rawValue }
+
+    /// The system's name, as shown in the guide and the link rows.
+    var systemName: String {
+        switch self {
+        case .google: return "Google Calendar"
+        case .blackboard: return "Blackboard"
+        case .canvas: return "Canvas"
+        case .schoology: return "Schoology"
+        case .brightspace: return "Brightspace"
+        }
+    }
+
+    var isLMS: Bool { CalendarLinkKind.lms.contains(self) }
+
+    var symbol: String {
+        switch self {
+        case .google: return "calendar"
+        case .blackboard: return "building.columns"
+        default: return "graduationcap"
+        }
+    }
 
     var guideTitle: String {
-        switch self {
-        case .google: return "Add your Google Calendar with a link"
-        case .blackboard: return "Add your Blackboard calendar with a link"
-        }
+        self == .google ? "Add your Google Calendar with a link" : "Add your \(systemName) calendar with a link"
     }
 
     /// Number of steps in the guide; the last one is the paste form.
     var totalSteps: Int { self == .google ? 5 : 3 }
 
-    func matches(_ feed: ICalFeed) -> Bool { feed.isBlackboard == (self == .blackboard) }
+    /// The server's default import mode for this kind: every event for
+    /// Blackboard and Schoology, assignment-like events for the others.
+    var defaultsToEveryEvent: Bool { self == .blackboard || self == .schoology }
+
+    func matches(_ feed: ICalFeed) -> Bool {
+        (CalendarLinkKind(rawValue: feed.kind) ?? .google) == self
+    }
 }
 
 // MARK: - Settings section
@@ -115,9 +146,11 @@ struct CalendarLinkRow: View {
     @State private var newName = ""
     @State private var confirmingRemove = false
 
+    private var kind: CalendarLinkKind { CalendarLinkKind(rawValue: feed.kind) ?? .google }
+
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
-            Image(systemName: feed.isBlackboard ? "building.columns" : "calendar")
+            Image(systemName: kind.symbol)
                 .foregroundStyle(Palette.secondary).frame(width: 24)
             VStack(alignment: .leading, spacing: 3) {
                 Text(feed.label).font(.body.weight(.medium)).lineLimit(2)
@@ -133,9 +166,9 @@ struct CalendarLinkRow: View {
             Button("Cancel", role: .cancel) {}
             Button("Save") { Task { await update(["label": .string(newName)], resync: false) } }
         } message: {
-            Text(verbatim: feed.isBlackboard
-                 ? "Your Blackboard courses keep their own names in Study Spot."
-                 : "Its class in Study Spot gets the new name too.")
+            Text(verbatim: kind == .google
+                 ? "Its class in Study Spot gets the new name too."
+                 : "Your \(kind.systemName) courses keep their own names in Study Spot.")
         }
         .confirmationDialog("Remove “\(feed.label)”?", isPresented: $confirmingRemove, titleVisibility: .visible) {
             Button("Keep imported assignments") { Task { await remove(deleteAssignments: false) } }
@@ -149,6 +182,8 @@ struct CalendarLinkRow: View {
     @ViewBuilder private var statusLine: some View {
         if let err = feed.lastError {
             Text(verbatim: "Couldn't sync: \(err)").font(.caption).foregroundStyle(.red)
+        } else if kind.isLMS {
+            Text(verbatim: "\(kind.systemName) · \(syncedText)").font(.caption).foregroundStyle(.secondary)
         } else {
             Text(verbatim: syncedText).font(.caption).foregroundStyle(.secondary)
         }
@@ -262,9 +297,10 @@ struct CalendarLinkRow: View {
 
 // MARK: - Guide
 
-/// "Add your Google Calendar with a link" (5 steps) or "Add your Blackboard
-/// calendar with a link" (3 steps): a step-by-step sheet with a done screen,
-/// ending in the form that adds the link.
+/// "Add your Google Calendar with a link" (5 steps) or "Add your <System>
+/// calendar with a link" (3 steps, for Blackboard, Canvas, Schoology and
+/// Brightspace): a step-by-step sheet with a done screen, ending in the form
+/// that adds the link.
 struct CalendarLinkGuide: View {
     var kind: CalendarLinkKind
 
@@ -285,8 +321,9 @@ struct CalendarLinkGuide: View {
 
     init(kind: CalendarLinkKind = .google) {
         self.kind = kind
-        // Blackboard's calendar is mostly due dates, so import all of it by default.
-        _everyEvent = State(initialValue: kind == .blackboard)
+        // Blackboard's and Schoology's calendars are mostly due dates, so import
+        // all of them by default (matches the server's default mode).
+        _everyEvent = State(initialValue: kind.defaultsToEveryEvent)
     }
 
     private var isDemo: Bool { auth.user?.isDemo == true }
@@ -333,8 +370,10 @@ struct CalendarLinkGuide: View {
                            error: error, isDemo: isDemo, adding: adding)
         } else if kind == .google {
             GoogleGuideStep(step: step)
-        } else {
+        } else if kind == .blackboard {
             BlackboardGuideStep(step: step)
+        } else {
+            LMSGuideStep(kind: kind, step: step)
         }
     }
 
@@ -385,7 +424,7 @@ struct CalendarLinkGuide: View {
     private func restart() {
         link = ""
         name = ""
-        everyEvent = kind == .blackboard
+        everyEvent = kind.defaultsToEveryEvent
         error = ""
         withAnimation(theme.animation(.spring(duration: 0.35))) { step = 2 }
     }
@@ -445,7 +484,7 @@ private struct GuideProgress: View {
     }
 }
 
-private struct GuideStepTitle: View {
+struct GuideStepTitle: View {
     var number: Int
     var title: String
 
@@ -467,7 +506,7 @@ private struct GuideStepTitle: View {
 }
 
 /// A tinted box for tips, warnings and the privacy note.
-private struct GuideNote<Content: View>: View {
+struct GuideNote<Content: View>: View {
     var symbol: String
     var tint: Color
     @ViewBuilder var content: Content
@@ -485,7 +524,7 @@ private struct GuideNote<Content: View>: View {
 }
 
 /// The intro box above step 1.
-private struct GuideIntro: View {
+struct GuideIntro: View {
     var text: LocalizedStringKey
 
     var body: some View {
@@ -577,7 +616,7 @@ private struct GuideCopyStep: View {
     }
 }
 
-private struct PrivacyNote: View {
+struct PrivacyNote: View {
     var kind: CalendarLinkKind
 
     var body: some View {
@@ -585,8 +624,11 @@ private struct PrivacyNote: View {
             if kind == .google {
                 Text("Study Spot only reads this calendar. If you turn off public access later, Study Spot stops getting updates from it.")
                     .foregroundStyle(.secondary)
-            } else {
+            } else if kind == .blackboard {
                 Text("Keep this link private. Anyone with it can see your Blackboard calendar. If you get a new link in Blackboard, add the new one here.")
+                    .foregroundStyle(.secondary)
+            } else {
+                Text(verbatim: "Keep this link private. Anyone with it can see your \(kind.systemName) calendar. If you reset it in \(kind.systemName), add the new one here.")
                     .foregroundStyle(.secondary)
             }
         }
@@ -661,13 +703,10 @@ private struct GuidePasteStep: View {
 
     private var linkField: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text(verbatim: kind == .google ? "Calendar link" : "Blackboard calendar link")
+            Text(verbatim: kind == .google ? "Calendar link" : "\(kind.systemName) calendar link")
                 .font(.caption.weight(.semibold)).foregroundStyle(.secondary)
             HStack(spacing: 8) {
-                TextField(kind == .google
-                          ? "https://calendar.google.com/calendar/embed?src=…"
-                          : "https://…/webapps/calendar/calendarFeed/…/learn.ics",
-                          text: $link)
+                TextField(linkPlaceholder, text: $link)
                     .keyboardType(.URL)
                     .textContentType(.URL)
                     .textInputAutocapitalization(.never)
@@ -687,7 +726,7 @@ private struct GuidePasteStep: View {
     private var nameField: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text("Name (optional)").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
-            TextField(kind == .google ? "AP Biology" : "Blackboard", text: $name)
+            TextField(kind == .google ? "AP Biology" : kind.systemName, text: $name)
                 .textFieldStyle(.roundedBorder)
         }
     }
@@ -701,13 +740,29 @@ private struct GuidePasteStep: View {
                                  selected: !everyEvent) { everyEvent = false }
                 ImportModeOption(title: "Every event in this calendar", desc: nil,
                                  selected: everyEvent) { everyEvent = true }
+            } else if kind == .canvas || kind == .brightspace {
+                // Canvas and Brightspace default to their assignments and due dates.
+                ImportModeOption(title: "Only assignments and due dates", desc: "Recommended",
+                                 selected: !everyEvent) { everyEvent = false }
+                ImportModeOption(title: "Every event in this calendar", desc: nil,
+                                 selected: everyEvent) { everyEvent = true }
             } else {
-                // Blackboard defaults to every event, so it comes first.
+                // Blackboard and Schoology default to every event, so it comes first.
                 ImportModeOption(title: "Every event in this calendar", desc: nil,
                                  selected: everyEvent) { everyEvent = true }
                 ImportModeOption(title: "Only events that look like assignments", desc: nil,
                                  selected: !everyEvent) { everyEvent = false }
             }
+        }
+    }
+
+    private var linkPlaceholder: String {
+        switch kind {
+        case .google: return "https://calendar.google.com/calendar/embed?src=…"
+        case .blackboard: return "https://…/webapps/calendar/calendarFeed/…/learn.ics"
+        case .canvas: return "https://…/feeds/calendars/user_….ics"
+        case .schoology: return "https://…/calendar/feed/ical/…/ical.ics"
+        case .brightspace: return "https://…/d2l/le/calendar/feed/user/feed.ics?token=…"
         }
     }
 
@@ -852,7 +907,7 @@ private struct MockCalendarRow: View {
     }
 }
 
-private struct MockMenuItem: View {
+struct MockMenuItem: View {
     var text: String
     var highlighted: Bool
 
@@ -934,7 +989,7 @@ private struct PublicURLIllustration: View {
 }
 
 /// A link in a text box with its copy action highlighted.
-private struct MockLinkField: View {
+struct MockLinkField: View {
     var text: String
     var truncation: Text.TruncationMode
 

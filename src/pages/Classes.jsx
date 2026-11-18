@@ -7,6 +7,8 @@ import { Plus, Pencil, Trash2, Loader2, BookOpen } from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
 import { isDemoUser, getDemoClasses, getDemoAssignments } from '@/lib/demoData';
 
+const CLASS_SOURCE_LABEL = { google_classroom: 'Google', google_calendar: 'Google', blackboard: 'Blackboard', canvas: 'Canvas', schoology: 'Schoology', brightspace: 'Brightspace' };
+
 export default function Classes() {
   const { user } = useAuth();
   const [classes, setClasses] = useState([]);
@@ -82,7 +84,7 @@ export default function Classes() {
                   <span className="w-3 h-3 rounded-full" style={{ background: c.color }} />
                   <h3 className="font-semibold">{c.name}</h3>
                 </div>
-                {c.source !== 'manual' && <Badge variant="secondary" className="text-xs">Google</Badge>}
+                {c.source !== 'manual' && <Badge variant="secondary" className="text-xs">{CLASS_SOURCE_LABEL[c.source] || 'Synced'}</Badge>}
               </div>
               {[c.subject, c.room && `Room ${c.room}`, c.teacher_name].filter(Boolean).length > 0 && (
                 <p className="text-sm text-muted-foreground mt-1">

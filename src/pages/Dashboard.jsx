@@ -23,7 +23,7 @@ const PRIORITY_LABEL = { high: 'High', medium: 'Medium', low: 'Low' };
 const TYPE_LABEL = {
   homework: 'Homework', project: 'Project', quiz: 'Quiz', test: 'Test', reading: 'Reading', other: 'Other',
 };
-const SOURCE_LABEL = { manual: 'Manual', google_calendar: 'Calendar', google_classroom: 'Classroom', blackboard: 'Blackboard' };
+const SOURCE_LABEL = { manual: 'Manual', google_calendar: 'Calendar', google_classroom: 'Classroom', blackboard: 'Blackboard', canvas: 'Canvas', schoology: 'Schoology', brightspace: 'Brightspace' };
 
 // Greet once per full page load (login, refresh, or opening already logged in).
 let greetedThisLoad = false;

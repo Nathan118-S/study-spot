@@ -24,7 +24,7 @@ struct ClassesView: View {
                                     HStack {
                                         Text(c.name).font(.body.weight(.semibold))
                                         if c.source != .manual {
-                                            Pill(text: c.source == .blackboard ? "Blackboard" : "Google")
+                                            Pill(text: c.source == .googleCalendar || c.source == .googleClassroom ? "Google" : c.source.label)
                                         }
                                     }
                                     let details = [c.subject, c.room.map { $0.isEmpty ? "" : "Room \($0)" }, c.teacherName]

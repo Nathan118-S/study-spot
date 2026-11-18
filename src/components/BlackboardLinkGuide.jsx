@@ -10,23 +10,75 @@ import { schoolItEmailUrl } from '@/lib/schoolItEmail';
 import { cn } from '@/lib/utils';
 
 const STEPS = 3;
+
+// Per school system: where its personal calendar link is and what it looks like.
+export const LMS_SYSTEMS = {
+  blackboard: {
+    name: 'Blackboard',
+    defaultMode: 'all',
+    intro: 'If your school hasn’t approved Study Spot in Blackboard, you can paste your Blackboard calendar’s link instead. Study Spot reads it and imports your due dates.',
+    step1Title: 'Open your Blackboard calendar',
+    step1: <>Sign in to Blackboard in a web browser and open <strong>Calendar</strong>. In Ultra it’s in the menu on the left; in Original, open <strong>My Blackboard</strong> and choose the calendar icon.</>,
+    step2Title: 'Copy the calendar link',
+    step2: <>In Ultra, select the <strong>gear</strong> (Calendar Settings), open the <strong>⋯</strong> menu, choose <strong>Share Calendar</strong> and <strong>Copy</strong> the link. In Original, choose <strong>Get External Calendar Link</strong> and copy it. The link ends in <strong>learn.ics</strong>.</>,
+    menu: ['Calendar settings', 'Share Calendar'],
+    example: 'https://…/webapps/calendar/calendarFeed/…/learn.ics',
+    itEmail: true,
+  },
+  canvas: {
+    name: 'Canvas',
+    defaultMode: 'auto',
+    autoLabel: 'Only assignments and due dates',
+    intro: 'If your school uses Canvas, paste your Canvas calendar feed and Study Spot will import your due dates. It works without your school approving anything.',
+    step1Title: 'Open your Canvas calendar',
+    step1: <>Sign in to Canvas in a web browser and select <strong>Calendar</strong> in the menu on the left.</>,
+    step2Title: 'Copy the calendar feed',
+    step2: <>At the bottom of the right-hand side, select <strong>Calendar Feed</strong>, then copy the link. It ends in <strong>.ics</strong>.</>,
+    menu: [null, 'Calendar Feed'],
+    example: 'https://…/feeds/calendars/user_….ics',
+  },
+  schoology: {
+    name: 'Schoology',
+    defaultMode: 'all',
+    intro: 'If your school uses Schoology, paste your Schoology calendar link and Study Spot will import your due dates. It works without your school approving anything.',
+    step1Title: 'Open your Schoology calendar',
+    step1: <>Sign in to Schoology in a web browser and open <strong>Calendar</strong> from the top menu.</>,
+    step2Title: 'Copy the iCal link',
+    step2: <>Select <strong>Export</strong> (or the calendar’s export/iCal option) and copy the iCal feed link.</>,
+    menu: [null, 'Export'],
+    example: 'https://…/calendar/feed/ical/…/ical.ics',
+  },
+  brightspace: {
+    name: 'Brightspace',
+    defaultMode: 'auto',
+    autoLabel: 'Only assignments and due dates',
+    intro: 'If your school uses Brightspace, paste your Brightspace calendar link and Study Spot will import your due dates. It works without your school approving anything.',
+    step1Title: 'Open your Brightspace calendar',
+    step1: <>Sign in to Brightspace in a web browser and open <strong>Calendar</strong> (from the homepage or a course).</>,
+    step2Title: 'Copy the subscription link',
+    step2: <>Select <strong>Subscribe</strong>, choose <strong>All Courses</strong>, and copy the link. It contains <strong>feed.ics?token=</strong>.</>,
+    menu: [null, 'Subscribe'],
+    example: 'https://…/d2l/le/calendar/feed/user/feed.ics?token=…',
+  },
+};
 const DONE = STEPS + 1;
 
-// Step-by-step pop-up for people whose school hasn't approved Study Spot in
-// Blackboard: copy Blackboard's "external calendar link" (…/learn.ics) and
-// paste it here (server/src/functions/ical.js).
-export default function BlackboardLinkGuide({ open, onOpenChange }) {
+// Step-by-step pop-up to add a school system's personal calendar link
+// (Blackboard, Canvas, Schoology, Brightspace) — see LMS_SYSTEMS above and
+// server/src/functions/ical.js.
+export default function BlackboardLinkGuide({ open, onOpenChange, system = 'blackboard' }) {
+  const sys = LMS_SYSTEMS[system] || LMS_SYSTEMS.blackboard;
   const { user } = useAuth();
   const [step, setStep] = useState(1);
   const [url, setUrl] = useState('');
   const [label, setLabel] = useState('');
-  const [mode, setMode] = useState('all');
+  const [mode, setMode] = useState(sys.defaultMode);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [result, setResult] = useState(null);
 
   const reset = (toStep = 1) => {
-    setStep(toStep); setUrl(''); setLabel(''); setMode('all'); setError(''); setResult(null);
+    setStep(toStep); setUrl(''); setLabel(''); setMode(sys.defaultMode); setError(''); setResult(null);
   };
   const close = (next) => {
     onOpenChange(next);
@@ -60,7 +112,7 @@ export default function BlackboardLinkGuide({ open, onOpenChange }) {
     <Dialog open={open} onOpenChange={close}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>{step === DONE ? 'You’re all set' : 'Add your Blackboard calendar with a link'}</DialogTitle>
+          <DialogTitle>{step === DONE ? 'You’re all set' : `Add your ${sys.name} calendar with a link`}</DialogTitle>
           {step <= STEPS && <DialogDescription>Step {step} of {STEPS}</DialogDescription>}
         </DialogHeader>
         {step <= STEPS && (
@@ -71,38 +123,26 @@ export default function BlackboardLinkGuide({ open, onOpenChange }) {
           </div>
         )}
 
-        <div className="space-y-4 text-[15px] leading-relaxed">
+        <div className="min-w-0 space-y-4 text-[15px] leading-relaxed">
           {step === 1 && (
             <>
-              <p className="text-muted-foreground">
-                If your school hasn’t approved Study Spot in Blackboard, you can paste your Blackboard calendar’s link
-                instead. Study Spot reads it and imports your due dates.
-              </p>
-              <StepTitle n={1}>Open your Blackboard calendar</StepTitle>
-              <p>
-                Sign in to Blackboard in a web browser and open <strong>Calendar</strong>. In Ultra it’s in the menu on the
-                left; in Original, open <strong>My Blackboard</strong> and choose the calendar icon.
-              </p>
+              <p className="text-muted-foreground">{sys.intro}</p>
+              <StepTitle n={1}>{sys.step1Title}</StepTitle>
+              <p>{sys.step1}</p>
             </>
           )}
 
           {step === 2 && (
             <>
-              <StepTitle n={2}>Copy the calendar link</StepTitle>
-              <p>
-                In Ultra, select the <strong>gear</strong> (Calendar Settings), open the <strong>⋯</strong> menu, choose{' '}
-                <strong>Share Calendar</strong> and <strong>Copy</strong> the link. In Original, choose{' '}
-                <strong>Get External Calendar Link</strong> and copy it. The link ends in <strong>learn.ics</strong>.
-              </p>
+              <StepTitle n={2}>{sys.step2Title}</StepTitle>
+              <p>{sys.step2}</p>
               <div className="rounded-xl border bg-background p-3 text-sm select-none space-y-2" aria-hidden>
                 <div className="w-56 rounded-lg border bg-card shadow-sm py-1 text-[13px]">
-                  <div className="px-3 py-1.5 text-muted-foreground flex items-center gap-2"><Settings2 className="h-3.5 w-3.5" /> Calendar settings</div>
-                  <div className="px-3 py-1.5 bg-primary/15 font-semibold">Share Calendar</div>
+                  {sys.menu[0] && <div className="px-3 py-1.5 text-muted-foreground flex items-center gap-2"><Settings2 className="h-3.5 w-3.5" /> {sys.menu[0]}</div>}
+                  <div className="px-3 py-1.5 bg-primary/15 font-semibold">{sys.menu[1]}</div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="min-w-0 flex-1 truncate rounded-md ring-2 ring-primary bg-primary/10 px-2 py-1.5 text-xs font-mono">
-                    https://…/webapps/calendar/calendarFeed/…/learn.ics
-                  </div>
+                  <div className="min-w-0 flex-1 truncate rounded-md ring-2 ring-primary bg-primary/10 px-2 py-1.5 text-xs font-mono">{sys.example}</div>
                   <span className="rounded-full ring-2 ring-primary p-1"><Copy className="h-4 w-4" /></span>
                 </div>
               </div>
@@ -111,9 +151,11 @@ export default function BlackboardLinkGuide({ open, onOpenChange }) {
                   <TriangleAlert className="h-4 w-4 shrink-0 mt-0.5 text-amber-600" />
                   <span><strong>Don’t see it?</strong> Your school may have turned it off. Ask your school’s IT team, or add assignments yourself.</span>
                 </p>
-                <Button type="button" variant="outline" size="sm" className="ml-6 bg-card" onClick={() => { window.location.href = schoolItEmailUrl(user, 'blackboard'); }}>
-                  <Mail className="h-4 w-4 mr-1.5" /> Email my school’s IT team
-                </Button>
+                {sys.itEmail && (
+                  <Button type="button" variant="outline" size="sm" className="ml-6 bg-card" onClick={() => { window.location.href = schoolItEmailUrl(user, 'blackboard'); }}>
+                    <Mail className="h-4 w-4 mr-1.5" /> Email my school’s IT team
+                  </Button>
+                )}
               </div>
             </>
           )}
@@ -122,13 +164,13 @@ export default function BlackboardLinkGuide({ open, onOpenChange }) {
             <form id="bb-ical-add" onSubmit={add} className="space-y-4">
               <StepTitle n={3}>Paste it here</StepTitle>
               <div className="space-y-1.5">
-                <Label htmlFor="bb-url">Blackboard calendar link</Label>
+                <Label htmlFor="bb-url">{sys.name} calendar link</Label>
                 <div className="flex gap-2">
                   <Input
                     id="bb-url"
                     value={url}
                     onChange={(e) => { setUrl(e.target.value); setError(''); }}
-                    placeholder="https://…/webapps/calendar/calendarFeed/…/learn.ics"
+                    placeholder={sys.example}
                     autoComplete="off"
                     spellCheck={false}
                     className="h-11"
@@ -142,17 +184,26 @@ export default function BlackboardLinkGuide({ open, onOpenChange }) {
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="bb-label">Name (optional)</Label>
-                <Input id="bb-label" value={label} onChange={(e) => setLabel(e.target.value)} placeholder="Blackboard" className="h-11" />
+                <Input id="bb-label" value={label} onChange={(e) => setLabel(e.target.value)} placeholder={sys.name} className="h-11" />
               </div>
               <fieldset className="space-y-2">
                 <legend className="text-sm font-medium mb-1">What to import</legend>
-                <ModeOption checked={mode === 'all'} onSelect={() => setMode('all')} title="Every event in this calendar" />
-                <ModeOption checked={mode === 'auto'} onSelect={() => setMode('auto')} title="Only events that look like assignments" />
+                {sys.defaultMode === 'all' ? (
+                  <>
+                    <ModeOption checked={mode === 'all'} onSelect={() => setMode('all')} title="Every event in this calendar" />
+                    <ModeOption checked={mode === 'auto'} onSelect={() => setMode('auto')} title={sys.autoLabel || 'Only events that look like assignments'} />
+                  </>
+                ) : (
+                  <>
+                    <ModeOption checked={mode === 'auto'} onSelect={() => setMode('auto')} title={sys.autoLabel || 'Only events that look like assignments'} />
+                    <ModeOption checked={mode === 'all'} onSelect={() => setMode('all')} title="Every event in this calendar" />
+                  </>
+                )}
               </fieldset>
               <p className="flex gap-2 text-xs text-muted-foreground">
                 <Lock className="h-3.5 w-3.5 shrink-0 mt-0.5" />
-                Keep this link private. Anyone with it can see your Blackboard calendar. If you get a new link in
-                Blackboard, add the new one here.
+                Keep this link private. Anyone with it can see your {sys.name} calendar. If you reset it in {sys.name},
+                add the new one here.
               </p>
             </form>
           )}

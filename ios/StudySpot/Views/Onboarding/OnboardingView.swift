@@ -58,6 +58,7 @@ struct OnboardingView: View {
                     case .services: Form {
                         GoogleSettings()
                         BlackboardSettings()
+                        LMSCalendarLinksCard()
                     }
                     case .grading: Form { GradingScaleEditor() }
                     }

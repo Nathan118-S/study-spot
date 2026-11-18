@@ -23,7 +23,7 @@ const PRIORITY_BADGE = {
 const TYPE_LABEL = {
   homework: 'Homework', project: 'Project', quiz: 'Quiz', test: 'Test', reading: 'Reading', other: 'Other',
 };
-const SOURCE_LABEL = { manual: 'Manual', google_calendar: 'Calendar', google_classroom: 'Classroom' };
+const SOURCE_LABEL = { manual: 'Manual', google_calendar: 'Calendar', google_classroom: 'Classroom', blackboard: 'Blackboard', canvas: 'Canvas', schoology: 'Schoology', brightspace: 'Brightspace' };
 const GRADE_COLOR = {
   A: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300',
   B: 'bg-lime-100 text-lime-700 dark:bg-lime-900/40 dark:text-lime-300',

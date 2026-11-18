@@ -16,6 +16,7 @@ struct SettingsView: View {
         Item(id: "appearance", label: "Appearance", desc: "Light/dark mode and device sync", symbol: "paintpalette"),
         Item(id: "google", label: "Google", desc: "Calendar and Classroom connections", symbol: "powerplug"),
         Item(id: "blackboard", label: "Blackboard", desc: "Connect your school’s Blackboard", symbol: "building.columns"),
+        Item(id: "lms", label: "Canvas, Schoology & Brightspace", desc: "Add your school's calendar by link", symbol: "link"),
         Item(id: "sync", label: "Sync", desc: "Refresh synced data", symbol: "arrow.triangle.2.circlepath"),
         Item(id: "leaderboard", label: "Leaderboard", desc: "Show study-streak rankings", symbol: "trophy"),
         Item(id: "onboarding", label: "Onboarding", desc: "Run the setup wizard again", symbol: "arrow.counterclockwise"),
@@ -78,6 +79,7 @@ struct SettingsView: View {
         case "appearance": Form { AppearanceSettings() }
         case "google": Form { GoogleSettings() }
         case "blackboard": Form { BlackboardSettings() }
+        case "lms": Form { LMSCalendarLinksSettings() }
         case "sync": Form { SyncSettings() }
         case "leaderboard": Form { LeaderboardSetting() }
         case "onboarding": Form { OnboardingRestart() }

@@ -89,7 +89,7 @@ export default function CalendarLinkGuide({ open, onOpenChange, onAdded }) {
           </div>
         )}
 
-        <div className="space-y-4 text-[15px] leading-relaxed">
+        <div className="min-w-0 space-y-4 text-[15px] leading-relaxed">
           {step === 1 && (
             <>
               <p className="text-muted-foreground">

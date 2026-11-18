@@ -8,6 +8,7 @@ import { Calendar, BookOpen, Loader2, Link2, Unlink } from 'lucide-react';
 import BlackboardConnection from '@/components/BlackboardConnection';
 import { isDemoUser } from '@/lib/demoData';
 import SchoolAccessNote from '@/components/SchoolAccessNote';
+import CalendarLinks from '@/components/CalendarLinks';
 
 const CALENDAR_ID = 'google_calendar';
 const CLASSROOM_ID = 'google_classroom';
@@ -158,6 +159,9 @@ function ServiceRow({ icon, title, desc, loading, connected, busy, onConnect, on
           </Button>
         )}
       </div>
+      <motion.div variants={item}>
+        <CalendarLinks kind="lms" compact />
+      </motion.div>
     </motion.div>
   );
 }
