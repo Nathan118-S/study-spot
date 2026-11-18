@@ -20,7 +20,7 @@ cd android
 echo "sdk.dir=$HOME/Android/Sdk" > local.properties   # or set ANDROID_HOME
 ./gradlew :app:assembleDebug          # APK in app/build/outputs/apk/debug/
 ./gradlew :app:installDebug           # install on a connected device/emulator
-./gradlew :app:testDebugUnitTest      # JVM unit tests (JSON, config, timer, class schedule, push, export, 2FA, admin)
+./gradlew :app:testDebugUnitTest      # JVM unit tests (JSON, config, timer, class schedule, push, export, 2FA, admin, calendar links)
 ./gradlew :app:lintDebug
 ```
 
@@ -90,6 +90,14 @@ own host) before Android passkeys verify.
 - `SchoolAccessNote(service)` (`ui/settings/SchoolAccessNote.kt`) is the
   "Some schools block…" notice with the *Email my school's IT team* button; the
   email text is in `SchoolITEmail.kt` (same text as iOS and the website).
+- **Google Calendar links** (for schools that block connecting Google):
+  `IcalLinksSection.kt` in Settings → Google (and onboarding) lists the added
+  links (Sync now, Rename, Import every event, Remove); `IcalGuide.kt` is the
+  5-step full-screen guide (make the calendar public, copy its public URL,
+  paste it), also opened from `SchoolAccessNote`'s *Use a calendar link
+  instead*. Calls `icalListFeeds` / `icalAddFeed` / `icalUpdateFeed` /
+  `icalRemoveFeed` / `icalSyncFeeds` through `DataRepository`, which also runs
+  `icalSyncFeeds` in every sync when `connections.ical` is true.
 - Data export (`data/ExcelExport.kt`) writes SpreadsheetML (`.xls`) to the
   cache and shares it through the `FileProvider` declared in the manifest
   (`res/xml/file_paths.xml`).

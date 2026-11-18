@@ -82,7 +82,8 @@ export default function Support() {
         </div>
 
         <p className="text-sm text-muted-foreground">
-          See also our <Link to="/privacy" className="text-primary font-medium hover:underline">Privacy Policy</Link>.
+          See also our <Link to="/privacy" className="text-primary font-medium hover:underline">Privacy Policy</Link>,
+          and the page <Link to="/schools" className="text-primary font-medium hover:underline">for school IT teams</Link>.
         </p>
       </main>
     </div>

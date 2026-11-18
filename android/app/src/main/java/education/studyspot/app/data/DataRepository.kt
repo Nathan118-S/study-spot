@@ -334,8 +334,8 @@ class DataRepository(
         })
         val feed = res["feed"]?.let { runCatching { AppJson.decodeFromJsonElement(IcalFeed.serializer(), it) }.getOrNull() }
         if (feed != null) _icalFeeds.update { list -> list.map { if (it.id == feed.id) feed else it } }
-        // A rename also renames the link's class.
-        if (label != null) reloadData()
+        // A rename renames the link's class; a mode change re-imports on the server.
+        reloadData()
     }
 
     /** Removes a link; its imported assignments (and class) too when [removeAssignments]. Throws on failure. */

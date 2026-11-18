@@ -4,6 +4,7 @@
 // (The iOS app has the same text in ios/StudySpot/Views/Settings/SchoolITEmail.swift.)
 
 export const SCHOOL_PLACEHOLDER = '[School name]';
+export const SCHOOLS_URL = 'https://studyspot.education/schools';
 
 const DETAILS = {
   google: {
@@ -47,6 +48,8 @@ export function schoolItEmailUrl(user, service = 'both') {
       'Could you please approve Study Spot so students can connect it?',
     '',
     ...keys.flatMap((k) => [DETAILS[k].access, DETAILS[k].admin, '']),
+    `Everything your team needs to review and approve it, including the IDs to allow and step-by-step instructions, is at ${SCHOOLS_URL}`,
+    '',
     'Thank you for your help!',
     '',
     name,

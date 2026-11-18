@@ -30,6 +30,8 @@ class SchoolITEmailTest {
             "Study Spot only asks for read-only access to Google Calendar and to my Google Classroom courses and coursework (and, if I choose, marking my own Classroom work as turned in). It doesn't ask for access to Gmail or Drive.",
             "In the Google Admin console this is under Security → Access and data control → API controls → App access control, where Study Spot can be marked as trusted.",
             "",
+            "Everything your team needs to review and approve it, including the IDs to allow and step-by-step instructions, is at https://studyspot.education/schools",
+            "",
             "Thank you for your help!",
             "",
             "Alex Doe",

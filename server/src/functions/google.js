@@ -122,7 +122,7 @@ export async function syncGoogleClassroom(user) {
   for (const course of courses) {
     const cls = classMap[course.id];
     const cwRes = await fetch(
-      `https://classroom.googleapis.com/v1/courses/${course.id}/courseWork?courseWorkStates=PUBLISHED,DRAFT`,
+      `https://classroom.googleapis.com/v1/courses/${course.id}/courseWork?courseWorkStates=PUBLISHED`,
       auth
     );
     if (!cwRes.ok) continue;

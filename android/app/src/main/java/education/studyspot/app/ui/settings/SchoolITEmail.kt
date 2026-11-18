@@ -66,7 +66,7 @@ object SchoolITEmail {
                 "",
                 "When I try to connect ${what(service)}, it looks like the school has to approve third-party apps first. Could you please approve Study Spot so students can connect it?",
                 "",
-            ) + details + listOf("Thank you for your help!", "", name)
+            ) + details + listOf("Everything your team needs to review and approve it, including the IDs to allow and step-by-step instructions, is at https://studyspot.education/schools", "", "Thank you for your help!", "", name)
             ).joinToString("\n")
     }
 

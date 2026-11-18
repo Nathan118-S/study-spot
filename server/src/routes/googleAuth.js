@@ -17,10 +17,16 @@ const IOS_SCHEME = process.env.IOS_URL_SCHEME || 'studyspot';
 
 // Google Calendar / Classroom connectors — separate OAuth grant with
 // read-only scopes, stored per user so sync routes can use them.
-const CONNECTOR_SCOPES = {
+// The smallest set that works for students (also listed for school IT teams
+// on the /schools page, via GET /api/public/school-info):
+// - calendar.readonly: read the student's calendar to find assignments
+// - classroom.courses.readonly: list the student's classes
+// - classroom.coursework.me: read the student's own coursework and, only if
+//   they turn the option on, turn in their own work when they mark it done
+export const CONNECTOR_SCOPES = {
   google_calendar: 'https://www.googleapis.com/auth/calendar.readonly',
   google_classroom:
-    'https://www.googleapis.com/auth/classroom.courses.readonly https://www.googleapis.com/auth/classroom.coursework.me https://www.googleapis.com/auth/classroom.coursework.students',
+    'https://www.googleapis.com/auth/classroom.courses.readonly https://www.googleapis.com/auth/classroom.coursework.me',
 };
 
 router.get('/connectors/google/start', requireAuth, async (req, res) => {

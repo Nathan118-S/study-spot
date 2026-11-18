@@ -45,7 +45,7 @@ enum SchoolITEmail {
             "",
             "When I try to connect \(what(service)), it looks like the school has to approve third-party apps first. Could you please approve Study Spot so students can connect it?",
             "",
-        ] + details + ["Thank you for your help!", "", name]).joined(separator: "\n")
+        ] + details + ["Everything your team needs to review and approve it, including the IDs to allow and step-by-step instructions, is at https://studyspot.education/schools", "", "Thank you for your help!", "", name]).joined(separator: "\n")
         var c = URLComponents()
         c.scheme = "mailto"
         c.queryItems = [

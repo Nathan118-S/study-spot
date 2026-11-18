@@ -12,6 +12,7 @@ import googleAuthRoutes from './routes/googleAuth.js';
 import entityRoutes from './routes/entities.js';
 import functionRoutes from './routes/functions.js';
 import deviceRoutes from './routes/devices.js';
+import publicRoutes from './routes/public.js';
 import { syncAllIcalFeeds } from './functions/ical.js';
 import { sendAssignmentReminders } from './jobs/reminders.js';
 import { checkStreakRecords } from './jobs/streaks.js';
@@ -60,6 +61,7 @@ app.use('/api', googleAuthRoutes);
 app.use('/api/entities', entityRoutes);
 app.use('/api/functions', functionRoutes);
 app.use('/api/devices', deviceRoutes);
+app.use('/api/public', publicRoutes);
 
 // Serve the built website (dist/) from the same origin when it's present, as
 // in the Docker image. Assets are fingerprinted, so they can be cached long;
