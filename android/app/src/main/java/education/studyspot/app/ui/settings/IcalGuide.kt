@@ -37,11 +37,13 @@ import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.ContentPaste
+import androidx.compose.material.icons.outlined.School
 import androidx.compose.material.icons.outlined.Email
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.KeyboardArrowDown
 import androidx.compose.material.icons.outlined.Lightbulb
 import androidx.compose.material.icons.outlined.Lock
+import androidx.compose.material.icons.outlined.MoreHoriz
 import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.WarningAmber
 import androidx.compose.material3.Button
@@ -88,38 +90,47 @@ import education.studyspot.app.auth.WebSignIn
 import education.studyspot.app.core.userMessage
 import education.studyspot.app.model.IcalAddResult
 import education.studyspot.app.model.IcalFeed
+import education.studyspot.app.model.IcalKind
 import education.studyspot.app.ui.theme.StudySpotTheme
 import kotlinx.coroutines.launch
 
 /**
- * The "Add your Google Calendar with a link" guide, full screen: five steps
- * (open Google Calendar, the calendar's settings, make it public, copy its
- * public URL, paste it here) and a "You're all set" screen. Opened from Settings > Google,
- * the school-IT notice and onboarding.
+ * The calendar-link guides, full screen, each ending in a "You're all set" screen:
+ *
+ * - [IcalKind.Google], "Add your Google Calendar with a link": five steps (open
+ *   Google Calendar, the calendar's settings, make it public, copy its public
+ *   URL, paste it here). Opened from Settings > Google, the school-IT notice and onboarding.
+ * - [IcalKind.Blackboard], "Add your Blackboard calendar with a link": three
+ *   steps (open the Blackboard calendar, copy its external calendar link, paste
+ *   it here). Opened from Settings > Blackboard, the Blackboard school-IT notice
+ *   and the "Your school needs to approve Study Spot" error.
  */
 @Composable
-fun IcalGuideDialog(onDismiss: () -> Unit) {
+fun IcalGuideDialog(onDismiss: () -> Unit, kind: IcalKind = IcalKind.Google) {
     Dialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false),
     ) {
         Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-            IcalGuide(onClose = onDismiss, modifier = Modifier.safeDrawingPadding())
+            IcalGuide(onClose = onDismiss, kind = kind, modifier = Modifier.safeDrawingPadding())
         }
     }
 }
 
 /** The guide's content (also rendered directly by the screenshot tests). */
 @Composable
-fun IcalGuide(onClose: () -> Unit, modifier: Modifier = Modifier, initialStep: Int = 0) {
+fun IcalGuide(onClose: () -> Unit, modifier: Modifier = Modifier, initialStep: Int = 0, kind: IcalKind = IcalKind.Google) {
     val c = LocalAppContainer.current
     val scope = rememberCoroutineScope()
     val user by c.repository.user.collectAsStateWithLifecycle()
     val isDemo = user?.isDemo == true
-    val pager = rememberPagerState(initialPage = initialStep) { IcalLinks.STEPS }
+    val steps = IcalLinks.steps(kind)
+    val pager = rememberPagerState(initialPage = initialStep) { steps }
+    // Blackboard links default to every event (each course becomes a class).
+    val defaultImportAll = kind == IcalKind.Blackboard
     var url by rememberSaveable { mutableStateOf("") }
     var label by rememberSaveable { mutableStateOf("") }
-    var importAll by rememberSaveable { mutableStateOf(false) }
+    var importAll by rememberSaveable { mutableStateOf(defaultImportAll) }
     var busy by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
     var done by remember { mutableStateOf<IcalAddResult?>(null) }
@@ -131,7 +142,7 @@ fun IcalGuide(onClose: () -> Unit, modifier: Modifier = Modifier, initialStep: I
     fun add() {
         if (busy || isDemo) return
         if (url.isBlank()) {
-            error = "Paste your calendar's link first."
+            error = if (kind == IcalKind.Blackboard) "Paste your Blackboard calendar link first." else "Paste your calendar's link first."
             return
         }
         scope.launch {
@@ -156,7 +167,7 @@ fun IcalGuide(onClose: () -> Unit, modifier: Modifier = Modifier, initialStep: I
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                "Add your Google Calendar with a link",
+                IcalLinks.guideTitle(kind),
                 style = MaterialTheme.typography.titleLarge,
                 color = navy,
                 modifier = Modifier.weight(1f).semantics { heading() },
@@ -169,11 +180,12 @@ fun IcalGuide(onClose: () -> Unit, modifier: Modifier = Modifier, initialStep: I
             DonePage(
                 result = result,
                 fallbackLabel = label,
+                footer = IcalLinks.doneFooter(kind),
                 onAddAnother = {
                     done = null
                     url = ""
                     label = ""
-                    importAll = false
+                    importAll = defaultImportAll
                     error = null
                     scope.launch { pager.scrollToPage(1) }
                 },
@@ -183,9 +195,9 @@ fun IcalGuide(onClose: () -> Unit, modifier: Modifier = Modifier, initialStep: I
         }
 
         Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Text("Step ${page + 1} of ${IcalLinks.STEPS}", style = MaterialTheme.typography.labelMedium, color = StudySpotTheme.colors.mutedText)
+            Text("Step ${page + 1} of $steps", style = MaterialTheme.typography.labelMedium, color = StudySpotTheme.colors.mutedText)
             LinearProgressIndicator(
-                progress = { (page + 1f) / IcalLinks.STEPS },
+                progress = { (page + 1f) / steps },
                 modifier = Modifier.fillMaxWidth(),
                 color = StudySpotTheme.colors.accent,
                 trackColor = StudySpotTheme.colors.secondaryTint,
@@ -203,12 +215,10 @@ fun IcalGuide(onClose: () -> Unit, modifier: Modifier = Modifier, initialStep: I
                 Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 8.dp),
                 verticalArrangement = Arrangement.spacedBy(14.dp),
             ) {
-                when (p) {
-                    0 -> StepOpenCalendar()
-                    1 -> StepCalendarSettings()
-                    2 -> StepMakePublic()
-                    3 -> StepCopyAddress()
-                    else -> StepPaste(
+                val paste: @Composable () -> Unit = {
+                    StepPaste(
+                        kind = kind,
+                        number = steps,
                         url = url,
                         onUrlChange = { url = it; error = null },
                         label = label,
@@ -220,6 +230,20 @@ fun IcalGuide(onClose: () -> Unit, modifier: Modifier = Modifier, initialStep: I
                         enabled = !busy,
                         onSubmit = ::add,
                     )
+                }
+                when (kind) {
+                    IcalKind.Google -> when (p) {
+                        0 -> StepOpenCalendar()
+                        1 -> StepCalendarSettings()
+                        2 -> StepMakePublic()
+                        3 -> StepCopyAddress()
+                        else -> paste()
+                    }
+                    IcalKind.Blackboard -> when (p) {
+                        0 -> BlackboardStepOpenCalendar()
+                        1 -> BlackboardStepCopyLink()
+                        else -> paste()
+                    }
                 }
             }
         }
@@ -234,7 +258,7 @@ fun IcalGuide(onClose: () -> Unit, modifier: Modifier = Modifier, initialStep: I
                 modifier = Modifier.weight(1f),
                 colors = ButtonDefaults.outlinedButtonColors(contentColor = navy),
             ) { Text("Back") }
-            if (page < IcalLinks.STEPS - 1) {
+            if (page < steps - 1) {
                 Button(onClick = { goTo(page + 1) }, modifier = Modifier.weight(1f)) { Text("Next") }
             } else {
                 Button(onClick = ::add, enabled = !busy && !isDemo, modifier = Modifier.weight(1f)) {
@@ -303,6 +327,7 @@ private fun ColumnScope.StepOpenCalendar() {
 
 @Composable
 private fun StepCalendarSettings() {
+    var askingTeacher by remember { mutableStateOf(false) }
     StepTitle(2, "Open the calendar's settings")
     Body(
         "In the list on the left under \"My calendars\", point to the calendar that has your assignments, " +
@@ -314,18 +339,25 @@ private fun StepCalendarSettings() {
         tint = StudySpotTheme.colors.secondary,
         background = StudySpotTheme.colors.secondaryTint,
     ) {
-        Text(
-            "Each Google Classroom class has its own calendar named after the class. Your main calendar has your name. " +
-                "Add each one you want, one at a time.",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onBackground,
-        )
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(
+                IcalLinks.bold(
+                    "This works for calendars you own, like your own calendar. Google Classroom class calendars belong to your teacher, " +
+                        "so only your teacher can share them. Use **Ask your teacher** for those.",
+                ),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onBackground,
+            )
+            CalloutLink("Ask your teacher to share the class calendar", Icons.Outlined.School) { askingTeacher = true }
+        }
     }
+    if (askingTeacher) TeacherEmailConfirmDialog(onDismiss = { askingTeacher = false })
 }
 
 @Composable
 private fun StepMakePublic() {
     var emailing by remember { mutableStateOf(false) }
+    var askingTeacher by remember { mutableStateOf(false) }
     StepTitle(3, "Make the calendar public")
     Body(
         "Under **Access permissions for events**, turn on **Make available to public** and choose **See all event details**. " +
@@ -371,9 +403,30 @@ private fun StepMakePublic() {
                     color = StudySpotTheme.colors.secondary,
                 )
             }
+            // Teachers are often allowed to share calendars publicly even when students aren't.
+            CalloutLink("Ask your teacher to share the class calendar", Icons.Outlined.School) { askingTeacher = true }
         }
     }
     if (emailing) SchoolITEmailConfirmDialog(SchoolITEmail.Service.Google, onDismiss = { emailing = false })
+    if (askingTeacher) TeacherEmailConfirmDialog(onDismiss = { askingTeacher = false })
+}
+
+/** A small navy text button inside a [Callout]. */
+@Composable
+private fun CalloutLink(text: String, icon: androidx.compose.ui.graphics.vector.ImageVector, onClick: () -> Unit) {
+    TextButton(
+        onClick = onClick,
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 0.dp, vertical = 0.dp),
+    ) {
+        Icon(icon, contentDescription = null, tint = StudySpotTheme.colors.secondary, modifier = Modifier.size(16.dp))
+        Spacer(Modifier.size(6.dp))
+        Text(
+            text,
+            style = MaterialTheme.typography.bodySmall,
+            fontWeight = FontWeight.SemiBold,
+            color = StudySpotTheme.colors.secondary,
+        )
+    }
 }
 
 @Composable
@@ -382,11 +435,55 @@ private fun StepCopyAddress() {
     Body("Scroll down to **Integrate calendar** and copy **Public URL to this calendar**.")
     Body("It starts with https://calendar.google.com/calendar/embed?src=")
     PublicUrlIllustration()
-    PrivacyNote()
+    PrivacyNote(IcalKind.Google)
+}
+
+@Composable
+private fun BlackboardStepOpenCalendar() {
+    Text(
+        "If your school hasn't approved Study Spot in Blackboard, you can paste your Blackboard calendar's link instead. " +
+            "Study Spot reads it and imports your due dates.",
+        style = MaterialTheme.typography.bodyMedium,
+        color = StudySpotTheme.colors.mutedText,
+    )
+    StepTitle(1, "Open your Blackboard calendar")
+    Body(
+        "Sign in to Blackboard in a web browser and open **Calendar**. " +
+            "In Ultra it's in the menu on the left; in Original, open **My Blackboard** and choose the calendar icon.",
+    )
+}
+
+@Composable
+private fun BlackboardStepCopyLink() {
+    var emailing by remember { mutableStateOf(false) }
+    StepTitle(2, "Copy the calendar link")
+    Body(
+        "In Ultra, select the **gear** (Calendar Settings), open the **⋯** menu, choose **Share Calendar** and **Copy** the link. " +
+            "In Original, choose **Get External Calendar Link** and copy it. The link ends in **learn.ics**.",
+    )
+    BlackboardLinkIllustration()
+    Callout(
+        icon = Icons.Outlined.WarningAmber,
+        tint = StudySpotTheme.colors.dueToday,
+        background = StudySpotTheme.colors.dueToday.copy(alpha = 0.12f),
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(
+                "Don't see it? Your school may have turned it off. Ask your school's IT team or add assignments yourself.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onBackground,
+            )
+            CalloutLink("Email my school's IT team", Icons.Outlined.Email) { emailing = true }
+        }
+    }
+    PrivacyNote(IcalKind.Blackboard)
+    if (emailing) SchoolITEmailConfirmDialog(SchoolITEmail.Service.Blackboard, onDismiss = { emailing = false })
 }
 
 @Composable
 private fun StepPaste(
+    kind: IcalKind,
+    number: Int,
     url: String,
     onUrlChange: (String) -> Unit,
     label: String,
@@ -399,12 +496,13 @@ private fun StepPaste(
     onSubmit: () -> Unit,
 ) {
     val context = LocalContext.current
-    StepTitle(5, "Paste it here")
+    val blackboard = kind == IcalKind.Blackboard
+    StepTitle(number, "Paste it here")
     OutlinedTextField(
         value = url,
         onValueChange = onUrlChange,
-        label = { Text("Calendar link") },
-        placeholder = { Text(IcalLinks.URL_PLACEHOLDER, maxLines = 1) },
+        label = { Text(if (blackboard) "Blackboard calendar link" else "Calendar link") },
+        placeholder = { Text(if (blackboard) IcalLinks.BLACKBOARD_URL_PLACEHOLDER else IcalLinks.URL_PLACEHOLDER, maxLines = 1) },
         singleLine = true,
         enabled = enabled,
         isError = error != null,
@@ -431,23 +529,28 @@ private fun StepPaste(
     )
     Column(Modifier.selectableGroup(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Text("Import", style = MaterialTheme.typography.labelLarge, color = StudySpotTheme.colors.secondary)
+        val every: @Composable () -> Unit = {
+            ModeOption(
+                title = "Every event in this calendar",
+                description = null,
+                selected = importAll,
+                enabled = enabled,
+                onClick = { onImportAllChange(true) },
+            )
+        }
+        // Each guide lists its default first.
+        if (blackboard) every()
         ModeOption(
             title = "Only events that look like assignments",
-            description = "Homework, quizzes, tests, projects and everything from Google Classroom.",
+            description = if (blackboard) null else "Homework, quizzes, tests, projects and everything from Google Classroom.",
             selected = !importAll,
             enabled = enabled,
             onClick = { onImportAllChange(false) },
         )
-        ModeOption(
-            title = "Every event in this calendar",
-            description = null,
-            selected = importAll,
-            enabled = enabled,
-            onClick = { onImportAllChange(true) },
-        )
+        if (!blackboard) every()
     }
     if (isDemo) SettingsFootnote("The demo account can't add calendars.")
-    PrivacyNote()
+    PrivacyNote(kind)
 }
 
 @Composable
@@ -471,11 +574,14 @@ private fun ModeOption(title: String, description: String?, selected: Boolean, e
 }
 
 @Composable
-private fun PrivacyNote() {
+private fun PrivacyNote(kind: IcalKind) {
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Top) {
         Icon(Icons.Outlined.Info, contentDescription = null, tint = StudySpotTheme.colors.mutedText, modifier = Modifier.size(14.dp).padding(top = 2.dp))
         Text(
-            "Study Spot only reads this calendar. If you turn off public access later, Study Spot stops getting updates from it.",
+            when (kind) {
+                IcalKind.Google -> "Study Spot only reads this calendar. If you turn off public access later, Study Spot stops getting updates from it."
+                IcalKind.Blackboard -> "Keep this link private. Anyone with it can see your Blackboard calendar. If you get a new link in Blackboard, add the new one here."
+            },
             style = MaterialTheme.typography.bodySmall,
             color = StudySpotTheme.colors.mutedText,
         )
@@ -500,7 +606,7 @@ private fun Callout(
 }
 
 @Composable
-private fun DonePage(result: IcalAddResult, fallbackLabel: String, onAddAnother: () -> Unit, onDone: () -> Unit) {
+private fun DonePage(result: IcalAddResult, fallbackLabel: String, footer: String, onAddAnother: () -> Unit, onDone: () -> Unit) {
     val name = result.feed?.displayName ?: fallbackLabel.trim().ifEmpty { "your calendar" }
     Column(
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp),
@@ -511,7 +617,7 @@ private fun DonePage(result: IcalAddResult, fallbackLabel: String, onAddAnother:
         Text("You're all set", style = MaterialTheme.typography.headlineSmall, color = StudySpotTheme.colors.secondary, modifier = Modifier.semantics { heading() })
         Text(IcalLinks.importedMessage(result.imported, name), style = MaterialTheme.typography.bodyLarge, textAlign = TextAlign.Center)
         Text(
-            "Study Spot checks this calendar for changes every couple of hours and whenever you sync. Add each class calendar the same way.",
+            footer,
             style = MaterialTheme.typography.bodyMedium,
             color = StudySpotTheme.colors.mutedText,
             textAlign = TextAlign.Center,
@@ -677,6 +783,58 @@ private fun PublicUrlIllustration() {
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(Icons.Outlined.ContentCopy, contentDescription = null, tint = StudySpotTheme.colors.secondary, modifier = Modifier.size(18.dp))
+            }
+        }
+    }
+}
+
+/**
+ * Blackboard Ultra's calendar settings: the ⋯ menu with "Share Calendar"
+ * highlighted, and the link field ending in "…/calendarFeed/…/learn.ics" with its copy action.
+ */
+@Composable
+private fun BlackboardLinkIllustration() {
+    val accent = StudySpotTheme.colors.accent
+    MockWindow {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text("Calendar Settings", style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
+            Box(Modifier.size(26.dp).border(2.dp, accent, CircleShape), contentAlignment = Alignment.Center) {
+                Icon(Icons.Outlined.MoreHoriz, contentDescription = null, tint = StudySpotTheme.colors.secondary, modifier = Modifier.size(18.dp))
+            }
+        }
+        Row(Modifier.fillMaxWidth()) {
+            Spacer(Modifier.weight(0.3f))
+            Column(
+                Modifier
+                    .weight(0.7f)
+                    .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(10.dp))
+                    .border(1.dp, StudySpotTheme.colors.border, RoundedCornerShape(10.dp))
+                    .padding(vertical = 6.dp),
+            ) {
+                MenuItem("Share Calendar", highlighted = true)
+            }
+        }
+        Text("Calendar link", style = MaterialTheme.typography.labelLarge, color = StudySpotTheme.colors.mutedText)
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Text(
+                "…/calendarFeed/…/learn.ics",
+                style = MaterialTheme.typography.bodySmall,
+                fontFamily = FontFamily.Monospace,
+                maxLines = 1,
+                modifier = Modifier
+                    .weight(1f)
+                    .background(MaterialTheme.colorScheme.background, RoundedCornerShape(6.dp))
+                    .border(1.dp, StudySpotTheme.colors.border, RoundedCornerShape(6.dp))
+                    .padding(horizontal = 10.dp, vertical = 8.dp),
+            )
+            Box(
+                Modifier
+                    .size(40.dp)
+                    .background(accent.copy(alpha = 0.16f), CircleShape)
+                    .border(2.dp, accent, CircleShape),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(Icons.Outlined.ContentCopy, contentDescription = "Copy link", tint = StudySpotTheme.colors.secondary, modifier = Modifier.size(18.dp))
             }
         }
     }

@@ -1,49 +1,89 @@
 import SwiftUI
 
-// Google Calendar links: for students whose school blocks connecting their
-// Google account, Study Spot can import a calendar from its public URL (or
-// its secret iCal address) instead (server/src/functions/ical.js). This file has the
-// Settings → Google section that lists the links, and the step-by-step
-// guide for adding one.
+// Calendar links: for students whose school blocks connecting their Google
+// account (or hasn't approved Study Spot in Blackboard), Study Spot can import
+// a calendar from its public URL / secret iCal address, or from Blackboard's
+// external calendar link, instead (server/src/functions/ical.js). This file
+// has the Settings → Google / Blackboard sections that list the links, and the
+// step-by-step guides for adding one.
 
 private let googleCalendarSettingsURL = URL(string: "https://calendar.google.com/calendar/r/settings")!
 
+/// Which service a calendar link comes from (ICalFeed.kind).
+enum CalendarLinkKind: String {
+    case google, blackboard
+
+    var guideTitle: String {
+        switch self {
+        case .google: return "Add your Google Calendar with a link"
+        case .blackboard: return "Add your Blackboard calendar with a link"
+        }
+    }
+
+    /// Number of steps in the guide; the last one is the paste form.
+    var totalSteps: Int { self == .google ? 5 : 3 }
+
+    func matches(_ feed: ICalFeed) -> Bool { feed.isBlackboard == (self == .blackboard) }
+}
+
 // MARK: - Settings section
 
-/// "Can't connect your Google account?" plus the list of added links.
-/// Shown under the Calendar/Classroom rows in Settings → Google (and so in
-/// onboarding's services step too).
+/// "Can't connect your Google account?" / "Can't connect Blackboard?" plus
+/// the list of added links of that kind. Shown under the connect UI in
+/// Settings → Google and Settings → Blackboard (and so in onboarding's
+/// services step too).
 struct CalendarLinksSettings: View {
+    var kind: CalendarLinkKind = .google
     var onAdd: () -> Void
+    /// Google only: opens the one-time calendar file import.
+    var onImportFile: (() -> Void)? = nil
     @Environment(AuthStore.self) private var auth
     @Environment(DataStore.self) private var data
 
     private var isDemo: Bool { auth.user?.isDemo == true }
+    private var feeds: [ICalFeed] { data.icalFeeds.filter { kind.matches($0) } }
 
     var body: some View {
         Section {
             VStack(alignment: .leading, spacing: 10) {
-                Text("Paste your calendar's public link instead and Study Spot will import your assignments from it.")
-                    .font(.subheadline).foregroundStyle(.secondary)
+                intro
                 HStack {
                     Spacer()
                     Button(action: onAdd) {
-                        Label("Add a calendar link", systemImage: "link.badge.plus")
+                        Label(kind == .google ? "Add a calendar link" : "Add a Blackboard calendar link",
+                              systemImage: "link.badge.plus")
                     }
                     .glassButtonStyle()
                     .disabled(isDemo)
+                }
+                if let onImportFile {
+                    HStack {
+                        Spacer()
+                        Button(action: onImportFile) {
+                            Label("Import a calendar file", systemImage: "doc.badge.plus")
+                        }
+                        .glassButtonStyle()
+                        .disabled(isDemo)
+                    }
+                }
+                if kind == .google {
+                    AskTeacherButton()
                 }
             }
             .padding(.vertical, 4)
             .task { await data.loadICalFeeds() }
         } header: {
-            Text("Can't connect your Google account?")
+            if kind == .google {
+                Text("Can't connect your Google account?")
+            } else {
+                Text("Can't connect Blackboard?")
+            }
         } footer: {
             if isDemo { Text("Calendar links aren't available on the demo account.") }
         }
-        if !data.icalFeeds.isEmpty {
+        if !feeds.isEmpty {
             Section {
-                ForEach(data.icalFeeds) { feed in
+                ForEach(feeds) { feed in
                     CalendarLinkRow(feed: feed)
                 }
             } header: {
@@ -51,6 +91,16 @@ struct CalendarLinksSettings: View {
             } footer: {
                 Text("Study Spot checks these calendars for changes every couple of hours and whenever you sync.")
             }
+        }
+    }
+
+    @ViewBuilder private var intro: some View {
+        if kind == .google {
+            Text("Paste your calendar's public link instead and Study Spot will import your assignments from it.")
+                .font(.subheadline).foregroundStyle(.secondary)
+        } else {
+            Text("Paste your Blackboard calendar link instead and Study Spot will import your due dates from it.")
+                .font(.subheadline).foregroundStyle(.secondary)
         }
     }
 }
@@ -67,7 +117,8 @@ struct CalendarLinkRow: View {
 
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
-            Image(systemName: "calendar").foregroundStyle(Palette.secondary).frame(width: 24)
+            Image(systemName: feed.isBlackboard ? "building.columns" : "calendar")
+                .foregroundStyle(Palette.secondary).frame(width: 24)
             VStack(alignment: .leading, spacing: 3) {
                 Text(feed.label).font(.body.weight(.medium)).lineLimit(2)
                 statusLine
@@ -82,7 +133,9 @@ struct CalendarLinkRow: View {
             Button("Cancel", role: .cancel) {}
             Button("Save") { Task { await update(["label": .string(newName)], resync: false) } }
         } message: {
-            Text("Its class in Study Spot gets the new name too.")
+            Text(verbatim: feed.isBlackboard
+                 ? "Your Blackboard courses keep their own names in Study Spot."
+                 : "Its class in Study Spot gets the new name too.")
         }
         .confirmationDialog("Remove “\(feed.label)”?", isPresented: $confirmingRemove, titleVisibility: .visible) {
             Button("Keep imported assignments") { Task { await remove(deleteAssignments: false) } }
@@ -209,33 +262,44 @@ struct CalendarLinkRow: View {
 
 // MARK: - Guide
 
-/// "Add your Google Calendar with a link": a step-by-step sheet (5 steps and
-/// a done screen) ending in the form that adds the link.
+/// "Add your Google Calendar with a link" (5 steps) or "Add your Blackboard
+/// calendar with a link" (3 steps): a step-by-step sheet with a done screen,
+/// ending in the form that adds the link.
 struct CalendarLinkGuide: View {
-    enum Page: Int { case open = 1, settings, makePublic, copy, paste, done }
+    var kind: CalendarLinkKind
 
     @Environment(\.dismiss) private var dismiss
     @Environment(AuthStore.self) private var auth
     @Environment(DataStore.self) private var data
     @Environment(ThemeStore.self) private var theme
 
-    @State private var page: Page = .open
+    /// 1...totalSteps, then totalSteps + 1 for the done screen.
+    @State private var step = 1
     @State private var link = ""
     @State private var name = ""
-    @State private var everyEvent = false
+    @State private var everyEvent: Bool
     @State private var adding = false
     @State private var error = ""
     @State private var imported = 0
     @State private var addedLabel = ""
 
+    init(kind: CalendarLinkKind = .google) {
+        self.kind = kind
+        // Blackboard's calendar is mostly due dates, so import all of it by default.
+        _everyEvent = State(initialValue: kind == .blackboard)
+    }
+
     private var isDemo: Bool { auth.user?.isDemo == true }
     private var trimmedLink: String { link.trimmingCharacters(in: .whitespacesAndNewlines) }
+    private var total: Int { kind.totalSteps }
+    private var isDone: Bool { step > total }
+    private var isPaste: Bool { step == total }
 
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                if page != .done {
-                    GuideProgress(step: page.rawValue, total: 5)
+                if !isDone {
+                    GuideProgress(title: kind.guideTitle, step: step, total: total)
                 }
                 ScrollView {
                     pageContent
@@ -243,7 +307,7 @@ struct CalendarLinkGuide: View {
                         .padding()
                 }
                 .scrollDismissesKeyboard(.interactively)
-                .id(page)
+                .id(step)
                 .transition(.asymmetric(insertion: .move(edge: .trailing).combined(with: .opacity),
                                         removal: .move(edge: .leading).combined(with: .opacity)))
                 bottomBar
@@ -253,7 +317,7 @@ struct CalendarLinkGuide: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button(page == .done ? "Close" : "Cancel") { dismiss() }
+                    Button(isDone ? "Close" : "Cancel") { dismiss() }
                         .disabled(adding)
                 }
             }
@@ -262,26 +326,21 @@ struct CalendarLinkGuide: View {
     }
 
     @ViewBuilder private var pageContent: some View {
-        switch page {
-        case .open:
-            GuideOpenStep()
-        case .settings:
-            GuideSettingsStep()
-        case .makePublic:
-            GuideMakePublicStep()
-        case .copy:
-            GuideCopyStep()
-        case .paste:
-            GuidePasteStep(link: $link, name: $name, everyEvent: $everyEvent,
+        if isDone {
+            GuideDoneView(kind: kind, imported: imported, label: addedLabel)
+        } else if isPaste {
+            GuidePasteStep(kind: kind, link: $link, name: $name, everyEvent: $everyEvent,
                            error: error, isDemo: isDemo, adding: adding)
-        case .done:
-            GuideDoneView(imported: imported, label: addedLabel)
+        } else if kind == .google {
+            GoogleGuideStep(step: step)
+        } else {
+            BlackboardGuideStep(step: step)
         }
     }
 
     @ViewBuilder private var bottomBar: some View {
         HStack {
-            if page == .done {
+            if isDone {
                 Button { restart() } label: { Label("Add another calendar", systemImage: "plus") }
                     .glassButtonStyle()
                 Spacer()
@@ -289,9 +348,9 @@ struct CalendarLinkGuide: View {
                     .glassButtonStyle(prominent: true)
             } else {
                 Button { go(-1) } label: { Label("Back", systemImage: "arrow.left") }
-                    .disabled(page == .open || adding)
+                    .disabled(step == 1 || adding)
                 Spacer()
-                if page == .paste {
+                if isPaste {
                     addButton
                 } else {
                     Button { go(1) } label: { Label("Next", systemImage: "arrow.right") }
@@ -318,16 +377,17 @@ struct CalendarLinkGuide: View {
     }
 
     private func go(_ delta: Int) {
-        guard let next = Page(rawValue: page.rawValue + delta), next != .done else { return }
-        withAnimation(theme.animation(.spring(duration: 0.35))) { page = next }
+        let next = step + delta
+        guard next >= 1, next <= total else { return }
+        withAnimation(theme.animation(.spring(duration: 0.35))) { step = next }
     }
 
     private func restart() {
         link = ""
         name = ""
-        everyEvent = false
+        everyEvent = kind == .blackboard
         error = ""
-        withAnimation(theme.animation(.spring(duration: 0.35))) { page = .settings }
+        withAnimation(theme.animation(.spring(duration: 0.35))) { step = 2 }
     }
 
     private func add() async {
@@ -348,7 +408,7 @@ struct CalendarLinkGuide: View {
             return
         }
         adding = false
-        withAnimation(theme.animation(.spring(duration: 0.35))) { page = .done }
+        withAnimation(theme.animation(.spring(duration: 0.35))) { step = total + 1 }
         await data.refreshConnections()
         await data.loadICalFeeds()
         await data.reloadData()
@@ -358,12 +418,13 @@ struct CalendarLinkGuide: View {
 // MARK: - Guide pieces
 
 private struct GuideProgress: View {
+    var title: String
     var step: Int
     var total: Int
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text("Add your Google Calendar with a link")
+            Text(verbatim: title)
                 .font(.headline)
                 .foregroundStyle(Palette.secondary)
             Text("Step \(step) of \(total)")
@@ -384,7 +445,7 @@ private struct GuideProgress: View {
     }
 }
 
-private struct GuideStepTitle: View {
+struct GuideStepTitle: View {
     var number: Int
     var title: String
 
@@ -406,7 +467,7 @@ private struct GuideStepTitle: View {
 }
 
 /// A tinted box for tips, warnings and the privacy note.
-private struct GuideNote<Content: View>: View {
+struct GuideNote<Content: View>: View {
     var symbol: String
     var tint: Color
     @ViewBuilder var content: Content
@@ -423,17 +484,40 @@ private struct GuideNote<Content: View>: View {
     }
 }
 
+/// The intro box above step 1.
+private struct GuideIntro: View {
+    var text: LocalizedStringKey
+
+    var body: some View {
+        Text(text)
+            .font(.subheadline)
+            .foregroundStyle(.secondary)
+            .padding(12)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .glassCard(cornerRadius: 14)
+    }
+}
+
+/// Steps 1–4 of the Google guide (step 5 is the paste form).
+private struct GoogleGuideStep: View {
+    var step: Int
+
+    var body: some View {
+        switch step {
+        case 1: GuideOpenStep()
+        case 2: GuideSettingsStep()
+        case 3: GuideMakePublicStep()
+        default: GuideCopyStep()
+        }
+    }
+}
+
 private struct GuideOpenStep: View {
     @Environment(\.openURL) private var openURL
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("If your school won't let Study Spot connect to your Google account, you can paste your calendar's public link instead. Study Spot reads your calendar and imports your assignments. It takes about a minute.")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-                .padding(12)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .glassCard(cornerRadius: 14)
+            GuideIntro(text: "If your school won't let Study Spot connect to your Google account, you can paste your calendar's public link instead. Study Spot reads your calendar and imports your assignments. It takes about a minute.")
             GuideStepTitle(number: 1, title: "Open Google Calendar on a computer")
             Text(verbatim: "Go to calendar.google.com in a web browser and sign in with your school account. These settings aren't in the Google Calendar phone app. On a phone, open the page in your browser and choose “Desktop site”.")
             Button {
@@ -453,7 +537,8 @@ private struct GuideSettingsStep: View {
             Text("In the list on the left under “My calendars”, point to the calendar that has your assignments, click the three dots (⋮), then choose **Settings and sharing**.")
             CalendarMenuIllustration()
             GuideNote(symbol: "lightbulb", tint: Palette.secondary) {
-                Text("Each Google Classroom class has its own calendar named after the class. Your main calendar has your name. Add each one you want, one at a time.")
+                Text("This works for calendars you own, like your own calendar. Google Classroom class calendars belong to your teacher, so only your teacher can share them. Use **Ask your teacher** for those.")
+                AskTeacherButton()
             }
         }
     }
@@ -472,6 +557,7 @@ private struct GuideMakePublicStep: View {
                 Text("Don't see this option, or it's greyed out?").font(.footnote.weight(.semibold))
                 Text("Your school has turned off public calendars. Email your school's IT team or add assignments yourself.")
                 SchoolITEmailButton(service: .google)
+                AskTeacherButton()
             }
         }
     }
@@ -486,21 +572,70 @@ private struct GuideCopyStep: View {
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
             PublicURLIllustration()
-            PrivacyNote()
+            PrivacyNote(kind: .google)
         }
     }
 }
 
 private struct PrivacyNote: View {
+    var kind: CalendarLinkKind
+
     var body: some View {
         GuideNote(symbol: "lock", tint: Palette.secondary) {
-            Text("Study Spot only reads this calendar. If you turn off public access later, Study Spot stops getting updates from it.")
-                .foregroundStyle(.secondary)
+            if kind == .google {
+                Text("Study Spot only reads this calendar. If you turn off public access later, Study Spot stops getting updates from it.")
+                    .foregroundStyle(.secondary)
+            } else {
+                Text("Keep this link private. Anyone with it can see your Blackboard calendar. If you get a new link in Blackboard, add the new one here.")
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+}
+
+// MARK: - Blackboard steps
+
+/// Steps 1–2 of the Blackboard guide (step 3 is the paste form).
+private struct BlackboardGuideStep: View {
+    var step: Int
+
+    var body: some View {
+        if step == 1 {
+            BlackboardOpenStep()
+        } else {
+            BlackboardCopyStep()
+        }
+    }
+}
+
+private struct BlackboardOpenStep: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            GuideIntro(text: "If your school hasn't approved Study Spot in Blackboard, you can paste your Blackboard calendar's link instead. Study Spot reads it and imports your due dates.")
+            GuideStepTitle(number: 1, title: "Open your Blackboard calendar")
+            Text("Sign in to Blackboard in a web browser and open **Calendar**. In Ultra it's in the menu on the left; in Original, open **My Blackboard** and choose the calendar icon.")
+        }
+    }
+}
+
+private struct BlackboardCopyStep: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            GuideStepTitle(number: 2, title: "Copy the calendar link")
+            Text("In Ultra, select the **gear** (Calendar Settings), open the **⋯** menu, choose **Share Calendar** and **Copy** the link. In Original, choose **Get External Calendar Link** and copy it. The link ends in **learn.ics**.")
+            BlackboardLinkIllustration()
+            GuideNote(symbol: "exclamationmark.triangle", tint: .orange) {
+                Text("Don't see it?").font(.footnote.weight(.semibold))
+                Text("Your school may have turned it off. Ask your school's IT team or add assignments yourself.")
+                SchoolITEmailButton(service: .blackboard)
+            }
+            PrivacyNote(kind: .blackboard)
         }
     }
 }
 
 private struct GuidePasteStep: View {
+    var kind: CalendarLinkKind
     @Binding var link: String
     @Binding var name: String
     @Binding var everyEvent: Bool
@@ -510,7 +645,7 @@ private struct GuidePasteStep: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            GuideStepTitle(number: 5, title: "Paste it here")
+            GuideStepTitle(number: kind.totalSteps, title: "Paste it here")
             linkField
             nameField
             modePicker
@@ -519,16 +654,20 @@ private struct GuidePasteStep: View {
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             }
-            PrivacyNote()
+            PrivacyNote(kind: kind)
         }
         .disabled(adding)
     }
 
     private var linkField: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text("Calendar link").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+            Text(verbatim: kind == .google ? "Calendar link" : "Blackboard calendar link")
+                .font(.caption.weight(.semibold)).foregroundStyle(.secondary)
             HStack(spacing: 8) {
-                TextField("https://calendar.google.com/calendar/embed?src=…", text: $link)
+                TextField(kind == .google
+                          ? "https://calendar.google.com/calendar/embed?src=…"
+                          : "https://…/webapps/calendar/calendarFeed/…/learn.ics",
+                          text: $link)
                     .keyboardType(.URL)
                     .textContentType(.URL)
                     .textInputAutocapitalization(.never)
@@ -548,7 +687,7 @@ private struct GuidePasteStep: View {
     private var nameField: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text("Name (optional)").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
-            TextField("AP Biology", text: $name)
+            TextField(kind == .google ? "AP Biology" : "Blackboard", text: $name)
                 .textFieldStyle(.roundedBorder)
         }
     }
@@ -556,11 +695,19 @@ private struct GuidePasteStep: View {
     private var modePicker: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("What to import").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
-            ImportModeOption(title: "Only events that look like assignments",
-                             desc: "Homework, quizzes, tests, projects and everything from Google Classroom.",
-                             selected: !everyEvent) { everyEvent = false }
-            ImportModeOption(title: "Every event in this calendar", desc: nil,
-                             selected: everyEvent) { everyEvent = true }
+            if kind == .google {
+                ImportModeOption(title: "Only events that look like assignments",
+                                 desc: "Homework, quizzes, tests, projects and everything from Google Classroom.",
+                                 selected: !everyEvent) { everyEvent = false }
+                ImportModeOption(title: "Every event in this calendar", desc: nil,
+                                 selected: everyEvent) { everyEvent = true }
+            } else {
+                // Blackboard defaults to every event, so it comes first.
+                ImportModeOption(title: "Every event in this calendar", desc: nil,
+                                 selected: everyEvent) { everyEvent = true }
+                ImportModeOption(title: "Only events that look like assignments", desc: nil,
+                                 selected: !everyEvent) { everyEvent = false }
+            }
         }
     }
 
@@ -604,6 +751,7 @@ private struct ImportModeOption: View {
 }
 
 private struct GuideDoneView: View {
+    var kind: CalendarLinkKind
     var imported: Int
     var label: String
 
@@ -623,7 +771,9 @@ private struct GuideDoneView: View {
                 .foregroundStyle(Palette.secondary)
             Text(verbatim: summary)
                 .multilineTextAlignment(.center)
-            Text("Study Spot checks this calendar for changes every couple of hours and whenever you sync. Add each class calendar the same way.")
+            Text(verbatim: kind == .google
+                 ? "Study Spot checks this calendar for changes every couple of hours and whenever you sync. Add each class calendar the same way."
+                 : "Study Spot checks this calendar for changes every couple of hours and whenever you sync.")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
@@ -769,23 +919,7 @@ private struct PublicURLIllustration: View {
             Text("Public URL to this calendar")
                 .font(.caption)
                 .foregroundStyle(.secondary)
-            HStack(spacing: 8) {
-                Text(verbatim: "https://calendar.google.com/calendar/embed?src=…")
-                    .font(.caption2.monospaced())
-                    .lineLimit(1)
-                    .truncationMode(.middle)
-                    .padding(8)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Color.accentColor.opacity(0.15), in: RoundedRectangle(cornerRadius: 6))
-                    .overlay {
-                        RoundedRectangle(cornerRadius: 6).strokeBorder(Palette.secondary.opacity(0.2))
-                    }
-                Image(systemName: "doc.on.doc")
-                    .font(.footnote)
-                    .frame(width: 32, height: 32)
-                    .background(Color.accentColor.opacity(0.2), in: Circle())
-                    .overlay { Circle().strokeBorder(Color.accentColor, lineWidth: 1.5) }
-            }
+            MockLinkField(text: "https://calendar.google.com/calendar/embed?src=…", truncation: .middle)
             Text("Select the link in the box and copy it.")
                 .font(.caption2)
                 .foregroundStyle(.secondary)
@@ -796,5 +930,74 @@ private struct PublicURLIllustration: View {
         .frame(maxWidth: .infinity)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Illustration: the Public URL to this calendar box, with the link selected to copy.")
+    }
+}
+
+/// A link in a text box with its copy action highlighted.
+private struct MockLinkField: View {
+    var text: String
+    var truncation: Text.TruncationMode
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Text(verbatim: text)
+                .font(.caption2.monospaced())
+                .lineLimit(1)
+                .truncationMode(truncation)
+                .padding(8)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(Color.accentColor.opacity(0.15), in: RoundedRectangle(cornerRadius: 6))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 6).strokeBorder(Palette.secondary.opacity(0.2))
+                }
+            Image(systemName: "doc.on.doc")
+                .font(.footnote)
+                .frame(width: 32, height: 32)
+                .background(Color.accentColor.opacity(0.2), in: Circle())
+                .overlay { Circle().strokeBorder(Color.accentColor, lineWidth: 1.5) }
+        }
+    }
+}
+
+/// Blackboard's calendar ⋯ menu on "Share Calendar", and the
+/// …/calendarFeed/…/learn.ics link with its copy action.
+private struct BlackboardLinkIllustration: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 8) {
+                Text("Calendar")
+                    .font(.subheadline.weight(.semibold))
+                Spacer()
+                Image(systemName: "gearshape")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                Text(verbatim: "⋯")
+                    .font(.headline)
+                    .frame(width: 26, height: 26)
+                    .background(Color.accentColor.opacity(0.2), in: Circle())
+                    .overlay { Circle().strokeBorder(Color.accentColor, lineWidth: 1.5) }
+            }
+            HStack {
+                Spacer()
+                VStack(alignment: .leading, spacing: 0) {
+                    MockMenuItem(text: "Share Calendar", highlighted: true)
+                }
+                .frame(width: 200)
+                .padding(.vertical, 4)
+                .background(Palette.surface, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .strokeBorder(Palette.secondary.opacity(0.15))
+                }
+                .shadow(color: .black.opacity(0.12), radius: 8, y: 3)
+            }
+            MockLinkField(text: "https://…/webapps/calendar/calendarFeed/…/learn.ics", truncation: .head)
+        }
+        .padding(14)
+        .frame(maxWidth: 360)
+        .glassCard(cornerRadius: 16)
+        .frame(maxWidth: .infinity)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Illustration: the calendar's ⋯ menu with Share Calendar highlighted, and a link ending in learn.ics with its copy button.")
     }
 }

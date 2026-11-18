@@ -56,12 +56,43 @@ enum SchoolITEmail {
     }
 }
 
+/// A ready-to-send email asking a teacher to make the class's Google
+/// Calendar public, so students can add it with a calendar link (the steps
+/// for teachers are at studyspot.education/teachers). No recipient; the
+/// student adds their teacher's address and name.
+enum TeacherCalendarEmail {
+    static let placeholder = "[Teacher's name]"
+
+    static func url(user: User?) -> URL? {
+        let name = SchoolITEmail.senderName(user)
+        let body = [
+            "Hi \(placeholder),",
+            "",
+            "I use Study Spot (https://studyspot.education) to keep track of my assignments, but our school doesn't let me connect my Google account to it.",
+            "",
+            "If you make our class's Google Calendar public, I (and anyone in our class) can add our assignments to Study Spot with a link. It only shares the assignment titles and due dates already on the class calendar, not any student information, and it takes about a minute. The steps are here: https://studyspot.education/teachers",
+            "",
+            "Thank you!",
+            "",
+            name,
+        ].joined(separator: "\n")
+        var c = URLComponents()
+        c.scheme = "mailto"
+        c.queryItems = [
+            URLQueryItem(name: "subject", value: "Could you share our class calendar?"),
+            URLQueryItem(name: "body", value: body),
+        ]
+        return c.url
+    }
+}
+
 /// Shown before connecting Google or Blackboard: many schools restrict which
 /// third-party apps can access school accounts. Offers a drafted email to
-/// the school's IT team and, for Google, the calendar-link guide.
+/// the school's IT team and, when `onUseCalendarLink` is set, the
+/// calendar-link guide (Google's for google/both, Blackboard's for blackboard).
 struct SchoolAccessNote: View {
     var service: SchoolITEmail.Service
-    /// Opens the "Add your Google Calendar with a link" guide (Google only).
+    /// Opens the matching "Add your … calendar with a link" guide.
     var onUseCalendarLink: (() -> Void)? = nil
 
     private var label: String {
@@ -80,7 +111,7 @@ struct SchoolAccessNote: View {
                 Image(systemName: "info.circle")
             }
             SchoolITEmailButton(service: service)
-            if service != .blackboard, let onUseCalendarLink {
+            if let onUseCalendarLink {
                 Button(action: onUseCalendarLink) {
                     Label("Use a calendar link instead", systemImage: "link")
                 }
@@ -115,6 +146,32 @@ struct SchoolITEmailButton: View {
             }
         } message: {
             Text("We'll open a drafted email in your mail app asking your school to approve Study Spot, signed with your name.\n\nReplace every “\(SchoolITEmail.placeholder)” with your school's name, and add your IT team's email address as the recipient.")
+        }
+    }
+}
+
+/// "Ask your teacher to share the class calendar": confirms, then opens a
+/// drafted email to the teacher.
+struct AskTeacherButton: View {
+    @Environment(AuthStore.self) private var auth
+    @Environment(\.openURL) private var openURL
+    @State private var confirming = false
+
+    var body: some View {
+        Button {
+            confirming = true
+        } label: {
+            Label("Ask your teacher to share the class calendar", systemImage: "person.crop.circle.badge.questionmark")
+        }
+        .font(.footnote.weight(.semibold))
+        .buttonStyle(.borderless)
+        .alert("Before you send it", isPresented: $confirming) {
+            Button("Cancel", role: .cancel) {}
+            Button("Open email") {
+                if let url = TeacherCalendarEmail.url(user: auth.user) { openURL(url) }
+            }
+        } message: {
+            Text(verbatim: "We'll open a drafted email to your teacher. Add your teacher's email address and their name where it says \(TeacherCalendarEmail.placeholder).")
         }
     }
 }

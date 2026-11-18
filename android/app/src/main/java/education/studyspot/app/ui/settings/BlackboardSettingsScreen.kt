@@ -37,6 +37,7 @@ import education.studyspot.app.core.AppConfig
 import education.studyspot.app.core.get
 import education.studyspot.app.core.stringValue
 import education.studyspot.app.core.userMessage
+import education.studyspot.app.model.IcalKind
 import education.studyspot.app.ui.components.Pill
 import education.studyspot.app.ui.theme.StudySpotTheme
 import kotlinx.coroutines.launch
@@ -48,6 +49,8 @@ import kotlinx.serialization.json.put
  * functions/blackboardAuthUrl { instanceUrl, client } opens in a Custom Tab; the
  * website hands the code back as studyspot://blackboard?code=…, which
  * navigation.DeepLinkHandler exchanges with functions/blackboardCallback.
+ * Below it, Blackboard calendar links for when the school hasn't approved
+ * Study Spot ([IcalLinksSection] with [IcalKind.Blackboard]).
  */
 @Composable
 fun BlackboardSettingsScreen(modifier: Modifier = Modifier, embedded: Boolean = false) {
@@ -64,6 +67,7 @@ fun BlackboardSettingsScreen(modifier: Modifier = Modifier, embedded: Boolean = 
 
     LifecycleResumeEffect(Unit) {
         val job = scope.launch {
+            launch { c.repository.refreshIcalFeeds() }
             c.repository.refreshConnections()
             c.auth.refreshUser() // picks up blackboard_instance_url after connecting
             busy = false
@@ -171,6 +175,7 @@ fun BlackboardSettingsScreen(modifier: Modifier = Modifier, embedded: Boolean = 
                 }
             }
         }
+        IcalLinksSection(isDemo = isDemo, kind = IcalKind.Blackboard)
     }
 
     if (confirmDisconnect) {

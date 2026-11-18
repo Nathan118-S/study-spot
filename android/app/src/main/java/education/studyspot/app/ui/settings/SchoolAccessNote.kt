@@ -30,14 +30,16 @@ import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import education.studyspot.app.LocalAppContainer
+import education.studyspot.app.model.IcalKind
 import education.studyspot.app.model.User
 import education.studyspot.app.ui.theme.StudySpotTheme
 
 /**
  * Shown with the Google / Blackboard connect UI (settings and onboarding):
  * many schools restrict which third-party apps can reach school accounts.
- * Offers a drafted email to the school's IT team (see [SchoolITEmail]) and,
- * for Google, the calendar-link guide ([IcalGuideDialog]) as a way around it.
+ * Offers a drafted email to the school's IT team (see [SchoolITEmail]) and
+ * the calendar-link guide ([IcalGuideDialog]) as a way around it: the Google
+ * guide for Google / both, the Blackboard guide for Blackboard.
  * Mirrors SchoolAccessNote in ios/StudySpot/Views/Settings/SchoolITEmail.swift.
  */
 @Composable
@@ -61,22 +63,25 @@ fun SchoolAccessNote(service: SchoolITEmail.Service, modifier: Modifier = Modifi
                 modifier = Modifier.padding(start = 6.dp),
             )
         }
-        if (service != SchoolITEmail.Service.Blackboard) {
-            TextButton(onClick = { showGuide = true }, contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp)) {
-                Icon(Icons.Outlined.Link, contentDescription = null, tint = navy, modifier = Modifier.size(16.dp))
-                Text(
-                    "Use a calendar link instead",
-                    style = MaterialTheme.typography.bodySmall,
-                    fontWeight = FontWeight.SemiBold,
-                    color = navy,
-                    modifier = Modifier.padding(start = 6.dp),
-                )
-            }
+        TextButton(onClick = { showGuide = true }, contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp)) {
+            Icon(Icons.Outlined.Link, contentDescription = null, tint = navy, modifier = Modifier.size(16.dp))
+            Text(
+                "Use a calendar link instead",
+                style = MaterialTheme.typography.bodySmall,
+                fontWeight = FontWeight.SemiBold,
+                color = navy,
+                modifier = Modifier.padding(start = 6.dp),
+            )
         }
     }
 
     if (confirming) SchoolITEmailConfirmDialog(service, onDismiss = { confirming = false })
-    if (showGuide) IcalGuideDialog(onDismiss = { showGuide = false })
+    if (showGuide) {
+        IcalGuideDialog(
+            onDismiss = { showGuide = false },
+            kind = if (service == SchoolITEmail.Service.Blackboard) IcalKind.Blackboard else IcalKind.Google,
+        )
+    }
 }
 
 /** Explains the drafted email, then opens it in the user's mail app. */

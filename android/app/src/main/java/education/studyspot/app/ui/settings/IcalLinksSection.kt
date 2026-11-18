@@ -14,6 +14,8 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Event
+import androidx.compose.material.icons.outlined.FileUpload
+import androidx.compose.material.icons.outlined.School
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -39,20 +41,28 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import education.studyspot.app.LocalAppContainer
 import education.studyspot.app.core.userMessage
 import education.studyspot.app.model.IcalFeed
+import education.studyspot.app.model.IcalKind
 import education.studyspot.app.ui.theme.StudySpotTheme
 import kotlinx.coroutines.launch
 
 /**
- * Settings > Google (and onboarding): "Can't connect your Google account?",
- * the button that opens [IcalGuideDialog], and the added calendar links with
- * Sync now / Rename / Import every event / Remove.
+ * Settings > Google and Settings > Blackboard (and onboarding): "Can't connect
+ * your Google account?" / "Can't connect Blackboard?", the button that opens
+ * [IcalGuideDialog] for [kind], and that kind's calendar links with
+ * Sync now / Rename / Import every event / Remove. For Google it also offers
+ * a one-time calendar-file import ([IcalImportFileDialog]) and the drafted
+ * email asking a teacher to share the class calendar ([TeacherEmailConfirmDialog]).
  */
 @Composable
-fun IcalLinksSection(isDemo: Boolean) {
+fun IcalLinksSection(isDemo: Boolean, kind: IcalKind = IcalKind.Google) {
     val c = LocalAppContainer.current
     val scope = rememberCoroutineScope()
-    val feeds by c.repository.icalFeeds.collectAsStateWithLifecycle()
+    val allFeeds by c.repository.icalFeeds.collectAsStateWithLifecycle()
+    val feeds = IcalLinks.feeds(allFeeds, kind)
+    val google = kind == IcalKind.Google
     var showGuide by remember { mutableStateOf(false) }
+    var importingFile by remember { mutableStateOf(false) }
+    var askingTeacher by remember { mutableStateOf(false) }
     var syncing by remember { mutableStateOf(false) }
     var renaming by remember { mutableStateOf<IcalFeed?>(null) }
     var removing by remember { mutableStateOf<IcalFeed?>(null) }
@@ -80,16 +90,50 @@ fun IcalLinksSection(isDemo: Boolean) {
         }
     }
 
-    SettingsSection(header = "Can't connect your Google account?") {
-        SettingsText("Paste your calendar's public link instead and Study Spot will import your assignments from it.")
-        SettingsActions {
+    SettingsSection(header = if (google) "Can't connect your Google account?" else "Can't connect Blackboard?") {
+        SettingsText(
+            if (google) {
+                "Paste your calendar's public link instead and Study Spot will import your assignments from it."
+            } else {
+                "Paste your Blackboard calendar link instead and Study Spot will import your due dates from it."
+            },
+        )
+        FlowRow(
+            Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            if (google) {
+                BusyButton(
+                    "Import a calendar file",
+                    onClick = { importingFile = true },
+                    enabled = !isDemo,
+                    prominent = false,
+                    icon = Icons.Outlined.FileUpload,
+                )
+            }
             BusyButton(
-                "Add a calendar link",
+                if (google) "Add a calendar link" else "Add a Blackboard calendar link",
                 onClick = { showGuide = true },
                 enabled = !isDemo,
                 prominent = false,
                 icon = Icons.Outlined.Add,
             )
+        }
+        if (google) {
+            TextButton(
+                onClick = { askingTeacher = true },
+                modifier = Modifier.align(Alignment.End).padding(end = 8.dp),
+            ) {
+                Icon(Icons.Outlined.School, contentDescription = null, tint = StudySpotTheme.colors.secondary, modifier = Modifier.size(16.dp))
+                Text(
+                    "Ask your teacher to share the class calendar",
+                    color = StudySpotTheme.colors.secondary,
+                    style = MaterialTheme.typography.bodySmall,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.padding(start = 6.dp),
+                )
+            }
         }
         feeds.forEach { feed ->
             HorizontalDivider(color = StudySpotTheme.colors.border)
@@ -113,7 +157,9 @@ fun IcalLinksSection(isDemo: Boolean) {
         }
     }
 
-    if (showGuide) IcalGuideDialog(onDismiss = { showGuide = false })
+    if (showGuide) IcalGuideDialog(onDismiss = { showGuide = false }, kind = kind)
+    if (importingFile) IcalImportFileDialog(onDismiss = { importingFile = false })
+    if (askingTeacher) TeacherEmailConfirmDialog(onDismiss = { askingTeacher = false })
 
     renaming?.let { feed ->
         var name by remember(feed.id) { mutableStateOf(feed.displayName) }

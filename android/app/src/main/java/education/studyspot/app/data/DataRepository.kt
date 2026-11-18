@@ -17,6 +17,7 @@ import education.studyspot.app.model.Connections
 import education.studyspot.app.model.IcalAddResult
 import education.studyspot.app.model.IcalFeed
 import education.studyspot.app.model.IcalFeeds
+import education.studyspot.app.model.IcalImportResult
 import education.studyspot.app.model.IcalSyncResult
 import education.studyspot.app.model.Priority
 import education.studyspot.app.model.SchoolClass
@@ -82,7 +83,10 @@ class DataRepository(
     val connections: StateFlow<Connections> = _connections.asStateFlow()
 
     private val _icalFeeds = MutableStateFlow<List<IcalFeed>>(emptyList())
-    /** Pasted Google Calendar links (Settings > Google). Loaded by [refreshIcalFeeds]. */
+    /**
+     * Pasted calendar links: Google ones in Settings > Google, Blackboard ones in
+     * Settings > Blackboard (see IcalFeed.feedKind). Loaded by [refreshIcalFeeds].
+     */
     val icalFeeds: StateFlow<List<IcalFeed>> = _icalFeeds.asStateFlow()
 
     private val _isLoading = MutableStateFlow(false)
@@ -352,6 +356,21 @@ class DataRepository(
     suspend fun syncIcalFeeds(): IcalSyncResult {
         val result = api.invokeAs<IcalSyncResult>("icalSyncFeeds")
         afterIcalChange()
+        return result
+    }
+
+    /**
+     * One-time import of a calendar file (a .ics, or Google Calendar's export
+     * .zip) with functions/icalImportFile. Re-importing never duplicates. Throws
+     * the server's user-ready message (not a calendar, too large, demo).
+     */
+    suspend fun importIcalFile(filename: String, bytes: ByteArray, mode: String): IcalImportResult {
+        val result = api.invokeAs<IcalImportResult>("icalImportFile", buildJsonObject {
+            put("filename", filename)
+            put("data", java.util.Base64.getEncoder().encodeToString(bytes))
+            put("mode", mode)
+        })
+        reloadData()
         return result
     }
 

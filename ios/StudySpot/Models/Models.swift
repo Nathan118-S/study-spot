@@ -366,11 +366,14 @@ struct Connections: Decodable, Equatable, Sendable {
     enum CodingKeys: String, CodingKey { case calendar, classroom, blackboard, ical }
 }
 
-/// A Google Calendar link (the calendar's "Secret address in iCal format").
+/// A calendar link: a Google Calendar's public/secret iCal address, or a
+/// Blackboard Learn external calendar link (`kind`).
 /// The server never returns the secret URL itself, only a short hint.
 struct ICalFeed: Decodable, Identifiable, Equatable, Sendable {
     var id: String
     var label: String
+    /// "google" or "blackboard".
+    var kind: String
     var calendarName: String?
     var urlHint: String?
     /// "auto" (only assignment-like events) or "all".
@@ -381,13 +384,16 @@ struct ICalFeed: Decodable, Identifiable, Equatable, Sendable {
     var createdAt: Date?
 
     var importsEverything: Bool { mode == "all" }
+    var isBlackboard: Bool { kind == "blackboard" }
 
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         id = c.flexString(.id) ?? ""
-        label = c.flexString(.label) ?? "Google Calendar"
         calendarName = c.flexString(.calendarName)
         urlHint = c.flexString(.urlHint)
+        let hintIsBlackboard = (urlHint ?? "").hasSuffix("(Blackboard)")
+        kind = c.flexString(.kind) ?? (hintIsBlackboard ? "blackboard" : "google")
+        label = c.flexString(.label) ?? (kind == "blackboard" ? "Blackboard" : "Google Calendar")
         mode = c.flexString(.mode) ?? "auto"
         lastSyncedAt = c.flexDate(.lastSyncedAt)
         lastError = c.flexString(.lastError).flatMap { $0.isEmpty ? nil : $0 }
@@ -396,7 +402,7 @@ struct ICalFeed: Decodable, Identifiable, Equatable, Sendable {
     }
 
     enum CodingKeys: String, CodingKey {
-        case id, label, mode
+        case id, label, mode, kind
         case calendarName = "calendar_name"
         case urlHint = "url_hint"
         case lastSyncedAt = "last_synced_at"

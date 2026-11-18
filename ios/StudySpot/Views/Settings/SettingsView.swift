@@ -176,12 +176,14 @@ struct GoogleSettings: View {
     @State private var busy: String?
     @State private var loading = true
     @State private var showLinkGuide = false
+    @State private var showFileImport = false
 
     var body: some View {
         Section {
             Text("Connect your own Google account to import assignments. Each user connects separately — your data stays private to you.")
                 .font(.subheadline).foregroundStyle(.secondary)
-                .sheet(isPresented: $showLinkGuide) { CalendarLinkGuide() }
+                .sheet(isPresented: $showLinkGuide) { CalendarLinkGuide(kind: .google) }
+                .sheet(isPresented: $showFileImport) { CalendarFileImportSheet() }
         } footer: {
             SchoolAccessNote(service: .google, onUseCalendarLink: { showLinkGuide = true })
         }
@@ -213,7 +215,7 @@ struct GoogleSettings: View {
             await data.refreshConnections()
             loading = false
         }
-        CalendarLinksSettings(onAdd: { showLinkGuide = true })
+        CalendarLinksSettings(kind: .google, onAdd: { showLinkGuide = true }, onImportFile: { showFileImport = true })
     }
 
     private func connect(_ id: String) async {
@@ -293,6 +295,9 @@ struct BlackboardSettings: View {
     @State private var url = ""
     @State private var busy = false
     @State private var error = ""
+    /// The school hasn't approved Study Spot in Blackboard (offer a calendar link).
+    @State private var notApproved = false
+    @State private var showLinkGuide = false
 
     var body: some View {
         Section {
@@ -307,6 +312,7 @@ struct BlackboardSettings: View {
                         .font(.caption).foregroundStyle(.secondary)
                 }
             }
+            .sheet(isPresented: $showLinkGuide) { CalendarLinkGuide(kind: .blackboard) }
         }
         if data.connections.blackboard {
             Section {
@@ -325,16 +331,29 @@ struct BlackboardSettings: View {
                 }
                 .disabled(busy)
             } footer: {
-                VStack(alignment: .leading, spacing: 6) {
-                    if !error.isEmpty { Text(error).foregroundStyle(.red) }
-                    SchoolAccessNote(service: .blackboard)
-                }
+                connectFooter
             }
+        }
+        CalendarLinksSettings(kind: .blackboard, onAdd: { showLinkGuide = true })
+    }
+
+    private var connectFooter: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            if !error.isEmpty { Text(error).foregroundStyle(.red) }
+            if notApproved {
+                Button { showLinkGuide = true } label: {
+                    Label("Use a calendar link instead", systemImage: "link")
+                }
+                .font(.footnote.weight(.semibold))
+                .buttonStyle(.borderless)
+            }
+            SchoolAccessNote(service: .blackboard, onUseCalendarLink: { showLinkGuide = true })
         }
     }
 
     private func connect() async {
         error = ""
+        notApproved = false
         var trimmed = url.trimmingCharacters(in: .whitespaces)
         while trimmed.hasSuffix("/") { trimmed.removeLast() }
         guard !trimmed.isEmpty else { error = "Enter your Blackboard Learn URL."; return }
@@ -352,6 +371,7 @@ struct BlackboardSettings: View {
                 let description = callback.param("error_description") ?? ""
                 if description.range(of: "not registered|unregistered|invalid application", options: [.regularExpression, .caseInsensitive]) != nil {
                     // The school hasn't added Study Spot under REST API Integrations.
+                    notApproved = true
                     error = "Your school hasn’t approved Study Spot in Blackboard yet. A Blackboard admin at your school needs to add Study Spot under REST API Integrations. Ask your school’s IT team, or add your assignments yourself until then."
                 } else {
                     error = description.isEmpty ? "Blackboard did not return an authorization code." : description

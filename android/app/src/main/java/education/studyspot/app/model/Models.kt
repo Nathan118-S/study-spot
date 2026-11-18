@@ -303,14 +303,29 @@ data class Connections(
     val any: Boolean get() = calendar || classroom || blackboard || ical
 }
 
+/** Where a calendar link comes from: [IcalFeed.kind] and the guide it is added with. */
+enum class IcalKind(val key: String) {
+    Google("google"),
+    Blackboard("blackboard"),
+    ;
+
+    companion object {
+        /** Unknown or missing kinds are Google (links added before kinds existed). */
+        fun from(key: String?): IcalKind = entries.firstOrNull { it.key.equals(key?.trim(), ignoreCase = true) } ?: Google
+    }
+}
+
 /**
- * A pasted Google Calendar link (server/src/functions/ical.js `publicFeed`).
+ * A pasted Google Calendar or Blackboard calendar link
+ * (server/src/functions/ical.js `publicFeed`).
  * The secret URL itself is never returned, only [urlHint].
  */
 @Serializable
 data class IcalFeed(
     @Serializable(with = FlexTextSerializer::class) val id: String = "",
     @Serializable(with = FlexTextSerializer::class) val label: String = "",
+    /** "google" or "blackboard"; see [feedKind]. */
+    @Serializable(with = FlexTextSerializer::class) val kind: String = IcalKind.Google.key,
     @Serializable(with = FlexStringSerializer::class) @SerialName("calendar_name") val calendarName: String? = null,
     @Serializable(with = FlexStringSerializer::class) @SerialName("url_hint") val urlHint: String? = null,
     /** "auto" (events that look like assignments) or "all". */
@@ -322,8 +337,13 @@ data class IcalFeed(
 ) {
     val importsAll: Boolean get() = mode == MODE_ALL
 
+    val feedKind: IcalKind get() = IcalKind.from(kind)
+
     /** The label, else the calendar's own name. */
-    val displayName: String get() = label.ifBlank { calendarName?.takeIf { it.isNotBlank() } ?: "Google Calendar" }
+    val displayName: String
+        get() = label.ifBlank {
+            calendarName?.takeIf { it.isNotBlank() } ?: if (feedKind == IcalKind.Blackboard) "Blackboard" else "Google Calendar"
+        }
 
     companion object {
         const val MODE_AUTO = "auto"
@@ -344,6 +364,22 @@ data class IcalAddResult(
     @Serializable(with = FlexIntSerializer::class) val imported: Int = 0,
     @Serializable(with = FlexIntSerializer::class) val updated: Int = 0,
     @Serializable(with = FlexIntSerializer::class) val reviewed: Int = 0,
+)
+
+@Serializable
+data class IcalImportedCalendar(
+    @Serializable(with = FlexTextSerializer::class) val name: String = "",
+    @Serializable(with = FlexIntSerializer::class) val imported: Int = 0,
+    @Serializable(with = FlexIntSerializer::class) val events: Int = 0,
+)
+
+object IcalImportedCalendarList : LenientListSerializer<IcalImportedCalendar>(IcalImportedCalendar.serializer())
+
+/** functions/icalImportFile: a one-time import of a .ics file or Google Calendar's export .zip. */
+@Serializable
+data class IcalImportResult(
+    @Serializable(with = FlexIntSerializer::class) val imported: Int = 0,
+    @Serializable(with = IcalImportedCalendarList::class) val calendars: List<IcalImportedCalendar> = emptyList(),
 )
 
 @Serializable
