@@ -18,10 +18,7 @@ export default function BlackboardConnection({ connected, instanceUrl, onChanged
       setError('Enter your Blackboard Learn URL.');
       return;
     }
-    if (!/^https:\/\//i.test(trimmed)) {
-      setError('URL must start with https://');
-      return;
-    }
+
     setBusy(true);
     try {
       const res = await api.functions.invoke('blackboardAuthUrl', { instanceUrl: trimmed });

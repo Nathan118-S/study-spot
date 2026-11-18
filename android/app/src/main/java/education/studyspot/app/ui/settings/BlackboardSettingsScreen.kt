@@ -75,7 +75,6 @@ fun BlackboardSettingsScreen(modifier: Modifier = Modifier, embedded: Boolean = 
         error = ""
         val trimmed = url.trim().trimEnd('/')
         if (trimmed.isEmpty()) { error = "Enter your Blackboard Learn URL."; return }
-        if (!trimmed.lowercase().startsWith("https://")) { error = "URL must start with https://"; return }
         if (isDemo) return
         scope.launch {
             busy = true

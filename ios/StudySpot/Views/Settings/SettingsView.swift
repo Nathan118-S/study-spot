@@ -338,7 +338,6 @@ struct BlackboardSettings: View {
         var trimmed = url.trimmingCharacters(in: .whitespaces)
         while trimmed.hasSuffix("/") { trimmed.removeLast() }
         guard !trimmed.isEmpty else { error = "Enter your Blackboard Learn URL."; return }
-        guard trimmed.lowercased().hasPrefix("https://") else { error = "URL must start with https://"; return }
         guard auth.user?.isDemo != true else { return }
         busy = true
         defer { busy = false }

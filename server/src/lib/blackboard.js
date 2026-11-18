@@ -15,11 +15,15 @@ async function basicHeader() {
 // path or query string cannot be smuggled into credential-bearing requests.
 export function validateInstanceUrl(instanceUrl) {
   let url;
+  let raw = String(instanceUrl || '').trim();
+  // People often type just "school.blackboard.com".
+  if (raw && !/^[a-z][a-z0-9+.-]*:\/\//i.test(raw)) raw = `https://${raw}`;
   try {
-    url = new URL(instanceUrl);
+    url = new URL(raw);
   } catch {
     throw new Error('Invalid Blackboard instance URL');
   }
+  if (url.protocol === 'http:') url.protocol = 'https:';
   if (url.protocol !== 'https:') {
     throw new Error('Blackboard instance URL must use https');
   }
@@ -65,7 +69,18 @@ export async function exchangeCode(instanceUrl, code, redirectUri) {
     },
     body: 'grant_type=authorization_code',
   });
-  if (!res.ok) throw new Error('Blackboard token exchange failed: ' + (await res.text()));
+  if (!res.ok) {
+    const text = await res.text().catch(() => '');
+    let code = '';
+    try { code = JSON.parse(text).error || ''; } catch { /* not JSON */ }
+    if (code === 'invalid_client' || res.status === 401) {
+      throw new Error('Blackboard rejected Study Spot’s app key. An admin should check the Blackboard Client ID (Key) and Client secret in Admin → Integration Secrets, and that your school has approved Study Spot.');
+    }
+    if (code === 'invalid_grant' || /redirect/i.test(text)) {
+      throw new Error('Blackboard couldn’t finish signing in (the sign-in link expired or the redirect URI doesn’t match). Try connecting again. Admins: the Redirect URI must be exactly https://studyspot.education/blackboard/callback in both Blackboard’s developer portal and Integration Secrets.');
+    }
+    throw new Error(`Blackboard sign-in failed (${res.status}). Try connecting again.`);
+  }
   return await res.json();
 }
 
@@ -78,7 +93,7 @@ export async function refreshAccessToken(instanceUrl, refreshToken, redirectUri)
       Authorization: await basicHeader(),
       'Content-Type': 'application/x-www-form-urlencoded',
     },
-    body: 'grant_type=refresh_token',
+    body: new URLSearchParams({ grant_type: 'refresh_token', refresh_token: refreshToken }).toString(),
   });
   if (!res.ok) throw new Error('Blackboard token refresh failed: ' + (await res.text()));
   return await res.json();

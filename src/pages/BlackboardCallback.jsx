@@ -15,7 +15,11 @@ export default function BlackboardCallback() {
     const state = params.get('state');
     if (!code) {
       setStatus('error');
-      setError('No authorization code was returned.');
+      const denied = params.get('error');
+      setError(
+        params.get('error_description')
+          || (denied === 'access_denied' ? 'You cancelled the Blackboard sign-in.' : denied ? `Blackboard returned an error: ${denied}` : 'No authorization code was returned.')
+      );
       return;
     }
     (async () => {
