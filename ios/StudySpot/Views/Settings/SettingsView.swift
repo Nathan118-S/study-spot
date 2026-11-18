@@ -349,7 +349,13 @@ struct BlackboardSettings: View {
             }
             let callback = try await WebAuthSession.shared.start(authURL)
             guard let code = callback.param("code") else {
-                error = callback.param("error_description") ?? "Blackboard did not return an authorization code."
+                let description = callback.param("error_description") ?? ""
+                if description.range(of: "not registered|unregistered|invalid application", options: [.regularExpression, .caseInsensitive]) != nil {
+                    // The school hasn't added Study Spot under REST API Integrations.
+                    error = "Your school hasn’t approved Study Spot in Blackboard yet. A Blackboard admin at your school needs to add Study Spot under REST API Integrations. Ask your school’s IT team, or add your assignments yourself until then."
+                } else {
+                    error = description.isEmpty ? "Blackboard did not return an authorization code." : description
+                }
                 return
             }
             try await APIClient.shared.invoke("blackboardCallback", ["code": .string(code), "state": .from(callback.param("state"))])

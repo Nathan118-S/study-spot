@@ -37,7 +37,17 @@ class DeepLinkHandler(private val c: AppContainer) {
             "tab" -> c.router.showTab(AppTab.fromKey(uri.lastPathSegment))
             "timer" -> c.router.navigate(Routes.TIMER)
             "blackboard" -> {
-                val code = WebSignIn.param(uri, "code") ?: return
+                val code = WebSignIn.param(uri, "code")
+                if (code == null) {
+                    val description = WebSignIn.param(uri, "error_description").orEmpty()
+                    val notApproved = Regex("not registered|unregistered|invalid application", RegexOption.IGNORE_CASE).containsMatchIn(description)
+                    c.messages.show(
+                        if (notApproved) "Your school needs to approve Study Spot" else "Blackboard connection failed",
+                        if (notApproved) "Your school hasn’t approved Study Spot in Blackboard yet. A Blackboard admin at your school needs to add Study Spot under REST API Integrations. Ask your school’s IT team, or add your assignments yourself until then." else description.ifEmpty { "Blackboard didn't return an authorization code." },
+                        error = true,
+                    )
+                    return
+                }
                 try {
                     c.api.invoke("blackboardCallback", buildJsonObject {
                         put("code", code)

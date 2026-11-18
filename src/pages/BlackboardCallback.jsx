@@ -2,12 +2,21 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '@/api/client';
 import { Button } from '@/components/ui/button';
-import { Loader2, CheckCircle2, XCircle } from 'lucide-react';
+import { Loader2, CheckCircle2, XCircle, Mail } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { useAuth } from '@/lib/AuthContext';
+import { schoolItEmailUrl } from '@/lib/schoolItEmail';
+
+// Blackboard says this when the school hasn't added Study Spot under REST API Integrations.
+const NOT_APPROVED = /not registered|unregistered|invalid application|application.*not.*(found|authori)/i;
+export const BLACKBOARD_NOT_APPROVED = 'Your school hasn’t approved Study Spot in Blackboard yet. A Blackboard admin at your school needs to add Study Spot under REST API Integrations. Ask your school’s IT team, or add your assignments yourself until then.';
 
 export default function BlackboardCallback() {
   const navigate = useNavigate();
   const [status, setStatus] = useState('loading');
   const [error, setError] = useState('');
+  const { user } = useAuth();
+  const notApproved = error === BLACKBOARD_NOT_APPROVED;
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -16,8 +25,10 @@ export default function BlackboardCallback() {
     if (!code) {
       setStatus('error');
       const denied = params.get('error');
+      const description = params.get('error_description') || '';
       setError(
-        params.get('error_description')
+        NOT_APPROVED.test(description) ? BLACKBOARD_NOT_APPROVED
+          : description
           || (denied === 'access_denied' ? 'You cancelled the Blackboard sign-in.' : denied ? `Blackboard returned an error: ${denied}` : 'No authorization code was returned.')
       );
       return;
@@ -59,9 +70,19 @@ export default function BlackboardCallback() {
           <>
             <XCircle className="h-10 w-10 text-destructive mx-auto" />
             <div>
-              <p className="font-medium">Connection failed</p>
-              <p className="text-sm text-destructive">{error}</p>
+              <p className="font-medium">{notApproved ? 'Your school needs to approve Study Spot' : 'Connection failed'}</p>
+              <p className={`text-sm ${notApproved ? 'text-muted-foreground' : 'text-destructive'}`}>{error}</p>
             </div>
+            {notApproved && (
+              <div className="flex flex-col gap-2">
+                <Button className="rounded-full" onClick={() => { window.location.href = schoolItEmailUrl(user, 'blackboard'); }}>
+                  <Mail className="h-4 w-4 mr-1.5" /> Email my school’s IT team
+                </Button>
+                <Button asChild variant="outline" className="rounded-full">
+                  <Link to="/schools">Instructions for your school</Link>
+                </Button>
+              </div>
+            )}
             <Button variant="outline" onClick={() => navigate('/settings')}>
               Back to Settings
             </Button>
