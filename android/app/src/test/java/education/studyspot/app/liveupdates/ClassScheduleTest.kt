@@ -68,10 +68,10 @@ class ClassScheduleTest {
     }
 
     @Test
-    fun countdownStartsFiveMinutesBefore() {
+    fun countdownStartsTenMinutesBefore() {
         val start = ZonedDateTime.of(2026, 11, 17, 0, 2, 0, 0, zone)
         // Wraps to the previous day.
-        assertEquals(ZonedDateTime.of(2026, 11, 16, 23, 57, 0, 0, zone), ClassSchedule.triggerAt(start))
+        assertEquals(ZonedDateTime.of(2026, 11, 16, 23, 52, 0, 0, zone), ClassSchedule.triggerAt(start))
     }
 
     @Test

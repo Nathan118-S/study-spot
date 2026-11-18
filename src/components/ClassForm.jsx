@@ -157,7 +157,7 @@ export default function ClassForm({ open, onOpenChange, cls, onSaved }) {
               <Plus /> Add meeting time
             </Button>
             <p className="text-xs text-muted-foreground">
-              The iOS app shows a Live Activity with a countdown 5 minutes before each class.
+              The iOS app shows a Live Activity with a countdown 10 minutes before each class.
             </p>
           </div>
         </div>

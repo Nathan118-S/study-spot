@@ -140,7 +140,7 @@ struct MainTabView: View {
         }
         .task(id: scenePhase) {
             // While the app is open, start a class's Live Activity right at
-            // 5 minutes before it (and end finished ones).
+            // 10 minutes before it (and end finished ones).
             while scenePhase == .active && !Task.isCancelled {
                 if ClassActivityManager.isEnabled(for: auth.user) {
                     ClassActivityManager.refresh(classes: data.classes, assignments: data.assignments)

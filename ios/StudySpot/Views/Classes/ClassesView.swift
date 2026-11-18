@@ -155,7 +155,7 @@ struct ClassFormView: View {
                 } header: {
                     Text("Meeting times")
                 } footer: {
-                    Text("Study Spot shows a Live Activity with a countdown 5 minutes before each class.")
+                    Text("Study Spot shows a Live Activity with a countdown 10 minutes before each class.")
                 }
             }
             .navigationTitle(schoolClass == nil ? "Add Class" : "Edit Class")

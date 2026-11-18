@@ -72,7 +72,7 @@ object ClassSchedule {
 }
 
 /**
- * Posts the class countdown 5 minutes before each class without push (the
+ * Posts the class countdown 10 minutes before each class without push (the
  * iOS app's fallback reminders). Alarms are set for the next start of every
  * weekly meeting and re-set after each one fires, on app start, when classes
  * change, after a reboot and by a twice-daily worker.
@@ -143,7 +143,7 @@ object ClassAlarmScheduler {
         for (m in meetings) {
             val trigger = ClassSchedule.triggerAt(m.start)
             if (!trigger.isAfter(now)) {
-                // Starts within 5 minutes: show it now.
+                // Starts within the lead time: show it now.
                 LiveUpdates.showClassCountdown(context, countdown(context, m.cls, m.startsAt), now.toInstant().toEpochMilli())
                 continue
             }

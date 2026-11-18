@@ -233,7 +233,7 @@ fun RemindersSettingsScreen(modifier: Modifier = Modifier) {
         SettingsSection {
             SettingsToggle(
                 title = "Class countdown before class",
-                description = "5 minutes before each class, show a countdown notification with anything due that day. " +
+                description = "10 minutes before each class, show a countdown notification with anything due that day. " +
                     "Add meeting times to your classes to use it.",
                 icon = Icons.Outlined.Alarm,
                 checked = countdownOn,

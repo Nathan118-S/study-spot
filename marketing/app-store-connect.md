@@ -113,7 +113,7 @@ own notifications and aren't a "Device ID" in Apple's sense.)
 > NEVER MISS A DUE DATE
 > • Reminders hours or days before each due date, at the times you choose
 > • Do Not Disturb hours for quiet evenings
-> • Live Activity five minutes before class, with a countdown and what's due today
+> • Live Activity ten minutes before class, with a countdown and what's due today
 >
 > FOCUS
 > • Built-in study timer with focus sessions and short and long breaks

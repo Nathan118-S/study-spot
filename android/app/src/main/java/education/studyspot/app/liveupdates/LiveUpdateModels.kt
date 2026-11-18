@@ -57,7 +57,7 @@ data class ClassCountdown(
         }
 
     companion object {
-        const val LEAD_MINUTES = 5
+        const val LEAD_MINUTES = 10
         const val DEFAULT_END_AFTER_MINUTES = 10
     }
 }

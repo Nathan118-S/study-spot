@@ -231,7 +231,7 @@ export default function ReminderSettings() {
           <div>
             <p className="font-medium">Live Activity before class (iOS)</p>
             <p className="text-sm text-muted-foreground">
-              5 minutes before each class, the iPhone app shows a countdown on the Lock Screen with anything due that day.
+              10 minutes before each class, the iPhone and Android apps shows a countdown on the Lock Screen with anything due that day.
               Add meeting times to your classes to use it.
             </p>
           </div>

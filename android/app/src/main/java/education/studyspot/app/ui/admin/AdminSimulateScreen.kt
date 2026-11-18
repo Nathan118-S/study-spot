@@ -254,7 +254,7 @@ private fun NotificationSection(options: SimOptions, busy: Boolean, send: SimSen
 @Composable
 private fun ClassSection(options: SimOptions, busy: Boolean, send: SimSend) {
     var classId by remember { mutableStateOf("") }
-    var minutes by remember { mutableIntStateOf(5) }
+    var minutes by remember { mutableIntStateOf(10) }
 
     SettingsSection(
         header = "Class countdown",

@@ -2,7 +2,7 @@ import ActivityKit
 import SwiftUI
 import WidgetKit
 
-/// "Class starts soon": shown 5 minutes before a class, on the Lock Screen
+/// "Class starts soon": shown 10 minutes before a class, on the Lock Screen
 /// and in the Dynamic Island, with a circular countdown to the start and
 /// anything due that day. The system animates the countdown from
 /// `startsAt`, so it keeps running while the app is closed.
@@ -57,7 +57,7 @@ struct ClassStartLiveActivity: Widget {
     }
 }
 
-/// Circular countdown over the 5 minutes before class.
+/// Circular countdown over the 10 minutes before class.
 struct CountdownRing: View {
     var state: ClassStartAttributes.ContentState
     var tint: Color

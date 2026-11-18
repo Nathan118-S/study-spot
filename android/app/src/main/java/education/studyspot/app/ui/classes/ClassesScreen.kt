@@ -413,7 +413,7 @@ internal fun ClassFormSheet(schoolClass: SchoolClass?, onDismiss: () -> Unit, on
                 Text("  Add meeting time", color = colors.accent)
             }
             Text(
-                "Study Spot shows a countdown notification 5 minutes before each class.",
+                "Study Spot shows a countdown notification 10 minutes before each class.",
                 style = MaterialTheme.typography.bodySmall,
                 color = colors.mutedText,
             )

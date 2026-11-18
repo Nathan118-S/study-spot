@@ -62,7 +62,7 @@ object LiveUpdates {
             .setTimeoutAfter((cd.endsAtMillis - nowMillis).coerceAtLeast(1_000))
             .setRequestPromotedOngoing(true)
         if (supportsPromoted) {
-            // The bar covers the 5 minutes before class, like the iOS countdown ring.
+            // The bar covers the 10 minutes before class, like the iOS countdown ring.
             val lead = ClassCountdown.LEAD_MINUTES * 60
             val elapsed = (lead - (cd.startsAtMillis - nowMillis) / 1000).toInt().coerceIn(0, lead)
             b.setStyle(

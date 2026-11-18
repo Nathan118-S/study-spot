@@ -1,4 +1,4 @@
-// Starts the iOS "class starts soon" Live Activity 5 minutes before each
+// Starts the iOS "class starts soon" Live Activity 10 minutes before each
 // class meeting (ActivityKit push-to-start), and ends it 10 minutes after the
 // class starts. Runs every minute; each class meeting is sent at most once
 // (class_activity_sends). Needs APNs credentials (see lib/apns.js); without
@@ -8,7 +8,7 @@ import { apnsConfigured, sendLiveActivityPush } from '../lib/apns.js';
 import { fcmConfigured } from '../lib/fcm.js';
 import { sendAndroidData } from '../lib/notify.js';
 
-export const LEAD_MINUTES = 5;
+export const LEAD_MINUTES = 10;
 export const END_AFTER_MINUTES = 10;
 const DEFAULT_TZ = 'America/New_York';
 

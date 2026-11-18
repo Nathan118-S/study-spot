@@ -6,10 +6,10 @@ import UserNotifications
 ///
 /// - With push configured on the server (APNs key in Admin → Integration
 ///   Secrets, and the app built with the Push Notifications capability), the
-///   server starts the activity 5 minutes before each class even when the app
+///   server starts the activity 10 minutes before each class even when the app
 ///   is closed, and ends it after class starts. This manager registers the
 ///   device's push-to-start token and each activity's update token.
-/// - Otherwise it falls back to a notification 5 minutes before class;
+/// - Otherwise it falls back to a notification 10 minutes before class;
 ///   opening it (or having the app open then) starts the Live Activity.
 @MainActor
 enum ClassActivityManager {
@@ -53,7 +53,7 @@ enum ClassActivityManager {
         refresh(classes: classes, assignments: assignments)
     }
 
-    /// Starts an activity if a class begins within 5 minutes (app must be in
+    /// Starts an activity if a class begins within 10 minutes (app must be in
     /// the foreground), and ends activities whose class has started.
     static func refresh(classes: [SchoolClass], assignments: [Assignment], now: Date = Date()) {
         guard ActivityAuthorizationInfo().areActivitiesEnabled else { return }
@@ -161,7 +161,7 @@ enum ClassActivityManager {
 
     // MARK: Fallback reminders
 
-    /// A weekly notification 5 minutes before each class meeting, used when
+    /// A weekly notification 10 minutes before each class meeting, used when
     /// the server can't start the Live Activity itself.
     private static func scheduleReminders(classes: [SchoolClass]) async {
         await cancelReminders()
@@ -173,7 +173,7 @@ enum ClassActivityManager {
         let center = UNUserNotificationCenter.current()
         for (cls, meeting) in meetings.prefix(60) {
             guard let t = meeting.startComponents else { continue }
-            // 5 minutes earlier, wrapping to the previous day if needed.
+            // `lead` minutes earlier, wrapping to the previous day if needed.
             var minutes = t.hour * 60 + t.minute - Int(lead / 60)
             var weekday = meeting.day
             if minutes < 0 { minutes += 24 * 60; weekday = (weekday + 6) % 7 }
@@ -183,7 +183,7 @@ enum ClassActivityManager {
             when.minute = minutes % 60
 
             let content = UNMutableNotificationContent()
-            content.title = "\(cls.name) starts in 5 minutes"
+            content.title = "\(cls.name) starts in \(Int(lead / 60)) minutes"
             var details: [String] = []
             if let subject = cls.subject, !subject.isEmpty { details.append(subject) }
             if let room = cls.room, !room.isEmpty { details.append("Room \(room)") }

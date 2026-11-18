@@ -306,7 +306,7 @@ private struct AdminSimClassSection: View {
     var busy: Bool
     var send: AdminSimSend
     @State private var classId = ""
-    @State private var minutes = 5
+    @State private var minutes = 10
 
     var body: some View {
         Section {

@@ -595,7 +595,7 @@ struct ReminderSettings: View {
                 set: { v in Task { try? await auth.update(["class_live_activities": .bool(v)]) } }
             )) {
                 SettingLabel(title: "Live Activity before class",
-                             desc: "5 minutes before each class, show a countdown on the Lock Screen and in the Dynamic Island, with anything due that day. Add meeting times to your classes to use it.",
+                             desc: "10 minutes before each class, show a countdown on the Lock Screen and in the Dynamic Island, with anything due that day. Add meeting times to your classes to use it.",
                              symbol: "clock.badge")
             }
             .disabled(auth.user?.isDemo == true)

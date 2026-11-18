@@ -170,7 +170,7 @@ export async function adminSimulateLiveActivity(caller, body) {
       if (!res.rows[0]) throw new HttpError(404, 'Class not found');
       cls = res.rows[0];
     }
-    const minutes = Math.max(1, Math.min(Number(body.minutes) || 5, 60));
+    const minutes = Math.max(1, Math.min(Number(body.minutes) || 10, 60));
     const startsAt = new Date(now.getTime() + minutes * 60e3);
     const due = await dueToday(u.id, userTimeZone(u.data), now);
     const state = contentState(startsAt, due);

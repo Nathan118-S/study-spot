@@ -183,11 +183,11 @@ count-down chronometer (`liveupdates/LiveUpdates.kt`):
   chronometer (the class countdown also lists what's due; the timer has a
   progress bar).
 
-**Class countdown:** "Biology starts in 5 min", subject and room, a
+**Class countdown:** "Biology starts in 10 min", subject and room, a
 countdown to the start and "N due today" with up to three titles. It goes
 away 10 minutes after class starts. It comes from the server's `class_start`
 push when push is set up, and is **also scheduled locally**
-(`liveupdates/ClassAlarmScheduler.kt`): an alarm 5 minutes before the next
+(`liveupdates/ClassAlarmScheduler.kt`): an alarm 10 minutes before the next
 start of every weekly meeting, re-set when classes change, on app start,
 after reboot / time changes and by a twice-daily WorkManager job. A push and
 an alarm for the same meeting use the same notification id, so they never

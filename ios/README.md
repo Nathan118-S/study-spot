@@ -159,7 +159,7 @@ reminders*) or keep them in the app only (*iPhone notifications*).
 ### Class Live Activities
 
 Give a class its **meeting times** (and optionally a subject and room) in
-the app or on the website. Five minutes before each class, a Live Activity
+the app or on the website. Ten minutes before each class, a Live Activity
 appears on the Lock Screen and in the Dynamic Island. It shows the class,
 subject and room, a circular countdown to the start, and anything due that
 day. It ends shortly after class starts. Users can turn it off under
@@ -173,7 +173,7 @@ There are two ways it can start:
 The study timer's Live Activity can also be started by push (iOS 17.2+), which
 admins use from *Admin → People → an account → Simulate on iPhone* to test
 notifications and both Live Activities on a real device.
-- **Without push:** the app schedules a notification 5 minutes before each
+- **Without push:** the app schedules a notification 10 minutes before each
   class. Opening it, or having the app open at that time, starts the Live
   Activity.
 

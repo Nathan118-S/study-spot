@@ -82,7 +82,7 @@ export default function AdminSimulate({ userId }) {
 
   // Live Activity forms
   const [activityClass, setActivityClass] = useState(SAMPLE);
-  const [classMinutes, setClassMinutes] = useState('5');
+  const [classMinutes, setClassMinutes] = useState('10');
   const [phase, setPhase] = useState('focus');
   const [timerMinutes, setTimerMinutes] = useState('25');
   const [timerAssignment, setTimerAssignment] = useState('none');
@@ -272,7 +272,7 @@ export default function AdminSimulate({ userId }) {
                   kind: 'class_start',
                   action: 'start',
                   classId: activityClass === SAMPLE ? undefined : activityClass,
-                  minutes: Number(classMinutes) || 5,
+                  minutes: Number(classMinutes) || 10,
                 }, 'start')
               }
             >

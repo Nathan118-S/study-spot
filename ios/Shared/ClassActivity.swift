@@ -2,7 +2,7 @@ import Foundation
 #if canImport(ActivityKit)
 import ActivityKit
 
-/// "Class starts soon" Live Activity: appears 5 minutes before a class with
+/// "Class starts soon" Live Activity: appears 10 minutes before a class with
 /// a circular countdown to its start and anything due that day.
 ///
 /// The server starts it with an ActivityKit push-to-start (see
@@ -21,11 +21,11 @@ struct ClassStartAttributes: ActivityAttributes {
         var dueCount: Int
 
         var startDate: Date { Date(timeIntervalSince1970: startsAt) }
-        /// The countdown ring runs over the 5 minutes before class.
+        /// The countdown ring runs over the 10 minutes before class.
         var countdownStart: Date { startDate.addingTimeInterval(-ClassStartAttributes.leadTime) }
     }
 
-    static let leadTime: TimeInterval = 5 * 60
+    static let leadTime: TimeInterval = 10 * 60
 
     var classId: String
     var className: String
