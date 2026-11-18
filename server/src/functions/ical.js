@@ -168,10 +168,15 @@ export async function icalUpdateFeed(user, body) {
   const label = body.label === undefined ? feed.label : String(body.label || '').trim().slice(0, 120) || null;
   const mode = body.mode === undefined ? feed.mode : body.mode === 'all' ? 'all' : 'auto';
   const upd = await pool.query('UPDATE ical_feeds SET label = $1, mode = $2 WHERE id = $3 RETURNING *', [label, mode, feed.id]);
+  // Switching to "every event" should bring in the events skipped before.
+  if (mode !== feed.mode) {
+    try { await syncFeed(user, upd.rows[0]); } catch { /* the error is saved on the feed */ }
+  }
   if (label && label !== feed.label) {
     await pool.query('UPDATE classes SET name = $1, updated_at = now() WHERE created_by_id = $2 AND external_id = $3', [label, user.id, `ical:${feed.id}`]);
   }
-  return { ok: true, feed: publicFeed(upd.rows[0]) };
+  const fresh = (await pool.query('SELECT * FROM ical_feeds WHERE id = $1', [feed.id])).rows[0];
+  return { ok: true, feed: publicFeed(fresh) };
 }
 
 /** Body: { id, removeAssignments?: boolean } — by default imported work is kept. */
