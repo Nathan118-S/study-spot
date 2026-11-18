@@ -445,7 +445,7 @@ private struct GuideProgress: View {
     }
 }
 
-struct GuideStepTitle: View {
+private struct GuideStepTitle: View {
     var number: Int
     var title: String
 
@@ -467,7 +467,7 @@ struct GuideStepTitle: View {
 }
 
 /// A tinted box for tips, warnings and the privacy note.
-struct GuideNote<Content: View>: View {
+private struct GuideNote<Content: View>: View {
     var symbol: String
     var tint: Color
     @ViewBuilder var content: Content
