@@ -29,6 +29,7 @@ object FakeBackend {
         val body = when {
             path == "/auth/me" -> user?.let { AppJson.encodeToString(User.serializer(), it) } ?: "{}"
             path == "/functions/checkGoogleConnections" -> """{"calendar":true,"classroom":true,"blackboard":true}"""
+            path == "/functions/icalListFeeds" -> ICAL_FEEDS
             path == "/functions/adminListUsers" -> ADMIN_USERS
             path.startsWith("/entities/") && chain.request().method == "GET" ->
                 entities[path.removePrefix("/entities/").substringBefore('/')] ?: "[]"
@@ -42,6 +43,10 @@ object FakeBackend {
             .body(body.toResponseBody("application/json".toMediaType()))
             .build()
     }
+
+    private val ICAL_FEEDS = """
+        {"feeds":[{"id":"f1","label":"AP Biology","calendar_name":"AP Biology","mode":"auto","last_synced_at":"${java.time.Instant.now().minusSeconds(300)}","last_imported":3}]}
+    """.trimIndent()
 
     private val ADMIN_USERS = """
         {"users":[

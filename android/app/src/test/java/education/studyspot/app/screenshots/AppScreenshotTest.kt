@@ -1,5 +1,7 @@
 package education.studyspot.app.screenshots
 
+import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import education.studyspot.app.data.DemoData
@@ -12,6 +14,7 @@ import education.studyspot.app.ui.dashboard.AssignmentDetailScreen
 import education.studyspot.app.ui.dashboard.AssignmentFormScreen
 import education.studyspot.app.ui.notifications.NotificationsScreen
 import education.studyspot.app.ui.onboarding.OnboardingScreen
+import education.studyspot.app.ui.settings.IcalGuide
 import education.studyspot.app.ui.settings.SettingsPage
 import education.studyspot.app.ui.settings.SettingsPageScreen
 import education.studyspot.app.ui.settings.SettingsScreen
@@ -101,6 +104,11 @@ class AppScreenshotTest(dark: Boolean) : ScreenshotHarness(dark) {
     @Test fun settingsGoogle() {
         signedIn()
         snap("14_settings_google") { SettingsPageScreen(SettingsPage.Google, it) }
+    }
+
+    @Test fun icalGuidePublic() {
+        signedIn()
+        snap("14b_ical_guide_step3") { IcalGuide(onClose = {}, initialStep = 2, modifier = Modifier.safeDrawingPadding()) }
     }
 
     @Test fun studyTimer() {
