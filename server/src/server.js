@@ -20,7 +20,8 @@ import { sendClassActivities } from './jobs/classActivities.js';
 
 const app = express();
 app.use(cors({ origin: process.env.FRONTEND_URL, credentials: true }));
-app.use(express.json({ limit: '2mb' }));
+// 12 MB: calendar files (.ics / Google Calendar export .zip) are uploaded as base64.
+app.use(express.json({ limit: '12mb' }));
 app.use(attachUser);
 
 app.get('/api/health', (req, res) => res.json({ ok: true }));

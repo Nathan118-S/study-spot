@@ -1,11 +1,55 @@
-// Minimal iCalendar (RFC 5545) reader for Google Calendar's "Secret address
-// in iCal format" links: enough to pull events (title, description, start,
-// UID) out of a calendar. No dependencies.
+// Minimal iCalendar (RFC 5545) reader for calendar links (Google Calendar,
+// Blackboard Learn) and uploaded .ics files: enough to pull events (title,
+// description, start, UID) out of a calendar. No dependencies.
+import dns from 'node:dns/promises';
+import net from 'node:net';
 import { zonedTimeToUtc } from '../jobs/classActivities.js';
 
-// Google's iCal links. Only these hosts are fetched, so a pasted link can't
-// make the server request arbitrary addresses.
+// Google's iCal links. Blackboard links live on each school's own domain, so
+// those are allowed by path instead, and only after checking the host
+// resolves to a public address (a pasted link can't reach internal servers).
 const ALLOWED_HOSTS = new Set(['calendar.google.com']);
+const BLACKBOARD_FEED_PATH = /\/webapps\/calendar\/calendarFeed\/[^/]+\/[^/]+\.ics$/i;
+
+/** 'google' or 'blackboard' for a normalized calendar link. */
+export function feedKind(url) {
+  return ALLOWED_HOSTS.has(new URL(url).hostname.toLowerCase()) ? 'google' : 'blackboard';
+}
+
+function isPrivateAddress(ip) {
+  if (net.isIPv4(ip)) {
+    const [a, b] = ip.split('.').map(Number);
+    return a === 10 || a === 127 || a === 0 || (a === 169 && b === 254) || (a === 172 && b >= 16 && b <= 31)
+      || (a === 192 && b === 168) || (a === 100 && b >= 64 && b <= 127) || a >= 224;
+  }
+  const v = ip.toLowerCase();
+  if (v.startsWith('::ffff:')) return isPrivateAddress(v.slice(7));
+  return v === '::1' || v === '::' || v.startsWith('fc') || v.startsWith('fd') || v.startsWith('fe8') || v.startsWith('fe9')
+    || v.startsWith('fea') || v.startsWith('feb') || v.startsWith('ff');
+}
+
+/** Throws unless every address the host resolves to is public. */
+export async function assertPublicHost(hostname) {
+  if (net.isIP(hostname)) throw new Error('Use the calendar link from Blackboard (a web address, not an IP address).');
+  let addrs;
+  try {
+    addrs = await dns.lookup(hostname, { all: true, verbatim: true });
+  } catch {
+    throw new Error(`Couldn’t find ${hostname}. Check the link.`);
+  }
+  if (!addrs.length || addrs.some((a) => isPrivateAddress(a.address))) {
+    throw new Error('That calendar link points to a private network address.');
+  }
+}
+
+function checkBlackboardUrl(url) {
+  if (url.protocol !== 'https:') throw new Error('The link should start with https://');
+  if (url.username || url.password || url.port) throw new Error('That calendar link looks unusual. Copy it again from Blackboard.');
+  const host = url.hostname.toLowerCase();
+  if (net.isIP(host) || !host.includes('.') || /(^|\.)(localhost|local|internal)$/.test(host)) {
+    throw new Error('Use the calendar link from Blackboard.');
+  }
+}
 
 const publicFeedFor = (calendarId) =>
   `https://calendar.google.com/calendar/ical/${encodeURIComponent(calendarId)}/public/basic.ics`;
@@ -36,7 +80,15 @@ export function normalizeIcalUrl(raw) {
   }
   if (url.protocol !== 'https:' && url.protocol !== 'http:') throw new Error('The link should start with https://');
   if (!ALLOWED_HOSTS.has(url.hostname.toLowerCase())) {
-    throw new Error('Use a Google Calendar link (it starts with https://calendar.google.com/calendar/…).');
+    // Blackboard Learn: Calendar → "Get external calendar link"
+    // (https://<school>/webapps/calendar/calendarFeed/<id>/learn.ics).
+    if (BLACKBOARD_FEED_PATH.test(url.pathname)) {
+      url.protocol = 'https:';
+      checkBlackboardUrl(url);
+      url.hash = '';
+      return url.toString();
+    }
+    throw new Error('Use a Google Calendar link (https://calendar.google.com/calendar/…) or Blackboard’s external calendar link (…/webapps/calendar/calendarFeed/…/learn.ics).');
   }
 
   // iCal addresses (public or secret) are used as they are.
@@ -70,11 +122,12 @@ export function normalizeIcalUrl(raw) {
 }
 
 /** Whether a normalized address is a public feed (needs the calendar shared publicly). */
-export const isPublicFeed = (url) => /\/public\/basic\.ics$/i.test(new URL(url).pathname);
+export const isPublicFeed = (url) => feedKind(url) === 'google' && /\/public\/basic\.ics$/i.test(new URL(url).pathname);
 
 /** A short, non-secret description of a link to show in lists. */
 export function icalUrlHint(url) {
   const u = new URL(url);
+  if (feedKind(url) === 'blackboard') return `${u.hostname} (Blackboard)`;
   const id = decodeURIComponent(u.pathname.split('/')[3] || '');
   if (isPublicFeed(url)) return id;
   return id.length > 32 ? `${id.slice(0, 14)}…${id.slice(-14)}` : id;
@@ -85,7 +138,9 @@ const MAX_BYTES = 10 * 1024 * 1024;
 /** Downloads an iCal feed (following Google's redirects on allowed hosts only). */
 export async function fetchIcal(url) {
   let current = url;
+  const kind = feedKind(url);
   for (let hop = 0; hop < 4; hop++) {
+    if (feedKind(current) === 'blackboard') await assertPublicHost(new URL(current).hostname);
     const res = await fetch(current, {
       redirect: 'manual',
       headers: { Accept: 'text/calendar, */*' },
@@ -93,11 +148,18 @@ export async function fetchIcal(url) {
     });
     if (res.status >= 300 && res.status < 400 && res.headers.get('location')) {
       const next = new URL(res.headers.get('location'), current);
-      if (next.protocol !== 'https:' || !(ALLOWED_HOSTS.has(next.hostname) || next.hostname.endsWith('.googleusercontent.com'))) {
+      const googleOk = ALLOWED_HOSTS.has(next.hostname) || next.hostname.endsWith('.googleusercontent.com');
+      // Blackboard may redirect within the school's site (e.g. to its CDN); the
+      // public-address check runs again before following it.
+      const blackboardOk = kind === 'blackboard' && !next.port && !next.username;
+      if (next.protocol !== 'https:' || !(googleOk || blackboardOk)) {
         throw new Error('The calendar link redirected somewhere unexpected');
       }
       current = next.toString();
       continue;
+    }
+    if (kind === 'blackboard' && [401, 403, 404].includes(res.status)) {
+      throw new Error('Blackboard didn’t share this calendar. The link may have been reset; get a new one from Blackboard → Calendar → Get external calendar link.');
     }
     if (res.status === 404 || res.status === 401 || res.status === 403) {
       throw new Error(isPublicFeed(url)
@@ -204,6 +266,8 @@ export function parseIcal(text, fallbackTz = 'UTC') {
       case 'SUMMARY': ev.summary = unescapeText(value).trim(); break;
       case 'DESCRIPTION': ev.description = unescapeText(value).trim(); break;
       case 'URL': ev.url = value.trim(); break;
+      case 'CATEGORIES': ev.category = unescapeText(value.split(',')[0] || '').trim() || undefined; break;
+      case 'LOCATION': ev.location = unescapeText(value).trim() || undefined; break;
       case 'STATUS': ev.cancelled = value.trim().toUpperCase() === 'CANCELLED'; break;
       case 'RRULE': ev.recurring = true; break;
       case 'RECURRENCE-ID': ev.recurrenceId = value.trim(); break;

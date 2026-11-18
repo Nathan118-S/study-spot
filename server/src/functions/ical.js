@@ -5,9 +5,10 @@
 import { pool } from '../db.js';
 import { HttpError } from '../lib/httpError.js';
 import { decryptValue, encryptValue } from '../lib/secrets.js';
-import { eventDue, fetchIcal, icalUrlHint, normalizeIcalUrl, parseIcal } from '../lib/ical.js';
+import { eventDue, feedKind, fetchIcal, icalUrlHint, normalizeIcalUrl, parseIcal } from '../lib/ical.js';
 import { guessPriority, guessType, isAssignmentEvent } from '../lib/sync.js';
 import { userTimeZone } from '../jobs/classActivities.js';
+import { readZip } from '../lib/zip.js';
 
 const MAX_FEEDS = 25;
 const COLORS = ['#3b82f6', '#6366f1', '#ec4899', '#f59e0b', '#10b981', '#06b6d4', '#8b5cf6', '#ef4444', '#14b8a6'];
@@ -17,7 +18,8 @@ const FUTURE_DAYS = 180;
 function publicFeed(row) {
   return {
     id: row.id,
-    label: row.label || row.calendar_name || 'Google Calendar',
+    label: row.label || row.calendar_name || (String(row.url_hint || '').endsWith('(Blackboard)') ? 'Blackboard' : 'Google Calendar'),
+    kind: String(row.url_hint || '').endsWith('(Blackboard)') ? 'blackboard' : 'google',
     calendar_name: row.calendar_name,
     url_hint: row.url_hint,
     mode: row.mode,
@@ -39,9 +41,10 @@ export function isImportable(ev, mode) {
   return isAssignmentEvent({ summary: ev.summary, description: ev.description });
 }
 
-async function classForFeed(user, feed, calendarName) {
-  const ext = `ical:${feed.id}`;
-  const name = (feed.label || calendarName || 'Google Calendar').slice(0, 120);
+async function classForFeed(user, feed, calendarName, category, kind = 'google') {
+  // Events that name their course (e.g. Blackboard) get a class per course.
+  const ext = category ? `ical:${feed.id}:cat:${category.slice(0, 120)}` : `ical:${feed.id}`;
+  const name = (category || feed.label || calendarName || (kind === 'blackboard' ? 'Blackboard' : 'Google Calendar')).slice(0, 120);
   const existing = await pool.query('SELECT * FROM classes WHERE created_by_id = $1 AND external_id = $2 LIMIT 1', [user.id, ext]);
   if (existing.rows[0]) {
     // Follow a renamed calendar unless the person renamed the class themselves.
@@ -53,8 +56,8 @@ async function classForFeed(user, feed, calendarName) {
   }
   const count = (await pool.query('SELECT count(*)::int n FROM classes WHERE created_by_id = $1', [user.id])).rows[0].n;
   const ins = await pool.query(
-    `INSERT INTO classes (created_by_id, name, color, source, external_id) VALUES ($1, $2, $3, 'google_calendar', $4) RETURNING *`,
-    [user.id, name, COLORS[count % COLORS.length], ext]
+    `INSERT INTO classes (created_by_id, name, color, source, external_id) VALUES ($1, $2, $3, $5, $4) RETURNING *`,
+    [user.id, name, COLORS[count % COLORS.length], ext, kind === 'blackboard' ? 'blackboard' : 'google_calendar']
   );
   return ins.rows[0];
 }
@@ -63,7 +66,9 @@ async function classForFeed(user, feed, calendarName) {
 async function syncFeed(user, feed) {
   const tz = userTimeZone(user.data);
   try {
-    const text = await fetchIcal(feedUrl(feed));
+    const url = feedUrl(feed);
+    const kind = feedKind(url);
+    const text = await fetchIcal(url);
     const { calendarName, events } = parseIcal(text, tz);
     const now = Date.now();
     const from = now - PAST_DAYS * 86400e3;
@@ -76,7 +81,12 @@ async function syncFeed(user, feed) {
       wanted.push({ ...ev, due, externalId: `ical:${feed.id}:${ev.uid}${ev.recurrenceId ? `:${ev.recurrenceId}` : ''}` });
     }
 
-    const cls = await classForFeed(user, feed, calendarName);
+    const classCache = new Map();
+    const classFor = async (category) => {
+      const key = category || '';
+      if (!classCache.has(key)) classCache.set(key, await classForFeed(user, feed, calendarName, category, kind));
+      return classCache.get(key);
+    };
     const existing = await pool.query(
       'SELECT id, external_id, title, due_date FROM assignments WHERE created_by_id = $1 AND external_id LIKE $2',
       [user.id, `ical:${feed.id}:%`]
@@ -98,11 +108,12 @@ async function syncFeed(user, feed) {
         }
         continue;
       }
+      const cls = await classFor(ev.category);
       await pool.query(
         `INSERT INTO assignments (created_by_id, title, class_id, class_name, due_date, priority, type, notes, description, source, external_id, completed)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, '', $8, 'google_calendar', $9, false)`,
+         VALUES ($1, $2, $3, $4, $5, $6, $7, '', $8, $10, $9, false)`,
         [user.id, title, cls.id, cls.name, ev.due.toISOString(), guessPriority(title), guessType(title),
-          (ev.description || '').slice(0, 5000), ev.externalId]
+          (ev.description || '').slice(0, 5000), ev.externalId, kind === 'blackboard' ? 'blackboard' : 'google_calendar']
       );
       imported++;
     }
@@ -131,7 +142,8 @@ export async function icalAddFeed(user, body) {
   } catch (e) {
     throw new HttpError(400, e.message);
   }
-  const mode = body?.mode === 'all' ? 'all' : 'auto';
+  // Blackboard's calendar is mostly course due dates, so import all of it by default.
+  const mode = body?.mode === 'all' || body?.mode === 'auto' ? body.mode : feedKind(url) === 'blackboard' ? 'all' : 'auto';
   const label = String(body?.label || '').trim().slice(0, 120) || null;
 
   const existing = await pool.query('SELECT * FROM ical_feeds WHERE user_id = $1', [user.id]);
@@ -186,7 +198,7 @@ export async function icalRemoveFeed(user, body) {
   let removed = 0;
   if (body.removeAssignments) {
     removed = (await pool.query('DELETE FROM assignments WHERE created_by_id = $1 AND external_id LIKE $2', [user.id, `ical:${body.id}:%`])).rowCount;
-    await pool.query('DELETE FROM classes WHERE created_by_id = $1 AND external_id = $2', [user.id, `ical:${body.id}`]);
+    await pool.query('DELETE FROM classes WHERE created_by_id = $1 AND (external_id = $2 OR external_id LIKE $3)', [user.id, `ical:${body.id}`, `ical:${body.id}:cat:%`]);
   }
   return { ok: true, removedAssignments: removed };
 }
@@ -223,4 +235,92 @@ export async function syncAllIcalFeeds() {
     }
   }
   return { users: users.rows.length, imported };
+}
+
+// --- One-time import of a calendar file -------------------------------------
+// For when calendar links are turned off too: Google Calendar → Settings →
+// Import & export → Export gives a .zip of .ics files (one per calendar);
+// other calendars can export a single .ics.
+
+const MAX_UPLOAD = 10 * 1024 * 1024;
+
+/**
+ * Body: { filename, data (base64 of a .ics or .zip), mode?: 'auto'|'all' }
+ * Imports upcoming events once; re-importing the same file doesn't duplicate.
+ */
+export async function icalImportFile(user, body) {
+  if (user.role === 'demo') throw new HttpError(400, "The demo account can't import calendars");
+  const filename = String(body?.filename || 'calendar.ics');
+  let buf;
+  try {
+    buf = Buffer.from(String(body?.data || ''), 'base64');
+  } catch {
+    throw new HttpError(400, 'That file couldn’t be read');
+  }
+  if (!buf.length) throw new HttpError(400, 'Choose a calendar file (.ics or .zip)');
+  if (buf.length > MAX_UPLOAD) throw new HttpError(400, 'That file is too large (10 MB max)');
+
+  let files;
+  if (buf.readUInt32LE(0) === 0x04034b50) {
+    try {
+      files = readZip(buf).filter((f) => /\.ics$/i.test(f.name));
+    } catch (e) {
+      throw new HttpError(400, e.message);
+    }
+    if (!files.length) throw new HttpError(400, 'That .zip has no calendar (.ics) files in it');
+  } else {
+    files = [{ name: filename, data: buf }];
+  }
+
+  const mode = body?.mode === 'all' ? 'all' : 'auto';
+  const tz = userTimeZone(user.data);
+  const now = Date.now();
+  const from = now - PAST_DAYS * 86400e3;
+  const to = now + 365 * 86400e3;
+  const calendars = [];
+  let imported = 0;
+  for (const f of files) {
+    const text = f.data.toString('utf8');
+    if (!/BEGIN:VCALENDAR/.test(text)) continue;
+    const { calendarName, events } = parseIcal(text, tz);
+    const baseName = (calendarName || f.name.split('/').pop().replace(/\.ics$/i, '').replace(/_[^_]*@[^_]*$/, '') || 'Imported calendar').slice(0, 120);
+    const existing = await pool.query(
+      'SELECT external_id FROM assignments WHERE created_by_id = $1 AND external_id LIKE $2',
+      [user.id, 'icsfile:%']
+    );
+    const seen = new Set(existing.rows.map((r) => r.external_id));
+    let cls = null;
+    let count = 0;
+    for (const ev of events) {
+      if (!ev.uid || !isImportable(ev, mode)) continue;
+      const due = eventDue(ev.start, tz);
+      if (!due || due.getTime() < from || due.getTime() > to) continue;
+      const ext = `icsfile:${ev.uid}${ev.recurrenceId ? `:${ev.recurrenceId}` : ''}`.slice(0, 500);
+      if (seen.has(ext)) continue;
+      if (!cls) {
+        const clsExt = `icsfile:${baseName}`;
+        const found = await pool.query('SELECT * FROM classes WHERE created_by_id = $1 AND external_id = $2 LIMIT 1', [user.id, clsExt]);
+        cls = found.rows[0];
+        if (!cls) {
+          const n = (await pool.query('SELECT count(*)::int n FROM classes WHERE created_by_id = $1', [user.id])).rows[0].n;
+          cls = (await pool.query(
+            `INSERT INTO classes (created_by_id, name, color, source, external_id) VALUES ($1, $2, $3, 'manual', $4) RETURNING *`,
+            [user.id, baseName, COLORS[n % COLORS.length], clsExt]
+          )).rows[0];
+        }
+      }
+      const title = (ev.summary || 'Untitled event').slice(0, 300);
+      await pool.query(
+        `INSERT INTO assignments (created_by_id, title, class_id, class_name, due_date, priority, type, notes, description, source, external_id, completed)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, '', $8, 'manual', $9, false)`,
+        [user.id, title, cls.id, cls.name, due.toISOString(), guessPriority(title), guessType(title), (ev.description || '').slice(0, 5000), ext]
+      );
+      seen.add(ext);
+      count++;
+    }
+    calendars.push({ name: baseName, imported: count, events: events.length });
+    imported += count;
+  }
+  if (!calendars.length) throw new HttpError(400, 'That file isn’t a calendar. Choose the .ics or .zip file you exported.');
+  return { ok: true, imported, calendars };
 }
