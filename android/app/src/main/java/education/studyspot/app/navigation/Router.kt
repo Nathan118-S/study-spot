@@ -1,5 +1,6 @@
 package education.studyspot.app.navigation
 
+import education.studyspot.app.model.IcalKind
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -19,6 +20,18 @@ class Router {
     private val _popToMain = MutableStateFlow(0)
     /** Incremented to ask AppNavHost to return to the tabbed shell. */
     val popToMain: StateFlow<Int> = _popToMain.asStateFlow()
+
+    private val _calendarLinkGuide = MutableStateFlow<IcalKind?>(null)
+    /** A calendar-link guide to show over the app (AppRoot), e.g. from a Blackboard error message. */
+    val calendarLinkGuide: StateFlow<IcalKind?> = _calendarLinkGuide.asStateFlow()
+
+    fun openCalendarLinkGuide(kind: IcalKind) {
+        _calendarLinkGuide.value = kind
+    }
+
+    fun closeCalendarLinkGuide() {
+        _calendarLinkGuide.value = null
+    }
 
     fun selectTab(tab: AppTab) {
         _selectedTab.value = tab
@@ -53,5 +66,6 @@ class Router {
     fun reset() {
         _selectedTab.value = AppTab.Dashboard
         _pendingRoute.value = null
+        _calendarLinkGuide.value = null
     }
 }

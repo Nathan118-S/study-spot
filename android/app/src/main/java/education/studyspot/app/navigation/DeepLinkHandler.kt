@@ -5,6 +5,7 @@ import education.studyspot.app.AppContainer
 import education.studyspot.app.auth.WebSignIn
 import education.studyspot.app.core.AppConfig
 import education.studyspot.app.core.userMessage
+import education.studyspot.app.model.IcalKind
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 
@@ -41,11 +42,21 @@ class DeepLinkHandler(private val c: AppContainer) {
                 if (code == null) {
                     val description = WebSignIn.param(uri, "error_description").orEmpty()
                     val notApproved = Regex("not registered|unregistered|invalid application", RegexOption.IGNORE_CASE).containsMatchIn(description)
-                    c.messages.show(
-                        if (notApproved) "Your school needs to approve Study Spot" else "Blackboard connection failed",
-                        if (notApproved) "Your school hasn’t approved Study Spot in Blackboard yet. A Blackboard admin at your school needs to add Study Spot under REST API Integrations. Ask your school’s IT team, or add your assignments yourself until then." else description.ifEmpty { "Blackboard didn't return an authorization code." },
-                        error = true,
-                    )
+                    if (notApproved) {
+                        c.messages.show(
+                            "Your school needs to approve Study Spot",
+                            "Your school hasn’t approved Study Spot in Blackboard yet. A Blackboard admin at your school needs to add Study Spot under REST API Integrations. Ask your school’s IT team, or add your assignments yourself until then.",
+                            error = true,
+                            actionLabel = "Use a calendar link instead",
+                            onAction = { c.router.openCalendarLinkGuide(IcalKind.Blackboard) },
+                        )
+                    } else {
+                        c.messages.show(
+                            "Blackboard connection failed",
+                            description.ifEmpty { "Blackboard didn't return an authorization code." },
+                            error = true,
+                        )
+                    }
                     return
                 }
                 try {

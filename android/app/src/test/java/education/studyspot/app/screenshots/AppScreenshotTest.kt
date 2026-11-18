@@ -5,6 +5,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import education.studyspot.app.data.DemoData
+import education.studyspot.app.model.IcalKind
 import education.studyspot.app.navigation.AppTab
 import education.studyspot.app.navigation.MainScaffold
 import education.studyspot.app.ui.admin.AdminScreen
@@ -109,6 +110,18 @@ class AppScreenshotTest(dark: Boolean) : ScreenshotHarness(dark) {
     @Test fun icalGuidePublic() {
         signedIn()
         snap("14b_ical_guide_step3") { IcalGuide(onClose = {}, initialStep = 2, modifier = Modifier.safeDrawingPadding()) }
+    }
+
+    @Test fun blackboardGuideCopyLink() {
+        signedIn()
+        snap("14c_blackboard_guide_step2") {
+            IcalGuide(onClose = {}, initialStep = 1, kind = IcalKind.Blackboard, modifier = Modifier.safeDrawingPadding())
+        }
+    }
+
+    @Test fun settingsBlackboard() {
+        signedIn()
+        snap("14d_settings_blackboard") { SettingsPageScreen(SettingsPage.Blackboard, it) }
     }
 
     @Test fun studyTimer() {

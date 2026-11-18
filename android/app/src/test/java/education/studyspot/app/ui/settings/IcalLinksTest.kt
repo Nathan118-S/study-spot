@@ -5,12 +5,15 @@ import education.studyspot.app.model.Connections
 import education.studyspot.app.model.IcalAddResult
 import education.studyspot.app.model.IcalFeed
 import education.studyspot.app.model.IcalFeeds
+import education.studyspot.app.model.IcalImportResult
+import education.studyspot.app.model.IcalKind
 import education.studyspot.app.model.IcalSyncResult
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.io.ByteArrayInputStream
 import java.time.Instant
 
 /** Calendar links: decoding server/src/functions/ical.js responses, and the Settings status line. */
@@ -94,5 +97,76 @@ class IcalLinksTest {
         assertEquals("choose Settings and sharing now", s.text)
         assertEquals(1, s.spanStyles.size)
         assertEquals("Settings and sharing", s.text.substring(s.spanStyles[0].start, s.spanStyles[0].end))
+    }
+
+    @Test
+    fun decodesFeedKinds() {
+        val json = """
+            {"feeds":[
+              {"id":"g","label":"AP Biology","kind":"google","mode":"auto"},
+              {"id":"b","label":"Blackboard","kind":"blackboard","url_hint":"school.edu/…/learn.ics (Blackboard)","mode":"all"},
+              {"id":"b2","label":null,"calendar_name":null,"kind":"blackboard","mode":"all"},
+              {"id":"old","label":"Old link","mode":"auto"}
+            ]}
+        """.trimIndent()
+        val feeds = AppJson.decodeFromString(IcalFeeds.serializer(), json).feeds
+        assertEquals(listOf(IcalKind.Google, IcalKind.Blackboard, IcalKind.Blackboard, IcalKind.Google), feeds.map { it.feedKind })
+        assertEquals("Blackboard", feeds[2].displayName)
+        assertEquals("Google Calendar", IcalFeed(id = "x", kind = "something new").displayName)
+        assertEquals(listOf("g", "old"), IcalLinks.feeds(feeds, IcalKind.Google).map { it.id })
+        assertEquals(listOf("b", "b2"), IcalLinks.feeds(feeds, IcalKind.Blackboard).map { it.id })
+    }
+
+    @Test
+    fun decodesImportFileResult() {
+        // icalImportFile -> { ok, imported, calendars: [{ name, imported, events }] }; a malformed entry is skipped.
+        val json = """
+            {"ok":true,"imported":5,"calendars":[
+              {"name":"AP Biology","imported":"3","events":12},
+              {"name":"Alex Rivera","imported":0,"events":40},
+              {"name":"World History","imported":2,"events":7},
+              42
+            ]}
+        """.trimIndent()
+        val result = AppJson.decodeFromString(IcalImportResult.serializer(), json)
+        assertEquals(5, result.imported)
+        assertEquals(listOf("AP Biology", "Alex Rivera", "World History"), result.calendars.map { it.name })
+        assertEquals(3, result.calendars[0].imported)
+        assertEquals(12, result.calendars[0].events)
+        assertEquals("Imported 5 assignments from AP Biology and World History.", IcalLinks.importFileMessage(result))
+
+        val none = AppJson.decodeFromString(IcalImportResult.serializer(), """{"ok":true,"imported":0,"calendars":[{"name":"A","imported":0,"events":3}]}""")
+        assertEquals("No new assignments found.", IcalLinks.importFileMessage(none))
+        assertEquals(0, AppJson.decodeFromString(IcalImportResult.serializer(), "{}").imported)
+    }
+
+    @Test
+    fun importFileMessageWording() {
+        fun r(vararg cals: Pair<String, Int>) = IcalImportResult(
+            imported = cals.sumOf { it.second },
+            calendars = cals.map { education.studyspot.app.model.IcalImportedCalendar(it.first, it.second) },
+        )
+        assertEquals("Imported 1 assignment from AP Biology.", IcalLinks.importFileMessage(r("AP Biology" to 1)))
+        assertEquals("Imported 6 assignments from A, B and C.", IcalLinks.importFileMessage(r("A" to 1, "B" to 2, "C" to 3)))
+        assertEquals("Imported 2 assignments.", IcalLinks.importFileMessage(r(" " to 2)))
+    }
+
+    @Test
+    fun readCappedStopsPastTheLimit() {
+        val ok = ByteArray(100) { it.toByte() }
+        assertTrue(ok.contentEquals(IcalLinks.readCapped(ByteArrayInputStream(ok), max = 100)))
+        assertNull(IcalLinks.readCapped(ByteArrayInputStream(ByteArray(101)), max = 100))
+        assertEquals(0, IcalLinks.readCapped(ByteArrayInputStream(ByteArray(0)))?.size)
+    }
+
+    @Test
+    fun guidesHaveTheirOwnStepsAndText() {
+        assertEquals(5, IcalLinks.steps(IcalKind.Google))
+        assertEquals(3, IcalLinks.steps(IcalKind.Blackboard))
+        assertEquals("Add your Blackboard calendar with a link", IcalLinks.guideTitle(IcalKind.Blackboard))
+        assertEquals(
+            "Study Spot checks this calendar for changes every couple of hours and whenever you sync.",
+            IcalLinks.doneFooter(IcalKind.Blackboard),
+        )
     }
 }

@@ -45,7 +45,7 @@ object FakeBackend {
     }
 
     private val ICAL_FEEDS = """
-        {"feeds":[{"id":"f1","label":"AP Biology","calendar_name":"AP Biology","mode":"auto","last_synced_at":"${java.time.Instant.now().minusSeconds(300)}","last_imported":3}]}
+        {"feeds":[{"id":"f1","label":"AP Biology","calendar_name":"AP Biology","mode":"auto","last_synced_at":"${java.time.Instant.now().minusSeconds(300)}","last_imported":3},{"id":"f2","label":"Blackboard","kind":"blackboard","mode":"all","last_synced_at":"${java.time.Instant.now().minusSeconds(3600)}","last_imported":0}]}
     """.trimIndent()
 
     private val ADMIN_USERS = """

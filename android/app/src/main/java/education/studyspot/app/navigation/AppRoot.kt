@@ -3,6 +3,7 @@ package education.studyspot.app.navigation
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -18,6 +19,7 @@ import education.studyspot.app.ui.auth.Verify2FAScreen
 import education.studyspot.app.ui.auth.WelcomeScreen
 import education.studyspot.app.ui.components.LocalSnackbarHostState
 import education.studyspot.app.ui.onboarding.OnboardingScreen
+import education.studyspot.app.ui.settings.IcalGuideDialog
 
 /**
  * Top of the UI (ios/StudySpot/App/RootView.swift): picks splash / welcome /
@@ -30,13 +32,20 @@ fun AppRoot() {
     val phase by c.auth.phase.collectAsStateWithLifecycle()
     val needsTwoFactor by c.auth.needsTwoFactor.collectAsStateWithLifecycle()
     val needsOnboarding by c.auth.needsOnboarding.collectAsStateWithLifecycle()
+    val calendarLinkGuide by c.router.calendarLinkGuide.collectAsStateWithLifecycle()
     val snackbar = remember { SnackbarHostState() }
 
     LaunchedEffect(Unit) { c.auth.check() }
     LaunchedEffect(Unit) {
         c.messages.messages.collect { m ->
             val text = if (m.detail.isNullOrBlank()) m.title else "${m.title}: ${m.detail}"
-            snackbar.showSnackbar(text, withDismissAction = m.isError, duration = if (m.isError) SnackbarDuration.Long else SnackbarDuration.Short)
+            val result = snackbar.showSnackbar(
+                text,
+                actionLabel = m.actionLabel,
+                withDismissAction = m.isError,
+                duration = if (m.isError) SnackbarDuration.Long else SnackbarDuration.Short,
+            )
+            if (result == SnackbarResult.ActionPerformed) m.onAction?.invoke()
         }
     }
     LaunchedEffect(phase) {
@@ -49,10 +58,15 @@ fun AppRoot() {
                 AuthStore.Phase.Loading -> SplashScreen()
                 is AuthStore.Phase.Unreachable -> UnreachableScreen(p.message)
                 AuthStore.Phase.SignedOut -> WelcomeScreen()
-                AuthStore.Phase.SignedIn -> when {
-                    needsTwoFactor -> Verify2FAScreen()
-                    needsOnboarding -> OnboardingScreen()
-                    else -> AppNavHost()
+                AuthStore.Phase.SignedIn -> {
+                    when {
+                        needsTwoFactor -> Verify2FAScreen()
+                        needsOnboarding -> OnboardingScreen()
+                        else -> AppNavHost()
+                    }
+                    calendarLinkGuide?.let { kind ->
+                        if (!needsTwoFactor) IcalGuideDialog(onDismiss = { c.router.closeCalendarLinkGuide() }, kind = kind)
+                    }
                 }
             }
         }
