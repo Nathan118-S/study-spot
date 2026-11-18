@@ -7,36 +7,76 @@ import { zonedTimeToUtc } from '../jobs/classActivities.js';
 // make the server request arbitrary addresses.
 const ALLOWED_HOSTS = new Set(['calendar.google.com']);
 
+const publicFeedFor = (calendarId) =>
+  `https://calendar.google.com/calendar/ical/${encodeURIComponent(calendarId)}/public/basic.ics`;
+
+function looksLikeCalendarId(id) {
+  return /^[^\s@/]+@[a-z0-9.-]+\.[a-z]+$/i.test(id) || /^[a-z0-9._%+-]+$/i.test(id);
+}
+
 /**
- * Cleans up a pasted link: trims, turns webcal:// into https://, and checks it
- * is a Google Calendar iCal address. Returns the URL string or throws an Error
- * with a message for the user.
+ * Cleans up a pasted Google Calendar link and returns the iCal address to
+ * fetch, or throws an Error with a message for the user. Accepts:
+ * - the "Public URL to this calendar"  …/calendar/embed?src=<id>
+ * - a share link                         …/calendar/u/0?cid=<base64 id> (or /r?cid=)
+ * - the "Public address in iCal format"  …/calendar/ical/<id>/public/basic.ics
+ * - the "Secret address in iCal format"  …/calendar/ical/<id>/private-…/basic.ics
+ * - webcal:// versions of the iCal addresses
  */
 export function normalizeIcalUrl(raw) {
   let s = String(raw || '').trim().replace(/^<|>$/g, '');
-  if (!s) throw new Error('Paste your calendar’s secret address');
+  if (!s) throw new Error('Paste your calendar’s public URL');
   if (/^webcals?:\/\//i.test(s)) s = s.replace(/^webcals?:\/\//i, 'https://');
+  if (/^calendar\.google\.com\//i.test(s)) s = `https://${s}`;
   let url;
   try {
     url = new URL(s);
   } catch {
-    throw new Error('That doesn’t look like a link. Copy the whole “Secret address in iCal format”.');
+    throw new Error('That doesn’t look like a link. Copy the whole “Public URL to this calendar”.');
   }
   if (url.protocol !== 'https:' && url.protocol !== 'http:') throw new Error('The link should start with https://');
-  url.protocol = 'https:';
   if (!ALLOWED_HOSTS.has(url.hostname.toLowerCase())) {
-    throw new Error('Use a Google Calendar link (it starts with https://calendar.google.com/calendar/ical/…).');
+    throw new Error('Use a Google Calendar link (it starts with https://calendar.google.com/calendar/…).');
   }
-  if (!/^\/calendar\/ical\/.+\.ics$/i.test(url.pathname)) {
-    throw new Error('Use the “Secret address in iCal format” (it ends in .ics), not the calendar’s web or embed link.');
+
+  // iCal addresses (public or secret) are used as they are.
+  if (/^\/calendar\/ical\/.+\.ics$/i.test(url.pathname)) {
+    url.protocol = 'https:';
+    return url.toString();
   }
-  return url.toString();
+
+  // "Public URL to this calendar": …/embed?src=<id>[&src=<id2>…] (first calendar).
+  const src = url.searchParams.get('src');
+  if (/\/calendar\/(?:u\/\d+\/)?embed/i.test(url.pathname) && src) {
+    if (!looksLikeCalendarId(src)) throw new Error('That calendar link looks incomplete. Copy it again.');
+    return publicFeedFor(src);
+  }
+
+  // Share links: …?cid=<calendar id, usually base64url-encoded>.
+  const cid = url.searchParams.get('cid');
+  if (cid) {
+    let id = cid;
+    if (!cid.includes('@')) {
+      try {
+        const decoded = Buffer.from(cid.replace(/-/g, '+').replace(/_/g, '/'), 'base64').toString('utf8');
+        if (looksLikeCalendarId(decoded)) id = decoded;
+      } catch { /* keep as is */ }
+    }
+    if (!looksLikeCalendarId(id)) throw new Error('That calendar link looks incomplete. Copy it again.');
+    return publicFeedFor(id);
+  }
+
+  throw new Error('Use the calendar’s “Public URL to this calendar” from Settings and sharing → Integrate calendar.');
 }
+
+/** Whether a normalized address is a public feed (needs the calendar shared publicly). */
+export const isPublicFeed = (url) => /\/public\/basic\.ics$/i.test(new URL(url).pathname);
 
 /** A short, non-secret description of a link to show in lists. */
 export function icalUrlHint(url) {
   const u = new URL(url);
   const id = decodeURIComponent(u.pathname.split('/')[3] || '');
+  if (isPublicFeed(url)) return id;
   return id.length > 32 ? `${id.slice(0, 14)}…${id.slice(-14)}` : id;
 }
 
@@ -60,12 +100,18 @@ export async function fetchIcal(url) {
       continue;
     }
     if (res.status === 404 || res.status === 401 || res.status === 403) {
-      throw new Error('Google didn’t share this calendar. The link may have been reset, or your school may block secret addresses.');
+      throw new Error(isPublicFeed(url)
+        ? 'This calendar isn’t public yet. In Google Calendar, open the calendar’s Settings and sharing, turn on “Make available to public” with “See all event details”, then try again. (Your school may not allow it.)'
+        : 'Google didn’t share this calendar. The link may have been reset, or your school may block it.');
     }
     if (!res.ok) throw new Error(`Google Calendar returned an error (${res.status})`);
     const text = await res.text();
     if (text.length > MAX_BYTES) throw new Error('This calendar is too large to import');
-    if (!/BEGIN:VCALENDAR/.test(text)) throw new Error('That link didn’t return a calendar. Copy the “Secret address in iCal format”.');
+    if (!/BEGIN:VCALENDAR/.test(text)) {
+      throw new Error(isPublicFeed(url)
+        ? 'This calendar isn’t public yet. Turn on “Make available to public” in its Settings and sharing, then try again.'
+        : 'That link didn’t return a calendar. Copy the calendar’s “Public URL to this calendar”.');
+    }
     return text;
   }
   throw new Error('Too many redirects');

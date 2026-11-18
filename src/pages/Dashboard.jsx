@@ -100,6 +100,7 @@ export default function Dashboard() {
         ['calendar', 'Calendar', 'syncGoogleCalendar'],
         ['classroom', 'Classroom', 'syncGoogleClassroom'],
         ['blackboard', 'Blackboard', 'syncBlackboard'],
+        ['ical', 'Calendar links', 'icalSyncFeeds'],
       ].filter(([key]) => connections[key]);
       setSyncing(true);
       if (!silent) setSyncMsg(services.length ? 'Syncing...' : '');
@@ -126,7 +127,7 @@ export default function Dashboard() {
   const autoSynced = React.useRef(false);
   useEffect(() => {
     if (!user || isDemoUser(user) || !connectionsLoaded || autoSynced.current) return;
-    if (!connections.calendar && !connections.classroom && !connections.blackboard) return;
+    if (!connections.calendar && !connections.classroom && !connections.blackboard && !connections.ical) return;
     const last = user.data?.last_sync ? new Date(user.data.last_sync) : null;
     if (!last || Date.now() - last.getTime() > 6 * 60 * 60 * 1000) {
       autoSynced.current = true;
@@ -332,7 +333,7 @@ export default function Dashboard() {
           >
             <Timer className="h-4 w-4" />
           </Button>
-          {(connections.calendar || connections.classroom || connections.blackboard) && (
+          {(connections.calendar || connections.classroom || connections.blackboard || connections.ical) && (
             <Button variant="outline" className="h-11 md:h-10" onClick={() => runSync(false)} disabled={syncing}>
               {syncing ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
               Sync Now

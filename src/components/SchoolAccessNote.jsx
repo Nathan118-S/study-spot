@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Info, Mail } from 'lucide-react';
+import { CalendarPlus, Info, Mail } from 'lucide-react';
+import CalendarLinkGuide from '@/components/CalendarLinkGuide';
 import { useAuth } from '@/lib/AuthContext';
 import { Button } from '@/components/ui/button';
 import {
@@ -26,6 +27,7 @@ const SERVICE_LABEL = {
 export default function SchoolAccessNote({ service = 'both' }) {
   const { user } = useAuth();
   const [confirming, setConfirming] = useState(false);
+  const [guideOpen, setGuideOpen] = useState(false);
 
   const openEmail = () => {
     window.location.href = schoolItEmailUrl(user, service);
@@ -40,9 +42,17 @@ export default function SchoolAccessNote({ service = 'both' }) {
           connection is blocked or fails, ask your school&apos;s IT team, or add your assignments manually.
         </p>
       </div>
-      <Button type="button" variant="outline" size="sm" className="ml-6 bg-card" onClick={() => setConfirming(true)}>
-        <Mail className="h-4 w-4 mr-1.5" /> Email my school&apos;s IT team
-      </Button>
+      <div className="ml-6 flex flex-wrap gap-2">
+        <Button type="button" variant="outline" size="sm" className="bg-card" onClick={() => setConfirming(true)}>
+          <Mail className="h-4 w-4 mr-1.5" /> Email my school&apos;s IT team
+        </Button>
+        {service !== 'blackboard' && (
+          <Button type="button" variant="outline" size="sm" className="bg-card" onClick={() => setGuideOpen(true)}>
+            <CalendarPlus className="h-4 w-4 mr-1.5" /> Use a calendar link instead
+          </Button>
+        )}
+      </div>
+      {service !== 'blackboard' && <CalendarLinkGuide open={guideOpen} onOpenChange={setGuideOpen} />}
 
       <AlertDialog open={confirming} onOpenChange={setConfirming}>
         <AlertDialogContent>

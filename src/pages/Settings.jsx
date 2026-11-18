@@ -13,6 +13,7 @@ import DataExport from '@/components/DataExport';
 import AccountName from '@/components/AccountName';
 import ChangePassword from '@/components/ChangePassword';
 import SchoolAccessNote from '@/components/SchoolAccessNote';
+import CalendarLinks from '@/components/CalendarLinks';
 import { WelcomeStyleSelect } from '@/components/ThemeControls';
 import { Switch } from '@/components/ui/switch';
 import {
@@ -273,6 +274,7 @@ export default function Settings() {
                 </div>
               ) : null}
             />
+            <CalendarLinks />
           </div>
         );
       case 'blackboard':
