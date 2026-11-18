@@ -67,9 +67,11 @@ own notifications and aren't a "Device ID" in Apple's sense.)
 
 ### Screenshots
 
-- **iPhone 6.9″ (1320 × 2868):** upload the six images in
-  `marketing/ios-screenshots-6.9in/` in order (1 → 6). Apple scales them for
-  smaller iPhones automatically.
+- **iPhone 6.9″ (1320 × 2868):** upload the five images in
+  `marketing/ios-screenshots-6.9in-real/` in order (1 → 5). They're made from
+  screenshots of the real app. Apple scales them for smaller iPhones
+  automatically. (`marketing/ios-screenshots-6.9in/` has an older set made
+  from screen designs; use the real ones.)
 - **iPad 13″ (2064 × 2752):** required because the app also runs on iPad. Take
   them in Xcode's **iPad Pro 13-inch** simulator: run the app, sign in, and
   press ⌘S on each screen (Dashboard, Calendar, Streaks, an assignment,
