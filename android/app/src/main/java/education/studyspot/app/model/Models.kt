@@ -53,7 +53,13 @@ enum class Source(val wire: String, val label: String) {
     Manual("manual", "Manual"),
     GoogleCalendar("google_calendar", "Calendar"),
     GoogleClassroom("google_classroom", "Classroom"),
-    Blackboard("blackboard", "Blackboard");
+    Blackboard("blackboard", "Blackboard"),
+    Canvas("canvas", "Canvas"),
+    Schoology("schoology", "Schoology"),
+    Brightspace("brightspace", "Brightspace");
+
+    /** Imported from Google Calendar or Google Classroom. */
+    val isGoogle: Boolean get() = this == GoogleCalendar || this == GoogleClassroom
 
     object Serializer : LenientEnumSerializer<Source>("Source", entries.toTypedArray(), Manual, { it.wire })
 }
@@ -304,19 +310,30 @@ data class Connections(
 }
 
 /** Where a calendar link comes from: [IcalFeed.kind] and the guide it is added with. */
-enum class IcalKind(val key: String) {
-    Google("google"),
-    Blackboard("blackboard"),
+enum class IcalKind(val key: String, val label: String) {
+    Google("google", "Google Calendar"),
+    Blackboard("blackboard", "Blackboard"),
+    Canvas("canvas", "Canvas"),
+    Schoology("schoology", "Schoology"),
+    Brightspace("brightspace", "Brightspace"),
     ;
 
+    /** Canvas, Schoology and Brightspace: listed together in Settings > Canvas, Schoology & Brightspace. */
+    val isLms: Boolean get() = this in LMS
+
+    /** The server's import mode when none is sent: every event for Blackboard and Schoology, else "auto". */
+    val defaultImportsAll: Boolean get() = this == Blackboard || this == Schoology
+
     companion object {
+        val LMS: List<IcalKind> = listOf(Canvas, Schoology, Brightspace)
+
         /** Unknown or missing kinds are Google (links added before kinds existed). */
         fun from(key: String?): IcalKind = entries.firstOrNull { it.key.equals(key?.trim(), ignoreCase = true) } ?: Google
     }
 }
 
 /**
- * A pasted Google Calendar or Blackboard calendar link
+ * A pasted Google Calendar, Blackboard, Canvas, Schoology or Brightspace calendar link
  * (server/src/functions/ical.js `publicFeed`).
  * The secret URL itself is never returned, only [urlHint].
  */
@@ -324,7 +341,7 @@ enum class IcalKind(val key: String) {
 data class IcalFeed(
     @Serializable(with = FlexTextSerializer::class) val id: String = "",
     @Serializable(with = FlexTextSerializer::class) val label: String = "",
-    /** "google" or "blackboard"; see [feedKind]. */
+    /** "google", "blackboard", "canvas", "schoology" or "brightspace"; see [feedKind]. */
     @Serializable(with = FlexTextSerializer::class) val kind: String = IcalKind.Google.key,
     @Serializable(with = FlexStringSerializer::class) @SerialName("calendar_name") val calendarName: String? = null,
     @Serializable(with = FlexStringSerializer::class) @SerialName("url_hint") val urlHint: String? = null,
@@ -342,7 +359,7 @@ data class IcalFeed(
     /** The label, else the calendar's own name. */
     val displayName: String
         get() = label.ifBlank {
-            calendarName?.takeIf { it.isNotBlank() } ?: if (feedKind == IcalKind.Blackboard) "Blackboard" else "Google Calendar"
+            calendarName?.takeIf { it.isNotBlank() } ?: feedKind.label
         }
 
     companion object {

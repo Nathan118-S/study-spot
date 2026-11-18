@@ -56,39 +56,12 @@ import kotlinx.coroutines.launch
 @Composable
 fun IcalLinksSection(isDemo: Boolean, kind: IcalKind = IcalKind.Google) {
     val c = LocalAppContainer.current
-    val scope = rememberCoroutineScope()
     val allFeeds by c.repository.icalFeeds.collectAsStateWithLifecycle()
     val feeds = IcalLinks.feeds(allFeeds, kind)
     val google = kind == IcalKind.Google
     var showGuide by remember { mutableStateOf(false) }
     var importingFile by remember { mutableStateOf(false) }
     var askingTeacher by remember { mutableStateOf(false) }
-    var syncing by remember { mutableStateOf(false) }
-    var renaming by remember { mutableStateOf<IcalFeed?>(null) }
-    var removing by remember { mutableStateOf<IcalFeed?>(null) }
-
-    fun failed(title: String, e: Exception) {
-        if (e is kotlinx.coroutines.CancellationException) throw e
-        c.messages.show(title, e.userMessage, error = true)
-    }
-
-    fun syncAll() {
-        scope.launch {
-            syncing = true
-            try {
-                val r = c.repository.syncIcalFeeds()
-                if (r.errors.isEmpty()) {
-                    c.messages.show("Calendars synced", if (r.imported > 0) "${r.imported} new" else "No new assignments")
-                } else {
-                    c.messages.show("Couldn't sync ${r.errors.joinToString { it.label }}", r.errors.first().error, error = true)
-                }
-            } catch (e: Exception) {
-                failed("Couldn't sync", e)
-            } finally {
-                syncing = false
-            }
-        }
-    }
 
     SettingsSection(header = if (google) "Can't connect your Google account?" else "Can't connect Blackboard?") {
         SettingsText(
@@ -135,31 +108,71 @@ fun IcalLinksSection(isDemo: Boolean, kind: IcalKind = IcalKind.Google) {
                 )
             }
         }
-        feeds.forEach { feed ->
-            HorizontalDivider(color = StudySpotTheme.colors.border)
-            IcalFeedRow(
-                feed = feed,
-                syncing = syncing,
-                enabled = !isDemo,
-                onSync = ::syncAll,
-                onRename = { renaming = feed },
-                onImportAllChange = { all ->
-                    scope.launch {
-                        try {
-                            c.repository.updateIcalFeed(feed.id, mode = if (all) IcalFeed.MODE_ALL else IcalFeed.MODE_AUTO)
-                        } catch (e: Exception) {
-                            failed("Couldn't save", e)
-                        }
-                    }
-                },
-                onRemove = { removing = feed },
-            )
-        }
+        IcalFeedRows(feeds, isDemo = isDemo)
     }
 
     if (showGuide) IcalGuideDialog(onDismiss = { showGuide = false }, kind = kind)
     if (importingFile) IcalImportFileDialog(onDismiss = { importingFile = false })
     if (askingTeacher) TeacherEmailConfirmDialog(onDismiss = { askingTeacher = false })
+}
+
+/**
+ * The calendar links in [feeds], each after a divider, with Sync now / Rename /
+ * Import every event / Remove and their dialogs. With [showKind] each row's
+ * secondary line starts with the system's name ("Canvas · Synced 5 min ago").
+ */
+@Composable
+fun IcalFeedRows(feeds: List<IcalFeed>, isDemo: Boolean, showKind: Boolean = false) {
+    val c = LocalAppContainer.current
+    val scope = rememberCoroutineScope()
+    var syncing by remember { mutableStateOf(false) }
+    var renaming by remember { mutableStateOf<IcalFeed?>(null) }
+    var removing by remember { mutableStateOf<IcalFeed?>(null) }
+
+    fun failed(title: String, e: Exception) {
+        if (e is kotlinx.coroutines.CancellationException) throw e
+        c.messages.show(title, e.userMessage, error = true)
+    }
+
+    fun syncAll() {
+        scope.launch {
+            syncing = true
+            try {
+                val r = c.repository.syncIcalFeeds()
+                if (r.errors.isEmpty()) {
+                    c.messages.show("Calendars synced", if (r.imported > 0) "${r.imported} new" else "No new assignments")
+                } else {
+                    c.messages.show("Couldn't sync ${r.errors.joinToString { it.label }}", r.errors.first().error, error = true)
+                }
+            } catch (e: Exception) {
+                failed("Couldn't sync", e)
+            } finally {
+                syncing = false
+            }
+        }
+    }
+
+    feeds.forEach { feed ->
+        HorizontalDivider(color = StudySpotTheme.colors.border)
+        IcalFeedRow(
+            feed = feed,
+            showKind = showKind,
+            syncing = syncing,
+            enabled = !isDemo,
+            onSync = ::syncAll,
+            onRename = { renaming = feed },
+            onImportAllChange = { all ->
+                scope.launch {
+                    try {
+                        c.repository.updateIcalFeed(feed.id, mode = if (all) IcalFeed.MODE_ALL else IcalFeed.MODE_AUTO)
+                    } catch (e: Exception) {
+                        failed("Couldn't save", e)
+                    }
+                }
+            },
+            onRemove = { removing = feed },
+        )
+    }
 
     renaming?.let { feed ->
         var name by remember(feed.id) { mutableStateOf(feed.displayName) }
@@ -232,6 +245,7 @@ private fun RemoveOption(text: String, selected: Boolean, onClick: () -> Unit) {
 @Composable
 private fun IcalFeedRow(
     feed: IcalFeed,
+    showKind: Boolean,
     syncing: Boolean,
     enabled: Boolean,
     onSync: () -> Unit,
@@ -240,7 +254,7 @@ private fun IcalFeedRow(
     onRemove: () -> Unit,
 ) {
     val navy = StudySpotTheme.colors.secondary
-    val status = IcalLinks.status(feed)
+    val status = IcalLinks.status(feed, showKind = showKind)
     Column(Modifier.padding(horizontal = 16.dp, vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.Top) {
             Icon(Icons.Outlined.Event, contentDescription = null, tint = navy, modifier = Modifier.padding(top = 2.dp))

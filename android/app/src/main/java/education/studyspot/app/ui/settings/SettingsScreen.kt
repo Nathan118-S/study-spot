@@ -78,6 +78,7 @@ fun SettingsPageScreen(page: SettingsPage, navigator: AppNavigator) {
             SettingsPage.Appearance -> AppearanceSettingsScreen(modifier)
             SettingsPage.Google -> GoogleSettingsScreen(modifier)
             SettingsPage.Blackboard -> BlackboardSettingsScreen(modifier)
+            SettingsPage.Lms -> LmsSettingsScreen(modifier)
             SettingsPage.Sync -> SyncSettingsScreen(modifier)
             SettingsPage.Leaderboard -> LeaderboardSettingsScreen(modifier)
             SettingsPage.Onboarding -> OnboardingSettingsScreen(modifier)

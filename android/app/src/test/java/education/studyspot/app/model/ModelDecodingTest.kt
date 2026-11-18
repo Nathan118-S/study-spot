@@ -119,6 +119,25 @@ class ModelDecodingTest {
     }
 
     @Test
+    fun decodesLmsSources() {
+        // Assignments and classes imported from Canvas, Schoology and Brightspace calendar links.
+        val json = """
+            [{"id":"a1","title":"Lab 3","source":"canvas"},
+             {"id":"a2","title":"Essay","source":"schoology"},
+             {"id":"a3","title":"Quiz","source":"brightspace"},
+             {"id":"a4","title":"Mystery","source":"moodle"}]
+        """.trimIndent()
+        val list = AppJson.decodeFromString(ListSerializer(Assignment.serializer()), json)
+        assertEquals(listOf(Source.Canvas, Source.Schoology, Source.Brightspace, Source.Manual), list.map { it.source })
+        assertEquals(listOf("Canvas", "Schoology", "Brightspace"), list.take(3).map { it.source.label })
+        assertEquals(listOf("canvas", "schoology", "brightspace"), list.take(3).map { it.source.wire })
+        val c = AppJson.decodeFromString(SchoolClass.serializer(), """{"id":"c1","name":"Chemistry","source":"brightspace"}""")
+        assertEquals(Source.Brightspace, c.source)
+        assertFalse(Source.Canvas.isGoogle)
+        assertTrue(Source.GoogleClassroom.isGoogle)
+    }
+
+    @Test
     fun decodesClassWithSchedule() {
         val json = """
             {"id":"c1","name":"Biology","color":"#22c55e","teacher_name":"Ms. Lee","subject":"Science","room":"B12",

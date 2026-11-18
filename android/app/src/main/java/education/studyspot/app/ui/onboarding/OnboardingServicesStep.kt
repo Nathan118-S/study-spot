@@ -9,12 +9,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import education.studyspot.app.ui.settings.BlackboardSettingsScreen
 import education.studyspot.app.ui.settings.GoogleSettingsScreen
+import education.studyspot.app.ui.settings.LmsSettingsScreen
 import education.studyspot.app.ui.theme.StudySpotTheme
 
 /**
  * The onboarding "Services" step: the same Google and Blackboard connection
  * sections as Settings (each with the school-IT notice and the "Email my
- * school's IT team" draft), like iOS.
+ * school's IT team" draft), like iOS, then a compact Canvas, Schoology &
+ * Brightspace card whose three buttons open the calendar-link guides.
  */
 @Composable
 fun OnboardingServicesStep(modifier: Modifier = Modifier) {
@@ -27,5 +29,6 @@ fun OnboardingServicesStep(modifier: Modifier = Modifier) {
         )
         GoogleSettingsScreen(embedded = true)
         BlackboardSettingsScreen(embedded = true)
+        LmsSettingsScreen(embedded = true)
     }
 }

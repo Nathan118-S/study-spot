@@ -45,7 +45,7 @@ object FakeBackend {
     }
 
     private val ICAL_FEEDS = """
-        {"feeds":[{"id":"f1","label":"AP Biology","calendar_name":"AP Biology","mode":"auto","last_synced_at":"${java.time.Instant.now().minusSeconds(300)}","last_imported":3},{"id":"f2","label":"Blackboard","kind":"blackboard","mode":"all","last_synced_at":"${java.time.Instant.now().minusSeconds(3600)}","last_imported":0}]}
+        {"feeds":[{"id":"f1","label":"AP Biology","calendar_name":"AP Biology","mode":"auto","last_synced_at":"${java.time.Instant.now().minusSeconds(300)}","last_imported":3},{"id":"f2","label":"Blackboard","kind":"blackboard","mode":"all","last_synced_at":"${java.time.Instant.now().minusSeconds(3600)}","last_imported":0},{"id":"f3","label":"","kind":"canvas","mode":"auto","last_synced_at":"${java.time.Instant.now().minusSeconds(300)}","last_imported":4},{"id":"f4","label":"","kind":"brightspace","mode":"auto","last_error":"The link has expired"}]}
     """.trimIndent()
 
     private val ADMIN_USERS = """

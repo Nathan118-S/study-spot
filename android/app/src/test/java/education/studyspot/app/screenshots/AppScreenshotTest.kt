@@ -124,6 +124,25 @@ class AppScreenshotTest(dark: Boolean) : ScreenshotHarness(dark) {
         snap("14d_settings_blackboard") { SettingsPageScreen(SettingsPage.Blackboard, it) }
     }
 
+    @Test fun settingsLms() {
+        signedIn()
+        snap("14e_settings_lms") { SettingsPageScreen(SettingsPage.Lms, it) }
+    }
+
+    @Test fun canvasGuideCopyLink() {
+        signedIn()
+        snap("14f_canvas_guide_step2") {
+            IcalGuide(onClose = {}, initialStep = 1, kind = IcalKind.Canvas, modifier = Modifier.safeDrawingPadding())
+        }
+    }
+
+    @Test fun brightspaceGuidePaste() {
+        signedIn()
+        snap("14g_brightspace_guide_step3") {
+            IcalGuide(onClose = {}, initialStep = 2, kind = IcalKind.Brightspace, modifier = Modifier.safeDrawingPadding())
+        }
+    }
+
     @Test fun studyTimer() {
         signedIn()
         snap("15_study_timer") { StudyTimerScreen(it) }

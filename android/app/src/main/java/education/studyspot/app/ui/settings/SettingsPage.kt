@@ -4,6 +4,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.AccountBalance
 import androidx.compose.material.icons.outlined.Alarm
 import androidx.compose.material.icons.outlined.Dns
+import androidx.compose.material.icons.outlined.EditCalendar
 import androidx.compose.material.icons.outlined.EmojiEvents
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Palette
@@ -33,6 +34,7 @@ enum class SettingsPage(
     Appearance("appearance", "Appearance", "Light/dark mode and device sync", Icons.Outlined.Palette),
     Google("google", "Google", "Calendar and Classroom connections", Icons.Outlined.Power),
     Blackboard("blackboard", "Blackboard", "Connect your school’s Blackboard", Icons.Outlined.AccountBalance),
+    Lms("lms", "Canvas, Schoology & Brightspace", "Add your school's calendar by link", Icons.Outlined.EditCalendar),
     Sync("sync", "Sync", "Refresh synced data", Icons.Outlined.Sync),
     Leaderboard("leaderboard", "Leaderboard", "Show study-streak rankings", Icons.Outlined.EmojiEvents),
     Onboarding("onboarding", "Onboarding", "Run the setup wizard again", Icons.Outlined.RestartAlt),

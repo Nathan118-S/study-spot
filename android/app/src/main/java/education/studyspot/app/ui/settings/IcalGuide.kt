@@ -39,6 +39,8 @@ import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.ContentPaste
 import androidx.compose.material.icons.outlined.School
 import androidx.compose.material.icons.outlined.Email
+import androidx.compose.material.icons.outlined.FileDownload
+import androidx.compose.material.icons.outlined.Link
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.KeyboardArrowDown
 import androidx.compose.material.icons.outlined.Lightbulb
@@ -80,6 +82,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -104,6 +108,10 @@ import kotlinx.coroutines.launch
  *   steps (open the Blackboard calendar, copy its external calendar link, paste
  *   it here). Opened from Settings > Blackboard, the Blackboard school-IT notice
  *   and the "Your school needs to approve Study Spot" error.
+ * - [IcalKind.Canvas], [IcalKind.Schoology] and [IcalKind.Brightspace],
+ *   "Add your <System> calendar with a link": three steps (open the calendar,
+ *   copy its feed link, paste it here). Opened from Settings > Canvas,
+ *   Schoology & Brightspace and onboarding.
  */
 @Composable
 fun IcalGuideDialog(onDismiss: () -> Unit, kind: IcalKind = IcalKind.Google) {
@@ -126,8 +134,8 @@ fun IcalGuide(onClose: () -> Unit, modifier: Modifier = Modifier, initialStep: I
     val isDemo = user?.isDemo == true
     val steps = IcalLinks.steps(kind)
     val pager = rememberPagerState(initialPage = initialStep) { steps }
-    // Blackboard links default to every event (each course becomes a class).
-    val defaultImportAll = kind == IcalKind.Blackboard
+    // Blackboard and Schoology links default to every event (each course becomes a class), like the server.
+    val defaultImportAll = kind.defaultImportsAll
     var url by rememberSaveable { mutableStateOf("") }
     var label by rememberSaveable { mutableStateOf("") }
     var importAll by rememberSaveable { mutableStateOf(defaultImportAll) }
@@ -142,7 +150,7 @@ fun IcalGuide(onClose: () -> Unit, modifier: Modifier = Modifier, initialStep: I
     fun add() {
         if (busy || isDemo) return
         if (url.isBlank()) {
-            error = if (kind == IcalKind.Blackboard) "Paste your Blackboard calendar link first." else "Paste your calendar's link first."
+            error = IcalLinks.emptyUrlError(kind)
             return
         }
         scope.launch {
@@ -242,6 +250,11 @@ fun IcalGuide(onClose: () -> Unit, modifier: Modifier = Modifier, initialStep: I
                     IcalKind.Blackboard -> when (p) {
                         0 -> BlackboardStepOpenCalendar()
                         1 -> BlackboardStepCopyLink()
+                        else -> paste()
+                    }
+                    IcalKind.Canvas, IcalKind.Schoology, IcalKind.Brightspace -> when (p) {
+                        0 -> LmsStepOpenCalendar(kind)
+                        1 -> LmsStepCopyLink(kind)
                         else -> paste()
                     }
                 }
@@ -480,6 +493,55 @@ private fun BlackboardStepCopyLink() {
     if (emailing) SchoolITEmailConfirmDialog(SchoolITEmail.Service.Blackboard, onDismiss = { emailing = false })
 }
 
+/** Step 1 of the Canvas, Schoology and Brightspace guides. */
+@Composable
+private fun LmsStepOpenCalendar(kind: IcalKind) {
+    StepTitle(1, "Open your ${kind.label} calendar")
+    Body(
+        when (kind) {
+            IcalKind.Canvas -> "Sign in to Canvas in a web browser and select **Calendar** in the menu on the left."
+            IcalKind.Schoology -> "Sign in to Schoology in a web browser and open **Calendar** from the top menu."
+            else -> "Sign in to Brightspace in a web browser and open **Calendar** (from the homepage or a course)."
+        },
+    )
+}
+
+/** Step 2 of the Canvas, Schoology and Brightspace guides. */
+@Composable
+private fun LmsStepCopyLink(kind: IcalKind) {
+    when (kind) {
+        IcalKind.Canvas -> {
+            StepTitle(2, "Copy the calendar feed")
+            Body("At the bottom of the right-hand side, select **Calendar Feed**, then copy the link. It ends in **.ics**.")
+            LmsLinkIllustration(action = "Calendar Feed", button = false, link = "https://…/feeds/calendars/user_….ics")
+        }
+        IcalKind.Schoology -> {
+            StepTitle(2, "Copy the iCal link")
+            Body(
+                "Select **Export** (or the calendar's export/iCal option) and copy the iCal feed link. " +
+                    "If you don't see it, your school may have turned it off.",
+            )
+            LmsLinkIllustration(action = "Export", button = true, link = "…/calendar/feed/ical/…/ical.ics")
+        }
+        else -> {
+            StepTitle(2, "Copy the subscription link")
+            Body("Select **Subscribe**, choose **All Courses**, and copy the link. It contains **feed.ics?token=**.")
+            LmsLinkIllustration(action = "Subscribe", button = false, link = "…/d2l/le/calendar/feed/user/feed.ics?token=…")
+        }
+    }
+    Callout(
+        icon = Icons.Outlined.WarningAmber,
+        tint = StudySpotTheme.colors.dueToday,
+        background = StudySpotTheme.colors.dueToday.copy(alpha = 0.12f),
+    ) {
+        Text(
+            "Don't see it? Your school may have turned it off. Ask your school's IT team or add assignments yourself.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onBackground,
+        )
+    }
+}
+
 @Composable
 private fun StepPaste(
     kind: IcalKind,
@@ -496,13 +558,13 @@ private fun StepPaste(
     onSubmit: () -> Unit,
 ) {
     val context = LocalContext.current
-    val blackboard = kind == IcalKind.Blackboard
+    val google = kind == IcalKind.Google
     StepTitle(number, "Paste it here")
     OutlinedTextField(
         value = url,
         onValueChange = onUrlChange,
-        label = { Text(if (blackboard) "Blackboard calendar link" else "Calendar link") },
-        placeholder = { Text(if (blackboard) IcalLinks.BLACKBOARD_URL_PLACEHOLDER else IcalLinks.URL_PLACEHOLDER, maxLines = 1) },
+        label = { Text(IcalLinks.urlLabel(kind)) },
+        placeholder = { Text(IcalLinks.urlPlaceholder(kind), maxLines = 1) },
         singleLine = true,
         enabled = enabled,
         isError = error != null,
@@ -539,15 +601,15 @@ private fun StepPaste(
             )
         }
         // Each guide lists its default first.
-        if (blackboard) every()
+        if (kind.defaultImportsAll) every()
         ModeOption(
-            title = "Only events that look like assignments",
-            description = if (blackboard) null else "Homework, quizzes, tests, projects and everything from Google Classroom.",
+            title = IcalLinks.autoModeTitle(kind),
+            description = if (google) "Homework, quizzes, tests, projects and everything from Google Classroom." else null,
             selected = !importAll,
             enabled = enabled,
             onClick = { onImportAllChange(false) },
         )
-        if (!blackboard) every()
+        if (!kind.defaultImportsAll) every()
     }
     if (isDemo) SettingsFootnote("The demo account can't add calendars.")
     PrivacyNote(kind)
@@ -578,10 +640,7 @@ private fun PrivacyNote(kind: IcalKind) {
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Top) {
         Icon(Icons.Outlined.Info, contentDescription = null, tint = StudySpotTheme.colors.mutedText, modifier = Modifier.size(14.dp).padding(top = 2.dp))
         Text(
-            when (kind) {
-                IcalKind.Google -> "Study Spot only reads this calendar. If you turn off public access later, Study Spot stops getting updates from it."
-                IcalKind.Blackboard -> "Keep this link private. Anyone with it can see your Blackboard calendar. If you get a new link in Blackboard, add the new one here."
-            },
+            IcalLinks.privacyNote(kind),
             style = MaterialTheme.typography.bodySmall,
             color = StudySpotTheme.colors.mutedText,
         )
@@ -815,28 +874,74 @@ private fun BlackboardLinkIllustration() {
             }
         }
         Text("Calendar link", style = MaterialTheme.typography.labelLarge, color = StudySpotTheme.colors.mutedText)
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text(
-                "…/calendarFeed/…/learn.ics",
-                style = MaterialTheme.typography.bodySmall,
-                fontFamily = FontFamily.Monospace,
-                maxLines = 1,
-                modifier = Modifier
-                    .weight(1f)
-                    .background(MaterialTheme.colorScheme.background, RoundedCornerShape(6.dp))
-                    .border(1.dp, StudySpotTheme.colors.border, RoundedCornerShape(6.dp))
-                    .padding(horizontal = 10.dp, vertical = 8.dp),
-            )
-            Box(
+        CopyLinkField("…/calendarFeed/…/learn.ics")
+    }
+}
+
+/** A link field in monospace with its copy action ringed. */
+@Composable
+private fun CopyLinkField(link: String) {
+    val accent = StudySpotTheme.colors.accent
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        Text(
+            link,
+            style = MaterialTheme.typography.bodySmall,
+            fontFamily = FontFamily.Monospace,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier
+                .weight(1f)
+                .background(MaterialTheme.colorScheme.background, RoundedCornerShape(6.dp))
+                .border(1.dp, StudySpotTheme.colors.border, RoundedCornerShape(6.dp))
+                .padding(horizontal = 10.dp, vertical = 8.dp),
+        )
+        Box(
+            Modifier
+                .size(40.dp)
+                .background(accent.copy(alpha = 0.16f), CircleShape)
+                .border(2.dp, accent, CircleShape),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(Icons.Outlined.ContentCopy, contentDescription = "Copy link", tint = StudySpotTheme.colors.secondary, modifier = Modifier.size(18.dp))
+        }
+    }
+}
+
+/**
+ * Canvas, Schoology or Brightspace: the [action] that reveals the calendar link
+ * (a link, or a button when [button]) highlighted, and the [link] field with its copy action.
+ */
+@Composable
+private fun LmsLinkIllustration(action: String, button: Boolean, link: String) {
+    val accent = StudySpotTheme.colors.accent
+    val navy = StudySpotTheme.colors.secondary
+    MockWindow {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text("Calendar", style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
+            Row(
                 Modifier
-                    .size(40.dp)
-                    .background(accent.copy(alpha = 0.16f), CircleShape)
-                    .border(2.dp, accent, CircleShape),
-                contentAlignment = Alignment.Center,
+                    .background(accent.copy(alpha = 0.14f), RoundedCornerShape(8.dp))
+                    .border(2.dp, accent, RoundedCornerShape(8.dp))
+                    .padding(horizontal = 10.dp, vertical = 6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
             ) {
-                Icon(Icons.Outlined.ContentCopy, contentDescription = "Copy link", tint = StudySpotTheme.colors.secondary, modifier = Modifier.size(18.dp))
+                Icon(
+                    if (button) Icons.Outlined.FileDownload else Icons.Outlined.Link,
+                    contentDescription = null,
+                    tint = navy,
+                    modifier = Modifier.size(16.dp),
+                )
+                Text(
+                    action,
+                    style = MaterialTheme.typography.bodySmall,
+                    fontWeight = FontWeight.SemiBold,
+                    color = navy,
+                    textDecoration = if (button) null else TextDecoration.Underline,
+                )
             }
         }
+        CopyLinkField(link)
     }
 }
 

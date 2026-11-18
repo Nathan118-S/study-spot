@@ -236,7 +236,7 @@ private fun ClassCard(cls: SchoolClass, assignmentCount: Int, onEdit: () -> Unit
             Column(Modifier.weight(1f).padding(start = 12.dp), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text(cls.displayName, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f, fill = false))
-                    if (cls.source != Source.Manual) Pill(if (cls.source == Source.Blackboard) "Blackboard" else "Google")
+                    if (cls.source != Source.Manual) Pill(if (cls.source.isGoogle) "Google" else cls.source.label)
                 }
                 val details = listOfNotNull(
                     cls.subject?.takeIf { it.isNotBlank() },

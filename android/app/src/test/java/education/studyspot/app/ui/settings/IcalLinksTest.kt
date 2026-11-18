@@ -118,6 +118,63 @@ class IcalLinksTest {
     }
 
     @Test
+    fun decodesLmsKinds() {
+        val json = """
+            {"feeds":[
+              {"id":"c","label":"Canvas","kind":"canvas","url_hint":"school.instructure.com/…/user_….ics","mode":"auto"},
+              {"id":"s","label":null,"calendar_name":null,"kind":"Schoology","mode":"all"},
+              {"id":"d","label":"","kind":" brightspace ","mode":"auto"},
+              {"id":"b","label":"Blackboard","kind":"blackboard","mode":"all"},
+              {"id":"g","label":"AP Biology","kind":"google","mode":"auto"}
+            ]}
+        """.trimIndent()
+        val feeds = AppJson.decodeFromString(IcalFeeds.serializer(), json).feeds
+        assertEquals(
+            listOf(IcalKind.Canvas, IcalKind.Schoology, IcalKind.Brightspace, IcalKind.Blackboard, IcalKind.Google),
+            feeds.map { it.feedKind },
+        )
+        assertEquals(listOf("Canvas", "Schoology", "Brightspace"), feeds.take(3).map { it.displayName })
+        assertEquals(listOf("c", "s", "d"), IcalLinks.lmsFeeds(feeds).map { it.id })
+        assertEquals(listOf("c"), IcalLinks.feeds(feeds, IcalKind.Canvas).map { it.id })
+        assertEquals(listOf("b"), IcalLinks.feeds(feeds, IcalKind.Blackboard).map { it.id })
+        assertEquals(listOf("g"), IcalLinks.feeds(feeds, IcalKind.Google).map { it.id })
+        assertEquals(listOf("canvas", "schoology", "brightspace"), IcalKind.LMS.map { it.key })
+    }
+
+    @Test
+    fun lmsStatusLineNamesTheSystem() {
+        val now = Instant.parse("2026-11-18T15:00:00Z")
+        val canvas = IcalFeed(id = "1", kind = "canvas", lastSyncedAt = now.minusSeconds(300))
+        assertEquals("Canvas · Synced 5 min ago", IcalLinks.status(canvas, now, showKind = true).text)
+        assertEquals("Synced 5 min ago", IcalLinks.status(canvas, now).text)
+        assertEquals("Schoology · Not synced yet", IcalLinks.status(IcalFeed(id = "2", kind = "schoology"), now, showKind = true).text)
+        val broken = IcalLinks.status(IcalFeed(id = "3", kind = "brightspace", lastError = "Not public"), now, showKind = true)
+        assertEquals("Brightspace · Couldn't sync: Not public", broken.text)
+        assertTrue(broken.error)
+    }
+
+    @Test
+    fun lmsGuidesText() {
+        for (kind in IcalKind.LMS) assertEquals(3, IcalLinks.steps(kind))
+        assertEquals("Add your Canvas calendar with a link", IcalLinks.guideTitle(IcalKind.Canvas))
+        assertEquals("Add your Schoology calendar with a link", IcalLinks.guideTitle(IcalKind.Schoology))
+        assertEquals("Add your Brightspace calendar with a link", IcalLinks.guideTitle(IcalKind.Brightspace))
+        assertEquals("Brightspace calendar link", IcalLinks.urlLabel(IcalKind.Brightspace))
+        // Server defaults: every event for Blackboard and Schoology, "auto" for the rest.
+        assertEquals(
+            listOf(false, true, false, true, false),
+            listOf(IcalKind.Google, IcalKind.Blackboard, IcalKind.Canvas, IcalKind.Schoology, IcalKind.Brightspace).map { it.defaultImportsAll },
+        )
+        assertEquals("Only assignments and due dates", IcalLinks.autoModeTitle(IcalKind.Canvas))
+        assertEquals("Only assignments and due dates", IcalLinks.autoModeTitle(IcalKind.Brightspace))
+        assertEquals("Only events that look like assignments", IcalLinks.autoModeTitle(IcalKind.Schoology))
+        assertEquals(
+            "Keep this link private. Anyone with it can see your Schoology calendar. If you reset it in Schoology, add the new one here.",
+            IcalLinks.privacyNote(IcalKind.Schoology),
+        )
+    }
+
+    @Test
     fun decodesImportFileResult() {
         // icalImportFile -> { ok, imported, calendars: [{ name, imported, events }] }; a malformed entry is skipped.
         val json = """
