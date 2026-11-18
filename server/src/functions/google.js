@@ -11,7 +11,10 @@ export async function checkGoogleConnections(user) {
     [user.id]
   );
   const connected = new Set(res.rows.map((r) => r.connector));
+  const feeds = await pool.query('SELECT count(*)::int n FROM ical_feeds WHERE user_id = $1', [user.id]);
   return {
+    // Google Calendar links pasted instead of connecting a Google account.
+    ical: feeds.rows[0].n > 0,
     calendar: connected.has('google_calendar'),
     classroom: connected.has('google_classroom'),
     blackboard: !!user.data?.blackboard_access_token,

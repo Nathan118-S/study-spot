@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { isElevated } from '../lib/adminElevation.js';
 import * as adminUsers from '../functions/adminUsers.js';
 import * as adminSimulate from '../functions/adminSimulate.js';
+import * as ical from '../functions/ical.js';
 import { requireAuth, requireAdmin } from '../middleware/auth.js';
 import { HttpError } from '../lib/httpError.js';
 import * as twofa from '../functions/twofa.js';
@@ -35,6 +36,11 @@ const HANDLERS = {
   syncBlackboard: { handler: blackboard.syncBlackboard },
 
   checkGoogleConnections: { handler: google.checkGoogleConnections },
+  icalListFeeds: { handler: ical.icalListFeeds },
+  icalAddFeed: { handler: ical.icalAddFeed },
+  icalUpdateFeed: { handler: ical.icalUpdateFeed },
+  icalRemoveFeed: { handler: ical.icalRemoveFeed },
+  icalSyncFeeds: { handler: ical.icalSyncFeeds },
   syncGoogleCalendar: { handler: google.syncGoogleCalendar },
   syncGoogleClassroom: { handler: google.syncGoogleClassroom },
   getClassroomAttachments: { handler: google.getClassroomAttachments },

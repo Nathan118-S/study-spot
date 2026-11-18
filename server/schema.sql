@@ -203,3 +203,23 @@ CREATE TABLE IF NOT EXISTS class_activity_sends (
   ended_at TIMESTAMPTZ,
   PRIMARY KEY (user_id, class_id, starts_at)
 );
+
+-- Google Calendar links pasted by people who can't connect their Google
+-- account (the calendar's "Secret address in iCal format"). The URL is a
+-- secret, so it's stored encrypted like the integration secrets.
+CREATE TABLE IF NOT EXISTS ical_feeds (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  label TEXT,
+  url_hint TEXT,
+  url_iv BYTEA NOT NULL,
+  url_ciphertext BYTEA NOT NULL,
+  url_auth_tag BYTEA NOT NULL,
+  mode TEXT NOT NULL DEFAULT 'auto' CHECK (mode IN ('auto', 'all')),
+  calendar_name TEXT,
+  last_synced_at TIMESTAMPTZ,
+  last_error TEXT,
+  last_imported INTEGER NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_ical_feeds_user ON ical_feeds(user_id);

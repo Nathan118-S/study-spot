@@ -35,6 +35,20 @@ function encryptionKey() {
   return cachedKey;
 }
 
+/** Encrypts a value with the server's key (same scheme as the secrets vault). */
+export function encryptValue(value) {
+  const iv = crypto.randomBytes(12);
+  const cipher = crypto.createCipheriv('aes-256-gcm', encryptionKey(), iv);
+  const ciphertext = Buffer.concat([cipher.update(String(value), 'utf8'), cipher.final()]);
+  return { iv, ciphertext, authTag: cipher.getAuthTag() };
+}
+
+export function decryptValue({ iv, ciphertext, authTag }) {
+  const decipher = crypto.createDecipheriv('aes-256-gcm', encryptionKey(), iv);
+  decipher.setAuthTag(authTag);
+  return Buffer.concat([decipher.update(ciphertext), decipher.final()]).toString('utf8');
+}
+
 export function listSecretMetadata() {
   return KNOWN_SECRETS;
 }

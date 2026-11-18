@@ -12,6 +12,7 @@ import googleAuthRoutes from './routes/googleAuth.js';
 import entityRoutes from './routes/entities.js';
 import functionRoutes from './routes/functions.js';
 import deviceRoutes from './routes/devices.js';
+import { syncAllIcalFeeds } from './functions/ical.js';
 import { sendAssignmentReminders } from './jobs/reminders.js';
 import { checkStreakRecords } from './jobs/streaks.js';
 import { sendClassActivities } from './jobs/classActivities.js';
@@ -99,6 +100,10 @@ cron.schedule('*/15 * * * *', () => {
 // iOS "class starts soon" Live Activities (no-op until APNs is configured).
 cron.schedule('* * * * *', () => {
   sendClassActivities().catch((err) => console.error('sendClassActivities failed', err));
+});
+// Google Calendar links (iCal) pasted by people who can't connect Google.
+cron.schedule('20 */2 * * *', () => {
+  syncAllIcalFeeds().catch((err) => console.error('syncAllIcalFeeds failed', err));
 });
 cron.schedule('0 * * * *', () => {
   checkStreakRecords().catch((err) => console.error('checkStreakRecords failed', err));
