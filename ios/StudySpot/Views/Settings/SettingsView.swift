@@ -175,13 +175,15 @@ struct GoogleSettings: View {
     @Environment(ToastCenter.self) private var toasts
     @State private var busy: String?
     @State private var loading = true
+    @State private var showLinkGuide = false
 
     var body: some View {
         Section {
             Text("Connect your own Google account to import assignments. Each user connects separately — your data stays private to you.")
                 .font(.subheadline).foregroundStyle(.secondary)
+                .sheet(isPresented: $showLinkGuide) { CalendarLinkGuide() }
         } footer: {
-            SchoolAccessNote(service: .google)
+            SchoolAccessNote(service: .google, onUseCalendarLink: { showLinkGuide = true })
         }
         Section {
             ConnectionRow(title: "Google Calendar", desc: "Import calendar events labeled as assignments.", symbol: "calendar",
@@ -211,6 +213,7 @@ struct GoogleSettings: View {
             await data.refreshConnections()
             loading = false
         }
+        CalendarLinksSettings(onAdd: { showLinkGuide = true })
     }
 
     private func connect(_ id: String) async {

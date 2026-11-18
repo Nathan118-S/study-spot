@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Email
 import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.Link
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -35,15 +36,14 @@ import education.studyspot.app.ui.theme.StudySpotTheme
 /**
  * Shown with the Google / Blackboard connect UI (settings and onboarding):
  * many schools restrict which third-party apps can reach school accounts.
- * Offers a drafted email to the school's IT team (see [SchoolITEmail]).
+ * Offers a drafted email to the school's IT team (see [SchoolITEmail]) and,
+ * for Google, the calendar-link guide ([IcalGuideDialog]) as a way around it.
  * Mirrors SchoolAccessNote in ios/StudySpot/Views/Settings/SchoolITEmail.swift.
  */
 @Composable
 fun SchoolAccessNote(service: SchoolITEmail.Service, modifier: Modifier = Modifier) {
-    val c = LocalAppContainer.current
-    val context = LocalContext.current
-    val user by c.repository.user.collectAsStateWithLifecycle()
     var confirming by remember { mutableStateOf(false) }
+    var showGuide by remember { mutableStateOf(false) }
     val navy = StudySpotTheme.colors.secondary
 
     Column(modifier, verticalArrangement = Arrangement.spacedBy(2.dp)) {
@@ -61,23 +61,43 @@ fun SchoolAccessNote(service: SchoolITEmail.Service, modifier: Modifier = Modifi
                 modifier = Modifier.padding(start = 6.dp),
             )
         }
+        if (service != SchoolITEmail.Service.Blackboard) {
+            TextButton(onClick = { showGuide = true }, contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp)) {
+                Icon(Icons.Outlined.Link, contentDescription = null, tint = navy, modifier = Modifier.size(16.dp))
+                Text(
+                    "Use a calendar link instead",
+                    style = MaterialTheme.typography.bodySmall,
+                    fontWeight = FontWeight.SemiBold,
+                    color = navy,
+                    modifier = Modifier.padding(start = 6.dp),
+                )
+            }
+        }
     }
 
-    if (confirming) {
-        ConfirmDialog(
-            title = "Before you send it",
-            message = "We'll open a drafted email in your mail app asking your school to approve Study Spot, signed with your name.\n\n" +
-                "Replace every “${SchoolITEmail.PLACEHOLDER}” with your school's name, and add your IT team's email address as the recipient.",
-            confirmLabel = "Open email",
-            destructive = false,
-            onConfirm = {
-                if (!openSchoolITEmail(context, user, service)) {
-                    c.messages.show("No email app found", "Install or set up an email app to send this.", error = true)
-                }
-            },
-            onDismiss = { confirming = false },
-        )
-    }
+    if (confirming) SchoolITEmailConfirmDialog(service, onDismiss = { confirming = false })
+    if (showGuide) IcalGuideDialog(onDismiss = { showGuide = false })
+}
+
+/** Explains the drafted email, then opens it in the user's mail app. */
+@Composable
+fun SchoolITEmailConfirmDialog(service: SchoolITEmail.Service, onDismiss: () -> Unit) {
+    val c = LocalAppContainer.current
+    val context = LocalContext.current
+    val user by c.repository.user.collectAsStateWithLifecycle()
+    ConfirmDialog(
+        title = "Before you send it",
+        message = "We'll open a drafted email in your mail app asking your school to approve Study Spot, signed with your name.\n\n" +
+            "Replace every “${SchoolITEmail.PLACEHOLDER}” with your school's name, and add your IT team's email address as the recipient.",
+        confirmLabel = "Open email",
+        destructive = false,
+        onConfirm = {
+            if (!openSchoolITEmail(context, user, service)) {
+                c.messages.show("No email app found", "Install or set up an email app to send this.", error = true)
+            }
+        },
+        onDismiss = onDismiss,
+    )
 }
 
 /** Opens the drafted email in the user's mail app. Returns false if there is none. */

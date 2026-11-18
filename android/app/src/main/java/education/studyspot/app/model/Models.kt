@@ -297,9 +297,72 @@ data class Connections(
     @Serializable(with = FlexBoolSerializer::class) val calendar: Boolean = false,
     @Serializable(with = FlexBoolSerializer::class) val classroom: Boolean = false,
     @Serializable(with = FlexBoolSerializer::class) val blackboard: Boolean = false,
+    /** At least one Google Calendar link (secret iCal address) is added. */
+    @Serializable(with = FlexBoolSerializer::class) val ical: Boolean = false,
 ) {
-    val any: Boolean get() = calendar || classroom || blackboard
+    val any: Boolean get() = calendar || classroom || blackboard || ical
 }
+
+/**
+ * A pasted Google Calendar link (server/src/functions/ical.js `publicFeed`).
+ * The secret URL itself is never returned, only [urlHint].
+ */
+@Serializable
+data class IcalFeed(
+    @Serializable(with = FlexTextSerializer::class) val id: String = "",
+    @Serializable(with = FlexTextSerializer::class) val label: String = "",
+    @Serializable(with = FlexStringSerializer::class) @SerialName("calendar_name") val calendarName: String? = null,
+    @Serializable(with = FlexStringSerializer::class) @SerialName("url_hint") val urlHint: String? = null,
+    /** "auto" (events that look like assignments) or "all". */
+    @Serializable(with = FlexTextSerializer::class) val mode: String = MODE_AUTO,
+    @Serializable(with = FlexInstantSerializer::class) @SerialName("last_synced_at") val lastSyncedAt: Instant? = null,
+    @Serializable(with = FlexStringSerializer::class) @SerialName("last_error") val lastError: String? = null,
+    @Serializable(with = FlexIntSerializer::class) @SerialName("last_imported") val lastImported: Int = 0,
+    @Serializable(with = FlexInstantSerializer::class) @SerialName("created_at") val createdAt: Instant? = null,
+) {
+    val importsAll: Boolean get() = mode == MODE_ALL
+
+    /** The label, else the calendar's own name. */
+    val displayName: String get() = label.ifBlank { calendarName?.takeIf { it.isNotBlank() } ?: "Google Calendar" }
+
+    companion object {
+        const val MODE_AUTO = "auto"
+        const val MODE_ALL = "all"
+    }
+}
+
+object IcalFeedList : LenientListSerializer<IcalFeed>(IcalFeed.serializer())
+
+/** functions/icalListFeeds */
+@Serializable
+data class IcalFeeds(@Serializable(with = IcalFeedList::class) val feeds: List<IcalFeed> = emptyList())
+
+/** functions/icalAddFeed */
+@Serializable
+data class IcalAddResult(
+    val feed: IcalFeed? = null,
+    @Serializable(with = FlexIntSerializer::class) val imported: Int = 0,
+    @Serializable(with = FlexIntSerializer::class) val updated: Int = 0,
+    @Serializable(with = FlexIntSerializer::class) val reviewed: Int = 0,
+)
+
+@Serializable
+data class IcalSyncError(
+    @Serializable(with = FlexTextSerializer::class) val id: String = "",
+    @Serializable(with = FlexTextSerializer::class) val label: String = "",
+    @Serializable(with = FlexTextSerializer::class) val error: String = "",
+)
+
+object IcalSyncErrorList : LenientListSerializer<IcalSyncError>(IcalSyncError.serializer())
+
+/** functions/icalSyncFeeds */
+@Serializable
+data class IcalSyncResult(
+    @Serializable(with = FlexIntSerializer::class) val feeds: Int = 0,
+    @Serializable(with = FlexIntSerializer::class) val imported: Int = 0,
+    @Serializable(with = FlexIntSerializer::class) val updated: Int = 0,
+    @Serializable(with = IcalSyncErrorList::class) val errors: List<IcalSyncError> = emptyList(),
+)
 
 @Serializable
 data class LeaderboardEntry(

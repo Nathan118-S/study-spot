@@ -346,11 +346,13 @@ struct Connections: Decodable, Equatable, Sendable {
     var calendar = false
     var classroom = false
     var blackboard = false
+    /// At least one Google Calendar link (secret iCal address) is added.
+    var ical = false
 
-    var any: Bool { calendar || classroom || blackboard }
+    var any: Bool { calendar || classroom || blackboard || ical }
 
-    init(calendar: Bool = false, classroom: Bool = false, blackboard: Bool = false) {
-        self.calendar = calendar; self.classroom = classroom; self.blackboard = blackboard
+    init(calendar: Bool = false, classroom: Bool = false, blackboard: Bool = false, ical: Bool = false) {
+        self.calendar = calendar; self.classroom = classroom; self.blackboard = blackboard; self.ical = ical
     }
 
     init(from decoder: Decoder) throws {
@@ -358,9 +360,50 @@ struct Connections: Decodable, Equatable, Sendable {
         calendar = c.flexBool(.calendar) ?? false
         classroom = c.flexBool(.classroom) ?? false
         blackboard = c.flexBool(.blackboard) ?? false
+        ical = c.flexBool(.ical) ?? false
     }
 
-    enum CodingKeys: String, CodingKey { case calendar, classroom, blackboard }
+    enum CodingKeys: String, CodingKey { case calendar, classroom, blackboard, ical }
+}
+
+/// A Google Calendar link (the calendar's "Secret address in iCal format").
+/// The server never returns the secret URL itself, only a short hint.
+struct ICalFeed: Decodable, Identifiable, Equatable, Sendable {
+    var id: String
+    var label: String
+    var calendarName: String?
+    var urlHint: String?
+    /// "auto" (only assignment-like events) or "all".
+    var mode: String
+    var lastSyncedAt: Date?
+    var lastError: String?
+    var lastImported: Int?
+    var createdAt: Date?
+
+    var importsEverything: Bool { mode == "all" }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = c.flexString(.id) ?? ""
+        label = c.flexString(.label) ?? "Google Calendar"
+        calendarName = c.flexString(.calendarName)
+        urlHint = c.flexString(.urlHint)
+        mode = c.flexString(.mode) ?? "auto"
+        lastSyncedAt = c.flexDate(.lastSyncedAt)
+        lastError = c.flexString(.lastError).flatMap { $0.isEmpty ? nil : $0 }
+        lastImported = c.flexDouble(.lastImported).map { Int($0) }
+        createdAt = c.flexDate(.createdAt)
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case id, label, mode
+        case calendarName = "calendar_name"
+        case urlHint = "url_hint"
+        case lastSyncedAt = "last_synced_at"
+        case lastError = "last_error"
+        case lastImported = "last_imported"
+        case createdAt = "created_at"
+    }
 }
 
 struct LeaderboardEntry: Decodable, Identifiable, Hashable, Sendable {

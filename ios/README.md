@@ -83,12 +83,20 @@ Everything in the web app is available natively:
 - **Notifications:** in-app notification center, mark read, clear, and deep
   links into the app; assignment reminders as push notifications (see below)
 - **Settings:** appearance (dark mode, sync with device, animations,
-  welcome style), Google Calendar/Classroom, Blackboard, sync, the
+  welcome style), Google Calendar/Classroom (plus Google Calendar links, below),
+  Blackboard, sync, the
   leaderboard, re-running onboarding, Excel export (via the share sheet),
   assignment reminders (iPhone notifications, reminder times) and
   do-not-disturb, the grading scale, two-factor methods (TOTP with a QR code,
   passkey), account name, username and password, and the danger zone
 - **Onboarding wizard** for new accounts
+- **Google Calendar links:** for schools that block connecting a Google
+  account, *Settings → Google → Add a calendar link* (also in onboarding and
+  the school-IT notice) opens a 5-step guide to making a calendar public and
+  pasting its public URL (secret iCal addresses work too). Links are listed
+  there with sync, rename, "import every event" and remove, and are synced
+  with everything else (`icalSyncFeeds`). Code:
+  `StudySpot/Views/Settings/CalendarLinkViews.swift`
 - **Admin** (admin role only): a full account manager for each user (profile
   and username, role and disabling, 2FA methods, temporary or chosen
   passwords, signing out everywhere, every setting, connections, push

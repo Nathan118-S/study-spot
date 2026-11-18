@@ -58,12 +58,11 @@ enum SchoolITEmail {
 
 /// Shown before connecting Google or Blackboard: many schools restrict which
 /// third-party apps can access school accounts. Offers a drafted email to
-/// the school's IT team.
+/// the school's IT team and, for Google, the calendar-link guide.
 struct SchoolAccessNote: View {
     var service: SchoolITEmail.Service
-    @Environment(AuthStore.self) private var auth
-    @Environment(\.openURL) private var openURL
-    @State private var confirming = false
+    /// Opens the "Add your Google Calendar with a link" guide (Google only).
+    var onUseCalendarLink: (() -> Void)? = nil
 
     private var label: String {
         switch service {
@@ -80,16 +79,35 @@ struct SchoolAccessNote: View {
             } icon: {
                 Image(systemName: "info.circle")
             }
-            Button {
-                confirming = true
-            } label: {
-                Label("Email my school's IT team", systemImage: "envelope")
+            SchoolITEmailButton(service: service)
+            if service != .blackboard, let onUseCalendarLink {
+                Button(action: onUseCalendarLink) {
+                    Label("Use a calendar link instead", systemImage: "link")
+                }
+                .font(.footnote.weight(.semibold))
+                .buttonStyle(.borderless)
             }
-            .font(.footnote.weight(.semibold))
-            .buttonStyle(.borderless)
         }
         .font(.footnote)
         .foregroundStyle(Palette.secondary)
+    }
+}
+
+/// "Email my school's IT team": confirms, then opens the drafted email.
+struct SchoolITEmailButton: View {
+    var service: SchoolITEmail.Service
+    @Environment(AuthStore.self) private var auth
+    @Environment(\.openURL) private var openURL
+    @State private var confirming = false
+
+    var body: some View {
+        Button {
+            confirming = true
+        } label: {
+            Label("Email my school's IT team", systemImage: "envelope")
+        }
+        .font(.footnote.weight(.semibold))
+        .buttonStyle(.borderless)
         .alert("Before you send it", isPresented: $confirming) {
             Button("Cancel", role: .cancel) {}
             Button("Open email") {

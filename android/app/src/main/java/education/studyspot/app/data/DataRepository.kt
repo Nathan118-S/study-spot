@@ -2,6 +2,7 @@ package education.studyspot.app.data
 
 import androidx.annotation.VisibleForTesting
 import education.studyspot.app.core.ApiClient
+import education.studyspot.app.core.AppJson
 import education.studyspot.app.core.Dates
 import education.studyspot.app.core.Entities
 import education.studyspot.app.core.doubleValue
@@ -13,6 +14,10 @@ import education.studyspot.app.model.AppNotification
 import education.studyspot.app.model.Assignment
 import education.studyspot.app.model.AssignmentTemplate
 import education.studyspot.app.model.Connections
+import education.studyspot.app.model.IcalAddResult
+import education.studyspot.app.model.IcalFeed
+import education.studyspot.app.model.IcalFeeds
+import education.studyspot.app.model.IcalSyncResult
 import education.studyspot.app.model.Priority
 import education.studyspot.app.model.SchoolClass
 import education.studyspot.app.model.Source
@@ -76,6 +81,10 @@ class DataRepository(
     private val _connections = MutableStateFlow(Connections())
     val connections: StateFlow<Connections> = _connections.asStateFlow()
 
+    private val _icalFeeds = MutableStateFlow<List<IcalFeed>>(emptyList())
+    /** Pasted Google Calendar links (Settings > Google). Loaded by [refreshIcalFeeds]. */
+    val icalFeeds: StateFlow<List<IcalFeed>> = _icalFeeds.asStateFlow()
+
     private val _isLoading = MutableStateFlow(false)
     /** True during the first load (before [hasLoaded]). */
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
@@ -128,6 +137,7 @@ class DataRepository(
         _studySessions.value = emptyList()
         _notifications.value = emptyList()
         _connections.value = Connections()
+        _icalFeeds.value = emptyList()
         _hasLoaded.value = false
         _syncMessage.value = ""
         _lastError.value = null
@@ -245,7 +255,7 @@ class DataRepository(
 
     // endregion
 
-    // region Sync (Google Calendar / Classroom / Blackboard)
+    // region Sync (Google Calendar / Classroom / Blackboard / calendar links)
 
     /** Auto-refresh synced data when the last sync was more than 6 hours ago. */
     suspend fun autoSyncIfStale() {
@@ -266,6 +276,7 @@ class DataRepository(
                 if (c.calendar) add("Calendar" to "syncGoogleCalendar")
                 if (c.classroom) add("Classroom" to "syncGoogleClassroom")
                 if (c.blackboard) add("Blackboard" to "syncBlackboard")
+                if (c.ical) add("Calendar links" to "icalSyncFeeds")
             }
             val results = coroutineScope {
                 services.map { (label, fn) ->
@@ -282,11 +293,73 @@ class DataRepository(
             }
             if (!silent) _syncMessage.value = results.joinToString(" · ")
             reloadData()
+            if (c.ical) refreshIcalFeeds()
             if (services.isNotEmpty()) {
                 runCatching { updateUser(buildJsonObject { put("last_sync", Dates.format(Instant.now())) }) }
             }
         } finally {
             _isSyncing.value = false
+        }
+    }
+
+    // endregion
+
+    // region Calendar links (functions/ical*, server/src/functions/ical.js)
+
+    suspend fun refreshIcalFeeds() {
+        if (isDemo) { _icalFeeds.value = emptyList(); return }
+        runCatching { api.invokeAs<IcalFeeds>("icalListFeeds") }.onSuccess { _icalFeeds.value = it.feeds }
+    }
+
+    /**
+     * Adds a link and imports it (can take a few seconds). Throws the server's
+     * user-ready message (bad link, school blocks it, duplicate, demo).
+     */
+    suspend fun addIcalFeed(url: String, label: String?, mode: String): IcalAddResult {
+        val result = api.invokeAs<IcalAddResult>("icalAddFeed", buildJsonObject {
+            put("url", url.trim())
+            label?.trim()?.takeIf { it.isNotEmpty() }?.let { put("label", it) }
+            put("mode", mode)
+        })
+        afterIcalChange()
+        return result
+    }
+
+    /** Renames a link (blank clears the label) or switches its mode. Throws on failure. */
+    suspend fun updateIcalFeed(id: String, label: String? = null, mode: String? = null) {
+        val res = api.invokeAs<JsonObject>("icalUpdateFeed", buildJsonObject {
+            put("id", id)
+            label?.let { put("label", it.trim()) }
+            mode?.let { put("mode", it) }
+        })
+        val feed = res["feed"]?.let { runCatching { AppJson.decodeFromJsonElement(IcalFeed.serializer(), it) }.getOrNull() }
+        if (feed != null) _icalFeeds.update { list -> list.map { if (it.id == feed.id) feed else it } }
+        // A rename also renames the link's class.
+        if (label != null) reloadData()
+    }
+
+    /** Removes a link; its imported assignments (and class) too when [removeAssignments]. Throws on failure. */
+    suspend fun removeIcalFeed(id: String, removeAssignments: Boolean) {
+        api.invoke("icalRemoveFeed", buildJsonObject {
+            put("id", id)
+            put("removeAssignments", removeAssignments)
+        })
+        _icalFeeds.update { list -> list.filterNot { it.id == id } }
+        afterIcalChange()
+    }
+
+    /** Re-imports every link now. Throws on failure; per-link errors are in the result. */
+    suspend fun syncIcalFeeds(): IcalSyncResult {
+        val result = api.invokeAs<IcalSyncResult>("icalSyncFeeds")
+        afterIcalChange()
+        return result
+    }
+
+    private suspend fun afterIcalChange() {
+        coroutineScope {
+            launch { refreshIcalFeeds() }
+            launch { refreshConnections() }
+            launch { reloadData() }
         }
     }
 

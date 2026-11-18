@@ -172,6 +172,14 @@ final class APIClient: @unchecked Sendable {
         try await invoke("checkGoogleConnections", as: Connections.self)
     }
 
+    // MARK: Google Calendar links (iCal)
+
+    private struct ICalFeedList: Decodable { var feeds: [ICalFeed] }
+
+    func icalFeeds() async throws -> [ICalFeed] {
+        try await invoke("icalListFeeds", as: ICalFeedList.self).feeds
+    }
+
     // MARK: Connectors
 
     func googleConnectorURL(_ connector: String) async throws -> URL {

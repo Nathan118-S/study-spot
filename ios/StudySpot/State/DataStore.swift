@@ -8,6 +8,8 @@ final class DataStore {
     var assignments: [Assignment] = []
     var classes: [SchoolClass] = []
     var connections = Connections()
+    /// Google Calendar links (secret iCal addresses), shown in Settings → Google.
+    var icalFeeds: [ICalFeed] = []
     var notifications: [AppNotification] = []
     var isLoading = false
     var hasLoaded = false
@@ -25,7 +27,7 @@ final class DataStore {
     }
 
     func reset() {
-        assignments = []; classes = []; connections = Connections(); notifications = []
+        assignments = []; classes = []; connections = Connections(); notifications = []; icalFeeds = []
         hasLoaded = false; syncMessage = ""; lastError = nil
     }
 
@@ -67,6 +69,11 @@ final class DataStore {
         if let conn = (try? await api.connections()) { connections = conn }
     }
 
+    func loadICalFeeds() async {
+        if isDemo { icalFeeds = []; return }
+        if let feeds = (try? await api.icalFeeds()) { icalFeeds = feeds }
+    }
+
     /// Auto-refresh synced data if the last sync was more than 6 hours ago.
     func autoSyncIfStale(user: User, auth: AuthStore) async {
         guard !user.isDemo, connections.any else { return }
@@ -85,6 +92,7 @@ final class DataStore {
             (connections.calendar, "Calendar", "syncGoogleCalendar"),
             (connections.classroom, "Classroom", "syncGoogleClassroom"),
             (connections.blackboard, "Blackboard", "syncBlackboard"),
+            (connections.ical, "Calendar links", "icalSyncFeeds"),
         ].filter { $0.0 }.map { ($0.1, $0.2) }
 
         let results: [String] = await withTaskGroup(of: (Int, String).self) { group in
@@ -92,7 +100,10 @@ final class DataStore {
                 group.addTask {
                     do {
                         let r = try await APIClient.shared.invoke(service.function)
-                        return (i, "\(service.label): \(Int(r["imported"]?.doubleValue ?? 0)) new")
+                        var text = "\(service.label): \(Int(r["imported"]?.doubleValue ?? 0)) new"
+                        let failed = r["errors"]?.arrayValue?.count ?? 0
+                        if failed > 0 { text += ", \(failed) couldn't sync" }
+                        return (i, text)
                     } catch {
                         return (i, "\(service.label): \(error.localizedDescription)")
                     }
@@ -105,6 +116,7 @@ final class DataStore {
         if !silent { syncMessage = results.joined(separator: " · ") }
         guard !services.isEmpty else { await reloadData(); return }
         await reloadData()
+        if connections.ical { await loadICalFeeds() }
         try? await auth.update(["last_sync": .string(ISO8601.string(from: Date()))])
     }
 
