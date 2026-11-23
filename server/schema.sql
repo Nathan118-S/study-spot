@@ -234,3 +234,18 @@ BEGIN
   ALTER TABLE assignments ADD CONSTRAINT assignments_source_check
     CHECK (source IN ('manual', 'google_calendar', 'google_classroom', 'blackboard', 'canvas', 'schoology', 'brightspace', 'device_calendar'));
 END $$;
+
+-- Parent / guardian view: private, read-only links a student shares with a
+-- parent or guardian. Only a SHA-256 hash of each link's random token is
+-- stored; the full link is shown to the student once, when it's created.
+CREATE TABLE IF NOT EXISTS guardian_links (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  token_hash TEXT NOT NULL UNIQUE,
+  label TEXT NOT NULL DEFAULT '',
+  show_grades BOOLEAN NOT NULL DEFAULT false,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  last_viewed_at TIMESTAMPTZ,
+  revoked_at TIMESTAMPTZ
+);
+CREATE INDEX IF NOT EXISTS idx_guardian_links_user ON guardian_links(user_id);

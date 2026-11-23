@@ -79,6 +79,8 @@ if (fs.existsSync(path.join(distDir, 'index.html'))) {
   }));
   app.get(/^\/(?!api\/|\.well-known\/).*/, (req, res) => {
     res.set('Cache-Control', 'no-cache');
+    // Parent-view links are private: keep them out of search engines and referrers.
+    if (req.path.startsWith('/parent/')) res.set({ 'X-Robots-Tag': 'noindex, nofollow', 'Referrer-Policy': 'no-referrer' });
     res.sendFile(path.join(distDir, 'index.html'));
   });
   console.log(`Serving website from ${distDir}`);

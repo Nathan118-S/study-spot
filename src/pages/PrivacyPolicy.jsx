@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { SUPPORT_EMAIL } from '@/lib/support';
 
 export default function PrivacyPolicy() {
-  const updated = 'November 18, 2026';
+  const updated = 'November 23, 2026';
   return (
     <div className="min-h-screen text-foreground">
       <header className="sticky top-0 z-30 backdrop-blur bg-background/80 border-b border-border">
@@ -76,6 +76,10 @@ export default function PrivacyPolicy() {
             We do not sell your data. We share information only as needed to operate the app (for example, with our
             hosting provider, and Apple or Google to deliver push notifications), to comply with legal obligations, or to protect our rights. Admin
             users in your workspace may access limited account information needed to manage the organization.
+          </p>
+          <p className="text-muted-foreground">
+            If you create a parent link in Settings &rarr; Parent view, anyone with that link can see a read-only weekly
+            summary of your assignments, streak and study time (and your grades only if you turn them on) until you turn the link off.
           </p>
         </Section>
 

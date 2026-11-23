@@ -3,7 +3,7 @@ import { api } from '@/api/client';
 import { useAuth } from '@/lib/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { CalendarPlus, Calendar, BookOpen, Loader2, Link2, Unlink, RefreshCw, Trash2, LogOut, Trophy, Moon, Sun, Smartphone, Palette, Plug, RefreshCcw, Database, AlarmClock, GraduationCap, Lock, User, AlertTriangle, ChevronRight, Sparkles, RotateCcw, Hand } from 'lucide-react';
+import { CalendarPlus, Calendar, BookOpen, Loader2, Link2, Unlink, RefreshCw, Trash2, LogOut, Trophy, Moon, Sun, Smartphone, Palette, Plug, RefreshCcw, Database, AlarmClock, GraduationCap, Lock, User, AlertTriangle, ChevronRight, Sparkles, RotateCcw, Hand, Users } from 'lucide-react';
 import { useTheme } from '@/lib/theme';
 import GradingScaleEditor from '@/components/GradingScaleEditor';
 import TwoFactorSettings from '@/components/TwoFactorSettings';
@@ -14,6 +14,7 @@ import AccountName from '@/components/AccountName';
 import ChangePassword from '@/components/ChangePassword';
 import SchoolAccessNote from '@/components/SchoolAccessNote';
 import CalendarLinks from '@/components/CalendarLinks';
+import GuardianLinks from '@/components/GuardianLinks';
 import { WelcomeStyleSelect } from '@/components/ThemeControls';
 import { Switch } from '@/components/ui/switch';
 import {
@@ -47,6 +48,7 @@ const CARDS = [
   { value: 'sync', label: 'Sync', desc: 'Refresh synced data', icon: RefreshCcw },
   { value: 'leaderboard', label: 'Leaderboard', desc: 'Show study-streak rankings', icon: Trophy },
   { value: 'onboarding', label: 'Onboarding', desc: 'Run the setup wizard again', icon: RotateCcw },
+  { value: 'parent', label: 'Parent view', desc: 'Share a read-only weekly summary', icon: Users },
   { value: 'data', label: 'Data', desc: 'Export your assignments', icon: Database },
   { value: 'reminders', label: 'Reminders', desc: 'Reminder timing and notifications', icon: AlarmClock },
   { value: 'grading', label: 'Grading', desc: 'Letter-grade thresholds', icon: GraduationCap },
@@ -329,6 +331,8 @@ export default function Settings() {
             </Button>
           </div>
         );
+      case 'parent':
+        return <GuardianLinks />;
       case 'data':
         return <DataExport />;
       case 'reminders':

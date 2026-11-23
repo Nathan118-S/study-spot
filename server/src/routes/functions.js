@@ -12,6 +12,7 @@ import * as google from '../functions/google.js';
 import { getLeaderboard } from '../functions/leaderboard.js';
 import * as secrets from '../functions/secrets.js';
 import * as deploy from '../functions/deploy.js';
+import * as guardian from '../functions/guardian.js';
 
 const router = Router();
 router.use(requireAuth);
@@ -43,6 +44,10 @@ const HANDLERS = {
   icalSyncFeeds: { handler: ical.icalSyncFeeds },
   icalImportFile: { handler: ical.icalImportFile },
   deviceCalendarImport: { handler: ical.deviceCalendarImport },
+  guardianListLinks: { handler: guardian.guardianListLinks },
+  guardianCreateLink: { handler: guardian.guardianCreateLink },
+  guardianUpdateLink: { handler: guardian.guardianUpdateLink },
+  guardianRevokeLink: { handler: guardian.guardianRevokeLink },
   syncGoogleCalendar: { handler: google.syncGoogleCalendar },
   syncGoogleClassroom: { handler: google.syncGoogleClassroom },
   getClassroomAttachments: { handler: google.getClassroomAttachments },

@@ -82,6 +82,7 @@ fun SettingsPageScreen(page: SettingsPage, navigator: AppNavigator) {
             SettingsPage.Sync -> SyncSettingsScreen(modifier)
             SettingsPage.Leaderboard -> LeaderboardSettingsScreen(modifier)
             SettingsPage.Onboarding -> OnboardingSettingsScreen(modifier)
+            SettingsPage.ParentView -> ParentViewSettingsScreen(modifier)
             SettingsPage.Data -> DataSettingsScreen(modifier)
             SettingsPage.Reminders -> RemindersSettingsScreen(modifier)
             SettingsPage.Grading -> GradingSettingsScreen(modifier)
