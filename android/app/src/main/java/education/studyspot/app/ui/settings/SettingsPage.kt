@@ -8,6 +8,7 @@ import androidx.compose.material.icons.outlined.EditCalendar
 import androidx.compose.material.icons.outlined.EmojiEvents
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Palette
+import androidx.compose.material.icons.outlined.People
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Power
 import androidx.compose.material.icons.outlined.PrivacyTip
@@ -38,6 +39,7 @@ enum class SettingsPage(
     Sync("sync", "Sync", "Refresh synced data", Icons.Outlined.Sync),
     Leaderboard("leaderboard", "Leaderboard", "Show study-streak rankings", Icons.Outlined.EmojiEvents),
     Onboarding("onboarding", "Onboarding", "Run the setup wizard again", Icons.Outlined.RestartAlt),
+    ParentView("parent", "Parent view", "Share a read-only weekly summary", Icons.Outlined.People),
     Data("data", "Data", "Export your assignments", Icons.Outlined.Storage),
     Reminders("reminders", "Reminders", "Assignment notifications and class updates", Icons.Outlined.Alarm),
     Grading("grading", "Grading", "Letter-grade thresholds", Icons.Outlined.School),

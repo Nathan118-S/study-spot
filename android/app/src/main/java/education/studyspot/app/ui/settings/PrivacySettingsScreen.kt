@@ -42,6 +42,7 @@ fun PrivacySettingsScreen(modifier: Modifier = Modifier) {
                 "Connect or disconnect Google and Blackboard integrations anytime in Settings.",
                 "Customize or turn off reminders and set a do-not-disturb window.",
                 "Enable or disable two-factor authentication.",
+                "Share a read-only weekly summary with a parent or guardian from Settings → Parent view. Anyone with the link can see it until you turn it off.",
                 "Export your data from Settings, or permanently delete your account and everything in it from Settings → Danger Zone.",
             ).map { null to it },
         )

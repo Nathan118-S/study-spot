@@ -20,6 +20,7 @@ struct SettingsView: View {
         Item(id: "sync", label: "Sync", desc: "Refresh synced data", symbol: "arrow.triangle.2.circlepath"),
         Item(id: "leaderboard", label: "Leaderboard", desc: "Show study-streak rankings", symbol: "trophy"),
         Item(id: "onboarding", label: "Onboarding", desc: "Run the setup wizard again", symbol: "arrow.counterclockwise"),
+        Item(id: "parent", label: "Parent view", desc: "Share a read-only weekly summary", symbol: "person.2"),
         Item(id: "data", label: "Data", desc: "Export your assignments", symbol: "externaldrive"),
         Item(id: "reminders", label: "Reminders", desc: "Assignment notifications and class Live Activities", symbol: "alarm"),
         Item(id: "grading", label: "Grading", desc: "Letter-grade thresholds", symbol: "graduationcap"),
@@ -83,6 +84,7 @@ struct SettingsView: View {
         case "sync": Form { SyncSettings() }
         case "leaderboard": Form { LeaderboardSetting() }
         case "onboarding": Form { OnboardingRestart() }
+        case "parent": Form { GuardianLinksSettings() }
         case "data": Form { DataExportSettings() }
         case "reminders": Form { ReminderSettings() }
         case "grading": Form { GradingScaleEditor() }
