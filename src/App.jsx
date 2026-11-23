@@ -7,6 +7,7 @@ import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import ScrollToTop from './components/ScrollToTop';
 import LiveBackground from '@/components/LiveBackground';
+import OfflineBanner, { OfflineErrorBoundary } from '@/components/OfflineBanner';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import Require2fa from '@/components/Require2fa';
 import Layout from '@/components/Layout';
@@ -102,7 +103,10 @@ function App() {
         <Router>
           <LiveBackground />
           <ScrollToTop />
-          <AuthenticatedApp />
+          <OfflineBanner />
+          <OfflineErrorBoundary>
+            <AuthenticatedApp />
+          </OfflineErrorBoundary>
           <AdminElevationProvider />
         </Router>
         <Toaster />

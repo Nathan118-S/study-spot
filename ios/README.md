@@ -107,6 +107,15 @@ Everything in the web app is available natively:
   anyone's account needs a two-factor confirmation (authenticator code or
   passkey) that stays unlocked for 15 minutes; admins must have 2FA turned on
 - **Demo role:** the same demo data as the web app
+- **Offline mode:** the last loaded assignments, classes and notifications are
+  cached (Application Support/Offline) and shown at launch, with "Last
+  updated" while they're stale. Changes made offline (add/edit/delete,
+  complete, reschedule, bulk edits, classes, mark read) apply at once and
+  queue; they sync in order when the connection returns (NWPathMonitor) or
+  the app comes back to the foreground. Last write wins; a change the server
+  refuses is dropped with a message. A pill under the navigation bar shows
+  "Offline — changes will sync" and how many are waiting. Code:
+  `StudySpot/State/OfflineSync.swift`, `DataStore.swift`
 
 ## Colors (60 / 20 / 20)
 

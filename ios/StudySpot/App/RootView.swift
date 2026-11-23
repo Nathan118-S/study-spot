@@ -151,7 +151,23 @@ struct MainTabView: View {
         .onChange(of: data.connections) { _, _ in publishWidgets() }
         .onChange(of: auth.needsOnboarding) { _, needs in if !needs { maybeGreet() } }
         .onChange(of: scenePhase) { _, phase in
-            if phase == .active { Task { await data.loadNotifications() } }
+            if phase == .active {
+                Task {
+                    // Back in the foreground: send changes made offline, then refresh.
+                    await data.syncPendingChanges()
+                    if data.isOffline || data.showingCachedData { await data.reloadData() }
+                    await data.loadNotifications()
+                }
+            }
+        }
+        .onChange(of: data.isOffline) { wasOffline, isOffline in
+            // Back online after starting from the cache: refresh the account too.
+            if wasOffline && !isOffline { Task { await auth.refreshUser() } }
+        }
+        .onChange(of: data.offlineSyncError) { _, message in
+            guard let message else { return }
+            toasts.show("A change couldn't be synced", message, error: true)
+            data.offlineSyncError = nil
         }
     }
 
@@ -173,7 +189,10 @@ struct AppToolbarModifier: ViewModifier {
     @Environment(Router.self) private var router
 
     func body(content: Content) -> some View {
-        content.appBackground().toolbar {
+        content.appBackground()
+            // "Offline — changes will sync" / "N changes waiting to sync" / "Last updated …".
+            .safeAreaInset(edge: .top, spacing: 0) { OfflineBanner() }
+            .toolbar {
             ToolbarItemGroup(placement: .topBarTrailing) {
                 Button { router.showNotifications = true } label: {
                     Image(systemName: data.unreadCount > 0 ? "bell.badge" : "bell")

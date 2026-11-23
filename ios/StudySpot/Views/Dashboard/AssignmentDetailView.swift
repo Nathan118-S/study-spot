@@ -201,7 +201,7 @@ struct AssignmentDetailView: View {
         saving = true
         Task {
             defer { saving = false }
-            if let updated = (try? await APIClient.shared.updateAssignment(a.id, patch)) { data.apply(updated) }
+            _ = try? await data.updateAssignment(a.id, patch)
         }
     }
 

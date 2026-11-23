@@ -48,7 +48,12 @@ fun AppNavHost() {
         c.repository.autoSyncIfStale()
     }
     LifecycleResumeEffect(Unit) {
-        val job = c.scope.launch { c.repository.loadNotifications() }
+        val job = c.scope.launch {
+            // Back in the foreground: send changes made offline, then refresh.
+            c.repository.syncPendingChanges()
+            if (c.repository.isOffline.value || c.repository.showingCachedData.value) c.repository.reloadData()
+            c.repository.loadNotifications()
+        }
         onPauseOrDispose { job.cancel() }
     }
     LaunchedEffect(pending) {

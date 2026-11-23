@@ -139,14 +139,13 @@ struct AssignmentFormView: View {
             return
         }
         do {
+            // Through DataStore so changes made offline are queued and synced later.
             if let a = assignment {
-                let updated = try await APIClient.shared.updateAssignment(a.id, payload)
-                data.apply(updated)
+                try await data.updateAssignment(a.id, payload)
             } else {
                 payload["source"] = "manual"
                 payload["completed"] = false
-                let _: Assignment = try await APIClient.shared.create("Assignment", payload)
-                await data.reloadData()
+                try await data.createAssignment(payload)
             }
             dismiss()
         } catch {
