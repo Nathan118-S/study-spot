@@ -99,7 +99,21 @@ class AuthStore(
                 scope.launch { runCatching { repository.updateUser(buildJsonObject { put("timezone", tz) }) } }
             }
         } catch (e: ApiException) {
-            if (e.isAuthError) signOut() else unreachable(e)
+            if (e.isAuthError) {
+                signOut()
+                return
+            }
+            // Offline at launch: start from the cached copy of the last session
+            // (DataRepository shows the cached data and syncs once back online).
+            if (e.isOffline && repository.user.value == null) {
+                repository.cachedUser()?.let { cached ->
+                    repository.setUser(cached)
+                    repository.markOffline()
+                    _phase.value = Phase.SignedIn
+                    return
+                }
+            }
+            unreachable(e)
         } catch (e: Exception) {
             if (e is kotlinx.coroutines.CancellationException) throw e
             unreachable(e)

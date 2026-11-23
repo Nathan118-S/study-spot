@@ -103,7 +103,7 @@ class ApiClient(
         val (status, text) = try {
             http.newCall(builder.build()).await().use { res -> res.code to (res.body.string()) }
         } catch (e: IOException) {
-            throw ApiException(0, "Couldn't reach the server. ${e.localizedMessage.orEmpty()}".trim())
+            throw ApiException(0, "Couldn't reach the server. ${e.localizedMessage.orEmpty()}".trim(), isOffline = true, cause = e)
         }
         if (status !in 200..299) {
             val json = runCatching { AppJson.parseToJsonElement(text) }.getOrNull()

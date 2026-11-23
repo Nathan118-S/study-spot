@@ -39,6 +39,7 @@ import education.studyspot.app.LocalAppContainer
 import education.studyspot.app.ui.calendar.CalendarScreen
 import education.studyspot.app.ui.classes.ClassesScreen
 import education.studyspot.app.ui.components.LocalSnackbarHostState
+import education.studyspot.app.ui.components.OfflineBanner
 import education.studyspot.app.ui.dashboard.DashboardScreen
 import education.studyspot.app.ui.insights.InsightsScreen
 import education.studyspot.app.ui.streaks.StreaksScreen
@@ -60,23 +61,27 @@ fun MainScaffold(navigator: AppNavigator) {
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
-            TopAppBar(
-                title = { Text(tab.label) },
-                actions = {
-                    if (tab == AppTab.Dashboard) {
-                        IconButton(onClick = navigator::openTimer) {
-                            Icon(Icons.Outlined.Timer, contentDescription = "Study timer")
+            Column {
+                TopAppBar(
+                    title = { Text(tab.label) },
+                    actions = {
+                        if (tab == AppTab.Dashboard) {
+                            IconButton(onClick = navigator::openTimer) {
+                                Icon(Icons.Outlined.Timer, contentDescription = "Study timer")
+                            }
                         }
-                    }
-                    NotificationsBell(onClick = navigator::openNotifications)
-                    AccountMenu(navigator)
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background,
-                    titleContentColor = colors.secondary,
-                    actionIconContentColor = colors.secondary,
-                ),
-            )
+                        NotificationsBell(onClick = navigator::openNotifications)
+                        AccountMenu(navigator)
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.background,
+                        titleContentColor = colors.secondary,
+                        actionIconContentColor = colors.secondary,
+                    ),
+                )
+                // "Offline — changes will sync" / "N changes waiting to sync" / "Last updated …".
+                OfflineBanner()
+            }
         },
         bottomBar = {
             NavigationBar(containerColor = MaterialTheme.colorScheme.surfaceContainer) {

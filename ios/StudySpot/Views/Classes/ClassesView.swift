@@ -194,14 +194,14 @@ struct ClassFormView: View {
             }),
         ]
         do {
+            // Through DataStore so changes made offline are queued and synced later.
             if let c = schoolClass {
-                let _: SchoolClass = try await APIClient.shared.update("Class", id: c.id, payload)
+                try await data.saveClass(id: c.id, payload)
             } else {
                 var p = payload
                 p["source"] = "manual"
-                let _: SchoolClass = try await APIClient.shared.create("Class", p)
+                try await data.saveClass(id: nil, p)
             }
-            await data.reloadData()
             dismiss()
         } catch {
             toasts.show("Couldn't save class", error.localizedDescription, error: true)

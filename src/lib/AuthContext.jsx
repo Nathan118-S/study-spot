@@ -15,6 +15,15 @@ export const AuthProvider = ({ children }) => {
     checkUserAuth();
   }, []);
 
+  // Opened while offline: the session check failed without a 401, so try
+  // again once the connection is back instead of staying signed out.
+  useEffect(() => {
+    if (isAuthenticated || !api.auth.hasToken()) return undefined;
+    const retry = () => checkUserAuth();
+    window.addEventListener('online', retry);
+    return () => window.removeEventListener('online', retry);
+  }, [isAuthenticated]);
+
   const checkUserAuth = async () => {
     try {
       setIsLoadingAuth(true);

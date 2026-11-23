@@ -13,6 +13,12 @@ class ApiException(
     val elevationRequired: Boolean = false,
     /** The session still needs its second factor verified. */
     val mfaRequired: Boolean = false,
+    /**
+     * The request never reached the server (no network, connection lost, timed
+     * out). Writes that fail this way are queued for later (DataRepository);
+     * HTTP error responses are not.
+     */
+    val isOffline: Boolean = false,
     cause: Throwable? = null,
 ) : Exception(message, cause) {
     override val message: String get() = super.message.orEmpty()

@@ -55,6 +55,13 @@ final class AuthStore {
         } catch let e as APIError where e.isAuthError {
             signOut()
         } catch {
+            // Offline at launch: start from the cached copy of the last session
+            // (DataStore shows the cached data and syncs once back online).
+            if user == nil, (error as? APIError)?.isOffline == true, let cached = OfflineStorage.cachedUser() {
+                user = cached
+                phase = .signedIn
+                return
+            }
             phase = user == nil ? .unreachable(error.localizedDescription) : .signedIn
         }
     }

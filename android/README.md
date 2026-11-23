@@ -82,6 +82,21 @@ accept `android:apk-key-hash:` origins whose hash matches one of
 `ANDROID_APP_FINGERPRINTS` (and then compare the rpIdHash with the server's
 own host) before Android passkeys verify.
 
+## Offline mode
+
+`DataRepository` caches the last loaded data per user in `files/offline/`
+(`data/OfflineStorage.kt`) and shows it at launch, so the app also opens
+signed in without a connection. Writes that fail with no connection
+(`ApiException.isOffline`, never a 4xx/5xx) stay applied locally and go into
+`data/OfflineQueue.kt`: creates get a temporary `local-…` id that is swapped
+for the server's id when they replay. The queue replays in order when
+`core/ConnectivityMonitor.kt` reports the network is back, when the app
+returns to the foreground and on pull to refresh; a 4xx drops the change with
+a message, offline/5xx keeps it. Last write wins. `ui/components/OfflineBanner.kt`
+shows the "Offline — changes will sync" pill, the waiting count and "Last
+updated". Sign-out clears the cache and queue; demo accounts never use them.
+Tests: `OfflineQueueTest`.
+
 ## Settings, security and admin
 
 - Settings sub-pages live in `ui/settings/<Name>SettingsScreen.kt`; shared

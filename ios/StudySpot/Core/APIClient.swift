@@ -6,6 +6,10 @@ struct APIError: LocalizedError, Sendable {
     var notConnected: Bool = false
     /// The admin 2FA step-up is missing or expired (see AdminUnlock).
     var elevationRequired: Bool = false
+    /// The request never reached the server (no connection, connection lost,
+    /// timed out). DataStore queues writes that fail this way; HTTP error
+    /// responses are never treated as offline.
+    var isOffline: Bool = false
 
     var errorDescription: String? { message }
     var isAuthError: Bool { (status == 401 || status == 403) && !elevationRequired }
@@ -75,7 +79,8 @@ final class APIClient: @unchecked Sendable {
         do {
             (data, response) = try await session.data(for: req)
         } catch {
-            throw APIError(status: 0, message: "Couldn't reach the server. \(error.localizedDescription)")
+            throw APIError(status: 0, message: "Couldn't reach the server. \(error.localizedDescription)",
+                           isOffline: Self.isOfflineError(error))
         }
         let status = (response as? HTTPURLResponse)?.statusCode ?? 0
         guard (200..<300).contains(status) else {
@@ -85,6 +90,19 @@ final class APIClient: @unchecked Sendable {
                            elevationRequired: json?["elevationRequired"]?.boolValue == true)
         }
         return data
+    }
+
+    /// Transport failures that mean "no usable connection right now".
+    static func isOfflineError(_ error: Error) -> Bool {
+        guard let e = error as? URLError else { return false }
+        switch e.code {
+        case .notConnectedToInternet, .networkConnectionLost, .timedOut, .cannotFindHost,
+             .cannotConnectToHost, .dnsLookupFailed, .dataNotAllowed, .internationalRoamingOff,
+             .callIsActive:
+            return true
+        default:
+            return false
+        }
     }
 
     func request<T: Decodable>(_ path: String, method: String = "GET", body: JSONValue? = nil, as type: T.Type = T.self) async throws -> T {
