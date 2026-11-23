@@ -8,5 +8,11 @@
 	<array>
 		<string>group.com.studyspot.app</string>
 	</array>
+	<!-- Push Notifications capability: without it iOS never gives the app a
+	     device token, so reminder pushes and Live Activity pushes can't arrive.
+	     Xcode switches this to "production" when archiving for TestFlight and
+	     the App Store. -->
+	<key>aps-environment</key>
+	<string>development</string>
 </dict>
 </plist>
