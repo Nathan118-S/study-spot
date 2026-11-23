@@ -210,6 +210,22 @@ the timer screen offers a shortcut), otherwise inexact and possibly a few
 minutes late. (`USE_EXACT_ALARM` isn't declared: Google Play reserves it for
 alarm-clock and calendar apps.)
 
+## Themes and app icons
+
+*Settings → Appearance* has a **Theme** picker (`ui/theme/ColorThemes.kt`:
+Study Spot, Ocean, Forest, Grape, Rose, Graphite, each light and dark) and an
+**App icon** picker (`ui/settings/ThemePickers.kt`, `AppIcons.kt`). Study Spot
+is the default and uses the palette in `Color.kt` / `Theme.kt` unchanged. The
+theme is cached in `ThemeStore` and saved to `user.data.theme`, so the website
+and iOS follow it (MainActivity applies the saved value after sign-in).
+
+Each icon is an `<activity-alias android:name=".Launcher<Name>">` of
+MainActivity in `AndroidManifest.xml` with the MAIN/LAUNCHER filter
+(`mipmap-anydpi/ic_launcher_<name>.xml`); exactly one is enabled, switched with
+`PackageManager.setComponentEnabledSetting(…, DONT_KILL_APP)`. MainActivity has
+no launcher filter of its own but keeps the `studyspot://` deep-link filter, and
+notifications and widgets target it explicitly, so they work with any icon.
+
 ## Widgets
 
 Two Glance widgets (`widget/`), in the Study Spot palette with light and dark

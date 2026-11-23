@@ -67,7 +67,7 @@ const SELF_EDITABLE_DATA_KEYS = new Set([
   'onboarding_completed', 'welcome_style', 'leaderboard_enabled',
   'reminders_enabled', 'reminder_lead_hours', 'dnd_enabled', 'dnd_start', 'dnd_end',
   'sync_completion_to_classroom', 'grading_scale', 'last_sync', 'sessions_invalidated_at',
-  'timezone', 'class_live_activities', 'push_reminders',
+  'timezone', 'class_live_activities', 'push_reminders', 'theme',
 ]);
 
 export function pickSelfEditable(patch) {
@@ -75,6 +75,9 @@ export function pickSelfEditable(patch) {
   for (const [key, value] of Object.entries(patch || {})) {
     if (SELF_EDITABLE_COLUMNS.has(key)) {
       out[key] = typeof value === 'string' ? value.trim().slice(0, 80) : null;
+    } else if (key === 'theme') {
+      // Colour theme id (src/lib/colorThemes.js); clients ignore ids they don't know.
+      out[key] = typeof value === 'string' && /^[a-z0-9-]{1,32}$/.test(value) ? value : null;
     } else if (SELF_EDITABLE_DATA_KEYS.has(key)) {
       out[key] = value;
     }

@@ -92,6 +92,11 @@ class AppScreenshotTest(dark: Boolean) : ScreenshotHarness(dark) {
         snap("11_settings") { SettingsScreen(it) }
     }
 
+    @Test fun settingsAppearance() {
+        signedIn()
+        snap("12a_settings_appearance") { SettingsPageScreen(SettingsPage.Appearance, it) }
+    }
+
     @Test fun settingsReminders() {
         signedIn()
         snap("12_settings_reminders") { SettingsPageScreen(SettingsPage.Reminders, it) }

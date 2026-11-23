@@ -149,6 +149,8 @@ struct MainTabView: View {
             }
         }
         .onChange(of: data.connections) { _, _ in publishWidgets() }
+        .onChange(of: theme.colorTheme) { _, _ in publishWidgets() }
+        .followsSavedColorTheme(auth.user, theme: theme)
         .onChange(of: auth.needsOnboarding) { _, needs in if !needs { maybeGreet() } }
         .onChange(of: scenePhase) { _, phase in
             if phase == .active { Task { await data.loadNotifications() } }

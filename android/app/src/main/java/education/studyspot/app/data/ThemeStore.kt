@@ -3,6 +3,7 @@ package education.studyspot.app.data
 import android.content.Context
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.SharingStarted
@@ -21,6 +22,8 @@ data class ThemeSettings(
     val syncWithDevice: Boolean = true,
     /** Motion and transitions (respect this in custom animations). */
     val animations: Boolean = true,
+    /** Colour theme id (ui/theme/ColorThemes.kt); also synced in user.data.theme. */
+    val colorTheme: String = "studyspot",
 ) {
     /** null = follow the system. */
     val forcedDark: Boolean? get() = if (syncWithDevice) null else dark
@@ -33,6 +36,7 @@ class ThemeStore(private val context: Context, private val scope: CoroutineScope
                 dark = p[DARK] ?: false,
                 syncWithDevice = p[SYNC] ?: true,
                 animations = p[ANIMATIONS] ?: true,
+                colorTheme = p[COLOR_THEME] ?: "studyspot",
             )
         }
         .stateIn(scope, SharingStarted.Eagerly, ThemeSettings())
@@ -44,6 +48,8 @@ class ThemeStore(private val context: Context, private val scope: CoroutineScope
 
     fun setAnimations(on: Boolean) = edit { it[ANIMATIONS] = on }
 
+    fun setColorTheme(id: String) = edit { it[COLOR_THEME] = id }
+
     private fun edit(block: (androidx.datastore.preferences.core.MutablePreferences) -> Unit) {
         scope.launch { context.settingsDataStore.edit(block) }
     }
@@ -52,5 +58,6 @@ class ThemeStore(private val context: Context, private val scope: CoroutineScope
         val DARK = booleanPreferencesKey("cf-theme-dark")
         val SYNC = booleanPreferencesKey("cf-theme-sync")
         val ANIMATIONS = booleanPreferencesKey("cf-animations")
+        val COLOR_THEME = stringPreferencesKey("cf-color-theme")
     }
 }

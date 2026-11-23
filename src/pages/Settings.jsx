@@ -15,6 +15,7 @@ import ChangePassword from '@/components/ChangePassword';
 import SchoolAccessNote from '@/components/SchoolAccessNote';
 import CalendarLinks from '@/components/CalendarLinks';
 import { WelcomeStyleSelect } from '@/components/ThemeControls';
+import ColorThemePicker from '@/components/ColorThemePicker';
 import { Switch } from '@/components/ui/switch';
 import {
   Dialog,
@@ -40,7 +41,7 @@ const CALENDAR_ID = 'google_calendar';
 const CLASSROOM_ID = 'google_classroom';
 
 const CARDS = [
-  { value: 'appearance', label: 'Appearance', desc: 'Light/dark mode and device sync', icon: Palette },
+  { value: 'appearance', label: 'Appearance', desc: 'Theme, light/dark mode and device sync', icon: Palette },
   { value: 'google', label: 'Google', desc: 'Calendar and Classroom connections', icon: Plug },
   { value: 'blackboard', label: 'Blackboard', desc: 'Connect your school’s Blackboard', icon: BookOpen },
   { value: 'lms', label: 'Canvas, Schoology & Brightspace', desc: 'Add your school’s calendar by link', icon: CalendarPlus },
@@ -190,6 +191,15 @@ export default function Settings() {
       case 'appearance':
         return (
           <div className="space-y-3">
+            <div className="rounded-lg border bg-card p-4 space-y-3">
+              <div>
+                <p className="text-sm font-medium flex items-center gap-2">
+                  <Palette className="h-4 w-4" /> Theme
+                </p>
+                <p className="text-xs text-muted-foreground">Pick your colors. Syncs to your other devices.</p>
+              </div>
+              <ColorThemePicker />
+            </div>
             <div className="rounded-lg border bg-card p-4 flex items-center justify-between gap-4">
               <div className="min-w-0">
                 <p className="text-sm font-medium flex items-center gap-2">

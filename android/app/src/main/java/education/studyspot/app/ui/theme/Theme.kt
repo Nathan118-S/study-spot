@@ -103,14 +103,15 @@ fun ThemeSettings.isDark(): Boolean = forcedDark ?: isSystemInDarkTheme()
 fun StudySpotTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     animations: Boolean = true,
+    colorTheme: ColorTheme = ColorTheme.Default,
     content: @Composable () -> Unit,
 ) {
     CompositionLocalProvider(
-        LocalAppColors provides if (darkTheme) DarkAppColors else LightAppColors,
+        LocalAppColors provides colorTheme.appColors(darkTheme),
         LocalAnimationsEnabled provides animations,
     ) {
         MaterialTheme(
-            colorScheme = if (darkTheme) DarkScheme else LightScheme,
+            colorScheme = colorTheme.colorScheme(if (darkTheme) DarkScheme else LightScheme, darkTheme),
             typography = StudySpotTypography,
             shapes = StudySpotShapes,
             content = content,

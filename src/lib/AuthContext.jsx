@@ -1,5 +1,6 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { api } from '@/api/client';
+import { syncColorThemeFromUser } from '@/lib/colorThemes';
 
 const AuthContext = createContext();
 
@@ -39,6 +40,7 @@ export const AuthProvider = ({ children }) => {
       }
       setUser(currentUser);
       setIsAuthenticated(true);
+      syncColorThemeFromUser(currentUser);
       // Reminders and do-not-disturb are scheduled in the user's own time zone.
       try {
         const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;

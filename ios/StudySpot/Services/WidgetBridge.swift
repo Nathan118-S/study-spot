@@ -5,7 +5,7 @@ import WidgetKit
 /// asks WidgetKit to refresh when it changed.
 @MainActor
 enum WidgetBridge {
-    static func publish(user: User?, data: DataStore, accent: AccentChoice) {
+    static func publish(user: User?, data: DataStore, accent: ColorTheme) {
         guard let user, data.hasLoaded else {
             if user == nil, SharedStore.save(.signedOut) { WidgetCenter.shared.reloadAllTimelines() }
             return

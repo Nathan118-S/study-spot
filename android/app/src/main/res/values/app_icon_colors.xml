@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Alternate launcher icon backgrounds (ui/settings/AppIconPicker.kt). -->
+<resources>
+    <color name="ic_launcher_background_navy">#FF1F2B47</color>
+    <color name="ic_launcher_background_midnight">#FF15120F</color>
+    <color name="ic_launcher_background_mono">#FFFFFFFF</color>
+    <color name="ic_launcher_background_ocean">#FFEFF6FD</color>
+    <color name="ic_launcher_background_grape">#FFF5EFFC</color>
+</resources>

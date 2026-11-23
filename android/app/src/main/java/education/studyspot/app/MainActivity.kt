@@ -9,9 +9,12 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import education.studyspot.app.navigation.AppRoot
+import education.studyspot.app.core.stringValue
+import education.studyspot.app.ui.theme.ColorTheme
 import education.studyspot.app.ui.theme.StudySpotTheme
 import education.studyspot.app.ui.theme.isDark
 import kotlinx.coroutines.launch
@@ -28,6 +31,12 @@ class MainActivity : ComponentActivity() {
         setContent {
             val settings by container.theme.settings.collectAsStateWithLifecycle()
             val dark = settings.isDark()
+            // The colour theme follows user.data.theme (set on any device), cached on-device.
+            val user by container.repository.user.collectAsStateWithLifecycle()
+            val savedTheme = user?.data?.get("theme").stringValue
+            LaunchedEffect(savedTheme) {
+                if (savedTheme != null && ColorTheme.entries.any { it.id == savedTheme }) container.theme.setColorTheme(savedTheme)
+            }
             DisposableEffect(dark) {
                 val style = if (dark) {
                     SystemBarStyle.dark(Color.TRANSPARENT)
@@ -38,7 +47,7 @@ class MainActivity : ComponentActivity() {
                 onDispose {}
             }
             CompositionLocalProvider(LocalAppContainer provides container) {
-                StudySpotTheme(darkTheme = dark, animations = settings.animations) {
+                StudySpotTheme(darkTheme = dark, animations = settings.animations, colorTheme = ColorTheme.fromId(settings.colorTheme)) {
                     AppRoot()
                 }
             }
