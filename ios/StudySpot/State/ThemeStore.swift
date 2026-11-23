@@ -1,18 +1,8 @@
 import SwiftUI
 import Observation
 
-/// The Study Spot brand color. It's fixed (not user-configurable), matching
-/// the website and the app icon.
-enum AccentChoice {
-    case orange
-
-    /// Shared with widgets and Live Activities.
-    var hex: String { "#f19d37" }
-
-    var color: Color { Color(hue: 33 / 360, saturation: 0.87, lightness: 0.58) }
-}
-
 /// Appearance preferences, stored on-device like the web app's localStorage.
+/// The colour theme also syncs through user.data.theme (see RootView).
 @MainActor
 @Observable
 final class ThemeStore {
@@ -21,7 +11,20 @@ final class ThemeStore {
     var dark: Bool { didSet { defaults.set(dark, forKey: "cf-theme-dark") } }
     var syncWithDevice: Bool { didSet { defaults.set(syncWithDevice, forKey: "cf-theme-sync") } }
     var animations: Bool { didSet { defaults.set(animations, forKey: "cf-animations") } }
-    let accent: AccentChoice = .orange
+
+    /// The colour theme (ColorTheme.swift). Stored in ActiveColorTheme so
+    /// `Palette` can read it; reading it here still drives SwiftUI updates.
+    var colorTheme: ColorTheme {
+        get { ActiveColorTheme.shared.theme }
+        set {
+            ActiveColorTheme.shared.theme = newValue
+            defaults.set(newValue.rawValue, forKey: ActiveColorTheme.storageKey)
+            Palette.applyAppearance()
+        }
+    }
+
+    /// The accent color in use (shared with widgets and Live Activities).
+    var accent: ColorTheme { colorTheme }
 
     init() {
         let d = UserDefaults.standard
@@ -61,24 +64,30 @@ extension Color {
 // Status colors (overdue red, done green, due-today orange) are semantic and
 // sit outside the split.
 enum Palette {
+    /// The active theme's values (ColorTheme.swift); `.studyspot` is the
+    /// original palette: base #FEFDFB / #15120F, surface #FFFFFF / #221D18,
+    /// secondary navy #1F2B47 / #A9B8DC, accent orange #F19D37.
+    private static var spec: ColorTheme.Spec { ActiveColorTheme.shared.theme.spec }
+
     /// 60%: the canvas behind everything.
-    static let base = dynamic(light: 0xFEFDFB, dark: 0x15120F)
+    static var base: Color { Color(ColorTheme.ui(spec.base)) }
     /// Cards and list rows sit on this, slightly lifted from the base.
-    static let surface = dynamic(light: 0xFFFFFF, dark: 0x221D18)
+    static var surface: Color { Color(ColorTheme.ui(spec.surface)) }
     /// 20%: structure and secondary emphasis.
-    static let secondary = dynamic(light: 0x1F2B47, dark: 0xA9B8DC)
+    static var secondary: Color { Color(ColorTheme.ui(spec.secondary)) }
     /// 20%: actions and highlights.
-    static let accent = AccentChoice.orange.color
+    static var accent: Color { ActiveColorTheme.shared.theme.color }
 
-    static let uiBase = uiDynamic(light: 0xFEFDFB, dark: 0x15120F)
-    static let uiSecondary = uiDynamic(light: 0x1F2B47, dark: 0xA9B8DC)
+    /// Resolved whenever UIKit draws, so they follow theme changes.
+    static let uiBase = live { $0.base }
+    static let uiSecondary = live { $0.secondary }
+    static let uiAccent = UIColor { ActiveColorTheme.shared.theme.accentUIColor.resolvedColor(with: $0) }
 
-    private static func uiDynamic(light: UInt32, dark: UInt32) -> UIColor {
-        UIColor { $0.userInterfaceStyle == .dark ? UIColor(rgb: dark) : UIColor(rgb: light) }
-    }
-
-    private static func dynamic(light: UInt32, dark: UInt32) -> Color {
-        Color(uiDynamic(light: light, dark: dark))
+    private static func live(_ pick: @escaping (ColorTheme.Spec) -> (light: UInt32, dark: UInt32)) -> UIColor {
+        UIColor { traits in
+            let pair = pick(ActiveColorTheme.shared.theme.spec)
+            return UIColor(rgb: traits.userInterfaceStyle == .dark ? pair.dark : pair.light)
+        }
     }
 
     /// UIKit-level styling for parts SwiftUI doesn't expose: navigation titles

@@ -1,6 +1,7 @@
 package education.studyspot.app.ui.settings
 
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ListItem
@@ -11,13 +12,15 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import education.studyspot.app.LocalAppContainer
 import education.studyspot.app.ui.theme.isDark
 
 /**
  * Settings > Appearance (iOS AppearanceSettings): dark mode, sync with device,
- * animations. Stored on-device by data.ThemeStore.
+ * animations (stored on-device by data.ThemeStore), colour theme (also synced
+ * in user.data.theme) and app icon (ThemePickers.kt).
  *
  * TODO(settings): welcome greeting style picker (user.data.welcome_style: large / small / off).
  */
@@ -47,5 +50,15 @@ fun AppearanceSettingsScreen(modifier: Modifier = Modifier) {
             trailingContent = { Switch(checked = settings.animations, onCheckedChange = theme::setAnimations) },
             colors = rowColors,
         )
+        SettingsSection(
+            Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+            header = "Theme",
+            footer = { SettingsFootnote("Pick your colors. Your theme syncs to Study Spot on the web and your other devices.") },
+        ) { ColorThemePicker() }
+        SettingsSection(
+            Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+            header = "App icon",
+            footer = { SettingsFootnote("Choose the icon on your home screen. Some launchers take a moment to update it.") },
+        ) { AppIconPicker() }
     }
 }

@@ -212,6 +212,24 @@ for Xcode versions without Icon Composer support. If Xcode 26 warns about
 two icons named `AppIcon`, delete the `.appiconset`; Xcode 26 generates the
 icons for older iOS versions from the `.icon` file.
 
+### Themes and alternate icons
+
+*Settings → Appearance* has a **Theme** picker (Study Spot, Ocean, Forest,
+Grape, Rose, Graphite; `State/ColorTheme.swift`) and an **App icon** picker
+(`Views/Settings/ThemeSettings.swift`). Study Spot is the default and keeps
+the palette above unchanged; the other themes are built the same way, with
+light and dark variants. `Palette` reads the active theme, so views update
+when it changes. The theme is saved on-device and in `user.data.theme`, so the
+website and Android follow it; widgets and Live Activities use its accent.
+
+Alternate icons are `AppIcon-Navy`, `-Midnight`, `-Mono`, `-Ocean` and `-Grape`
+`.appiconset`s, listed in the app target's
+`ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES` (with
+`ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES`) and switched with
+`UIApplication.setAlternateIconName`. The picker shows the
+`AppIconPreview-*` image sets, since app icons can't be loaded as images.
+They are flat renders of the `AppIcon.icon` layer artwork (no Liquid Glass).
+
 ## Widgets, Lock Screen widgets and Live Activities
 
 The **StudySpotWidgets** extension adds:

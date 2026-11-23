@@ -32,7 +32,7 @@ enum class SettingsPage(
     val danger: Boolean = false,
     val listed: Boolean = true,
 ) {
-    Appearance("appearance", "Appearance", "Light/dark mode and device sync", Icons.Outlined.Palette),
+    Appearance("appearance", "Appearance", "Theme, app icon, light/dark mode", Icons.Outlined.Palette),
     Google("google", "Google", "Calendar and Classroom connections", Icons.Outlined.Power),
     Blackboard("blackboard", "Blackboard", "Connect your school’s Blackboard", Icons.Outlined.AccountBalance),
     Lms("lms", "Canvas, Schoology & Brightspace", "Add your school's calendar by link", Icons.Outlined.EditCalendar),

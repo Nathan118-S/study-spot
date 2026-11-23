@@ -13,7 +13,7 @@ struct SettingsView: View {
     }
 
     private let items: [Item] = [
-        Item(id: "appearance", label: "Appearance", desc: "Light/dark mode and device sync", symbol: "paintpalette"),
+        Item(id: "appearance", label: "Appearance", desc: "Theme, app icon, light/dark mode", symbol: "paintpalette"),
         Item(id: "google", label: "Google", desc: "Calendar and Classroom connections", symbol: "powerplug"),
         Item(id: "blackboard", label: "Blackboard", desc: "Connect your school’s Blackboard", symbol: "building.columns"),
         Item(id: "lms", label: "Canvas, Schoology & Brightspace", desc: "Add your school's calendar by link", symbol: "link"),
@@ -115,6 +115,8 @@ struct AppearanceSettings: View {
                 SettingLabel(title: "Animations", desc: "Show entrance and transition animations. Turn off for a calmer, faster feel.", symbol: "sparkles")
             }
         }
+        ColorThemeSection()
+        AppIconSection()
         Section {
             WelcomeStylePicker()
         } header: {

@@ -38,7 +38,7 @@ enum ToastWindow {
                 .first(where: { $0.activationState == .foregroundActive }) ??
                 UIApplication.shared.connectedScenes.compactMap({ $0 as? UIWindowScene }).first
         else { return }
-        let host = UIHostingController(rootView: ToastOverlay().environment(toasts).tint(theme.accent.color))
+        let host = UIHostingController(rootView: ToastOverlay().environment(toasts).tint(Color(Palette.uiAccent)))
         host.view.backgroundColor = .clear
         let w = PassThroughWindow(windowScene: scene)
         w.rootViewController = host
