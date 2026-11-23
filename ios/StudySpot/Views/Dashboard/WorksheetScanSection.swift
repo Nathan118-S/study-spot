@@ -17,18 +17,58 @@ struct WorksheetScanSection: View {
 
     private var cameraSupported: Bool { VNDocumentCameraViewController.isSupported }
 
+    @State private var showPhotos = false
+
     var body: some View {
         Section {
-            if cameraSupported {
-                Button { showCamera = true } label: {
-                    Label("Scan worksheet", systemImage: "doc.viewfinder")
+            // One row owns both buttons and everything they present. In a
+            // Form, modifiers on a Section are copied onto each of its rows,
+            // so presenting from the Section left the camera and photo
+            // picker fighting over the same state and nothing opened.
+            // Bordered buttons (not plain row buttons) so each takes its own
+            // taps instead of the whole row firing both.
+            HStack(spacing: 10) {
+                if cameraSupported {
+                    Button { showCamera = true } label: {
+                        Label("Scan", systemImage: "doc.viewfinder")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.borderedProminent)
                 }
-                .disabled(working)
-            }
-            PhotosPicker(selection: $photoItem, matching: .images, photoLibrary: .shared()) {
-                Label(cameraSupported ? "Choose a photo" : "Scan worksheet from a photo", systemImage: "photo.on.rectangle")
+                Button { showPhotos = true } label: {
+                    Label(cameraSupported ? "Photo" : "Choose a photo", systemImage: "photo.on.rectangle")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.bordered)
             }
             .disabled(working)
+            .tint(Palette.accent)
+            .fullScreenCover(isPresented: $showCamera) {
+                DocumentCameraView { images in
+                    showCamera = false
+                    read(images)
+                } onCancel: {
+                    showCamera = false
+                }
+                .ignoresSafeArea()
+            }
+            .photosPicker(isPresented: $showPhotos, selection: $photoItem, matching: .images, photoLibrary: .shared())
+            .onChange(of: photoItem) { _, item in
+                guard let item else { return }
+                photoItem = nil
+                working = true
+                status = nil
+                Task {
+                    let data = try? await item.loadTransferable(type: Data.self)
+                    guard let data, let image = UIImage(data: data) else {
+                        working = false
+                        status = "That photo couldn't be opened."
+                        return
+                    }
+                    read([image])
+                }
+            }
+
             if working {
                 HStack(spacing: 8) {
                     ProgressView()
@@ -41,26 +81,6 @@ struct WorksheetScanSection: View {
             Text("Scan a worksheet")
         } footer: {
             Text("Fills in the title, due date and class from a handout. Text is read on your device; nothing is uploaded.")
-        }
-        .fullScreenCover(isPresented: $showCamera) {
-            DocumentCameraView { images in
-                showCamera = false
-                read(images)
-            } onCancel: {
-                showCamera = false
-            }
-            .ignoresSafeArea()
-        }
-        .onChange(of: photoItem) { _, item in
-            guard let item else { return }
-            photoItem = nil
-            Task {
-                guard let data = try? await item.loadTransferable(type: Data.self), let image = UIImage(data: data) else {
-                    status = "That photo couldn't be opened."
-                    return
-                }
-                read([image])
-            }
         }
     }
 
