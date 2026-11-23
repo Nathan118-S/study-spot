@@ -58,6 +58,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import education.studyspot.app.LocalAppContainer
 import education.studyspot.app.core.Dates
 import education.studyspot.app.logic.AssignmentEdits
+import education.studyspot.app.logic.WorksheetParser
 import education.studyspot.app.model.Assignment
 import education.studyspot.app.model.AssignmentTemplate
 import education.studyspot.app.model.AssignmentType
@@ -90,7 +91,7 @@ import java.time.format.FormatStyle
  * Add (assignmentId == null) or edit an assignment
  * (ios/StudySpot/Views/Dashboard/AssignmentFormView.swift): title, class, due
  * date and time, priority, type, points, notes, description and subtasks. New
- * assignments can start from a template.
+ * assignments can start from a template or a scanned worksheet (WorksheetScanCard).
  */
 @Composable
 fun AssignmentFormScreen(assignmentId: String?, navigator: AppNavigator) {
@@ -159,6 +160,13 @@ private fun AssignmentForm(existing: Assignment?, navigator: AppNavigator) {
         notes = t.notes
     }
 
+    fun applyScan(r: WorksheetParser.Result) {
+        if (r.title.isNotBlank()) title = r.title
+        r.dueDate?.let { hasDue = true; dueDay = it }
+        r.classId?.let { classId = it }
+        if (r.description.isNotBlank()) description = r.description
+    }
+
     fun addSubtask() {
         val text = newSubtask.trim()
         if (text.isEmpty()) return
@@ -223,6 +231,7 @@ private fun AssignmentForm(existing: Assignment?, navigator: AppNavigator) {
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             if (existing == null) {
+                WorksheetScanCard(classes, onScanned = ::applyScan)
                 TemplatePicker(templates, onApply = ::applyTemplate, onManage = navigator::openTemplates)
             }
 

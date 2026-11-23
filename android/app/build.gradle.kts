@@ -127,6 +127,9 @@ dependencies {
     implementation(libs.vico.compose.m3)
     implementation(libs.zxing.core)
 
+    // "Scan a worksheet": on-device OCR (bundled Latin model, no download, nothing uploaded)
+    implementation(libs.mlkit.text.recognition)
+
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
 

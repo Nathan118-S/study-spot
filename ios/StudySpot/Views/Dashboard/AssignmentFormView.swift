@@ -16,6 +16,7 @@ struct AssignmentFormView: View {
     @State private var type: AssignmentType = .homework
     @State private var points = ""
     @State private var notes = ""
+    @State private var details = ""
     @State private var saving = false
     @State private var templates: [AssignmentTemplate] = []
     @State private var showTemplates = false
@@ -25,6 +26,7 @@ struct AssignmentFormView: View {
         NavigationStack {
             Form {
                 if assignment == nil {
+                    WorksheetScanSection(classes: data.classes, onScanned: applyScan)
                     Section {
                         Menu {
                             if templates.isEmpty {
@@ -67,6 +69,10 @@ struct AssignmentFormView: View {
                     }
                 }
 
+                Section("Description") {
+                    TextField("What the assignment asks for", text: $details, axis: .vertical).lineLimit(2...8)
+                }
+
                 Section("Notes") {
                     TextField("Additional notes...", text: $notes, axis: .vertical).lineLimit(3...8)
                 }
@@ -102,6 +108,7 @@ struct AssignmentFormView: View {
             type = a.type
             points = a.points > 0 ? a.points.clean : ""
             notes = a.notes
+            details = a.description
         } else {
             classId = data.classes.first?.id ?? ""
         }
@@ -120,6 +127,19 @@ struct AssignmentFormView: View {
         notes = t.notes
     }
 
+    /// Prefills the form from a scanned worksheet (WorksheetScanSection).
+    private func applyScan(_ r: WorksheetParser.Result) {
+        if !r.title.isEmpty { title = r.title }
+        if let day = r.dueDate {
+            let cal = Calendar.current
+            let time = cal.dateComponents([.hour, .minute], from: dueDate)
+            dueDate = cal.date(bySettingHour: time.hour ?? 23, minute: time.minute ?? 59, second: 0, of: day) ?? day
+            hasDueDate = true
+        }
+        if let id = r.classId { classId = id }
+        if !r.description.isEmpty { details = r.description }
+    }
+
     private func save() async {
         saving = true
         defer { saving = false }
@@ -133,6 +153,7 @@ struct AssignmentFormView: View {
             "type": .string(type.rawValue),
             "points": .number(Double(points.replacingOccurrences(of: ",", with: ".")) ?? 0),
             "notes": .string(notes),
+            "description": .string(details),
         ]
         if auth.user?.isDemo == true {
             dismiss()

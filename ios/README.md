@@ -71,6 +71,11 @@ Everything in the web app is available natively:
 - **Assignments:** create and edit (with templates), and a detail sheet with
   notes, subtasks, progress, score with letter grade, Classroom attachments,
   and syncing completion back to Classroom
+- **Scan a worksheet:** on the new-assignment form, scan a handout with the
+  document camera (or pick a photo) to prefill the title, due date, class and
+  description. Text recognition runs on the device (Vision); nothing is
+  uploaded. Parsing rules: `Logic/WorksheetParser.swift` (same as Android's
+  `logic/WorksheetParser.kt`)
 - **Study timer:** Pomodoro with focus/short/long phases and custom lengths.
   Focus sessions are logged to the server, and a local notification fires when
   a phase ends while the app is in the background. App Intents
