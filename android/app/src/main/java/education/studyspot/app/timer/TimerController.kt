@@ -65,6 +65,20 @@ class TimerController private constructor(context: Context) {
 
     fun toggle() = if (_state.value.running) pause() else start()
 
+    /**
+     * Quick Settings tile / launcher shortcut: start focusing (or resume a
+     * paused phase). Does nothing while running.
+     */
+    fun quickStart() {
+        if (_state.value.running) return
+        set(_state.value.forQuickStart())
+        TimerNotifications.cancelAlert(app)
+        start()
+    }
+
+    /** Quick Settings tile tap: pause while running, otherwise [quickStart]. */
+    fun quickToggle() = if (_state.value.running) pause() else quickStart()
+
     /** Back to the full length of the current phase (stops the service). */
     fun reset() = set(_state.value.reset())
 

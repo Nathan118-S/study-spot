@@ -116,6 +116,13 @@ data class TimerState(
     fun switchPhase(p: TimerPhase): TimerState =
         copy(phase = p, endsAtMillis = null, remainingMillis = minutesFor(p) * 60_000L, phaseStartedAtMillis = null)
 
+    /**
+     * What the Quick Settings tile and the "Start study timer" shortcut start:
+     * the current phase if it's paused or a focus phase, but focus rather than
+     * an untouched break ("start studying").
+     */
+    fun forQuickStart(): TimerState = if (idle && phase.isBreak) switchPhase(TimerPhase.Focus) else this
+
     /** Ends the current phase early without logging it and moves to the next one. */
     fun skip(): TimerState = switchPhase(nextPhase(countThisFocus = false))
 

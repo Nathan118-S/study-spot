@@ -6,6 +6,7 @@ import education.studyspot.app.auth.WebSignIn
 import education.studyspot.app.core.AppConfig
 import education.studyspot.app.core.userMessage
 import education.studyspot.app.model.IcalKind
+import education.studyspot.app.timer.TimerController
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 
@@ -16,6 +17,7 @@ import kotlinx.serialization.json.put
  * - `studyspot://assignment/<id>`          open an assignment
  * - `studyspot://tab/<dashboard|classes|calendar|streaks|insights>`
  * - `studyspot://timer`                    open the study timer
+ * - `studyspot://timer/start`              start it too (launcher shortcut, res/xml/shortcuts.xml)
  * - `studyspot://blackboard?code=…&state=…` finish connecting Blackboard
  * - `studyspot://connected`                a Google connection finished
  */
@@ -36,7 +38,12 @@ class DeepLinkHandler(private val c: AppContainer) {
                 c.router.navigate(Routes.assignmentDetail(id))
             }
             "tab" -> c.router.showTab(AppTab.fromKey(uri.lastPathSegment))
-            "timer" -> c.router.navigate(Routes.TIMER)
+            "timer" -> {
+                if (uri.pathSegments.firstOrNull() == "start" && c.api.token != null) {
+                    TimerController.get(c.context).quickStart()
+                }
+                c.router.navigate(Routes.TIMER)
+            }
             "blackboard" -> {
                 val code = WebSignIn.param(uri, "code")
                 if (code == null) {

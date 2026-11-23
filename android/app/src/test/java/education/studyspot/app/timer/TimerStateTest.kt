@@ -165,4 +165,22 @@ class TimerStateTest {
         assertEquals(s, AppJson.decodeFromString(TimerState.serializer(), json))
         assertTrue(json.contains("\"phase\":\"focus\""))
     }
+
+    @Test
+    fun quickStartPicksFocusOverAnUntouchedBreak() {
+        // Idle on a break: the tile / shortcut starts focusing instead.
+        val idleBreak = TimerState().switchPhase(TimerPhase.Short)
+        assertEquals(TimerPhase.Focus, idleBreak.forQuickStart().phase)
+        assertEquals(25 * min, idleBreak.forQuickStart().remainingMillis)
+
+        // A paused break is resumed, not replaced.
+        val pausedBreak = idleBreak.start(t0).pause(t0 + 2 * min)
+        assertEquals(pausedBreak, pausedBreak.forQuickStart())
+
+        // Focus (idle or paused) and running phases are left alone.
+        val focus = TimerState(focusMinutes = 45, remainingMillis = 45 * min)
+        assertEquals(focus, focus.forQuickStart())
+        val running = idleBreak.start(t0)
+        assertEquals(running, running.forQuickStart())
+    }
 }

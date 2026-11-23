@@ -20,15 +20,36 @@ enum TimerPhase: String, CaseIterable, Identifiable {
 final class StudyTimerModel {
     static let presets = [15, 25, 45, 50]
 
+    /// The app's one timer. Shared with the App Intents (Control Center,
+    /// Action Button, Shortcuts) through `StudyTimerIntentBridge`.
+    static let shared = StudyTimerModel()
+
     var phase: TimerPhase = .focus
-    var focusMinutes = 25
+    var focusMinutes: Int
     var endsAt: Date?
-    var secondsLeft: Double = 25 * 60
+    var secondsLeft: Double
     var cycles = 0
     var assignmentId: String?
     var logging = false
 
     var running: Bool { endsAt != nil }
+
+    /// Last assignment list seen, so an intent can keep the Live Activity's title.
+    @ObservationIgnored private var knownAssignments: [Assignment] = []
+
+    init() {
+        // The user's usual focus length, remembered across launches.
+        let usual = max(1, min(180, StudyTimerShared.usualFocusMinutes))
+        focusMinutes = usual
+        secondsLeft = Double(usual * 60)
+        // The timer isn't persisted: clear a running state left by a previous launch.
+        StudyTimerShared.publish(endsAt: nil)
+    }
+
+    /// Mirrors start/stop into the App Group for the Control Center control.
+    private func publishShared() {
+        StudyTimerShared.publish(endsAt: endsAt)
+    }
 
     func minutes(for p: TimerPhase) -> Int {
         switch p { case .focus: focusMinutes; case .short: 5; case .long: 15 }
@@ -47,11 +68,14 @@ final class StudyTimerModel {
         secondsLeft = max(0, endsAt.timeIntervalSinceNow)
         if secondsLeft <= 0 {
             self.endsAt = nil
+            publishShared()
             Task { await completePhase(assignments: assignments, isDemo: isDemo, toasts: toasts) }
         }
     }
 
     func toggle(assignments: [Assignment]) {
+        knownAssignments = assignments
+        defer { publishShared() }
         if running {
             if let endsAt { secondsLeft = max(0, endsAt.timeIntervalSinceNow) }
             endsAt = nil
@@ -72,6 +96,7 @@ final class StudyTimerModel {
 
     /// Mirrors the timer onto the Lock Screen / Dynamic Island.
     func updateLiveActivity(assignments: [Assignment]) {
+        knownAssignments = assignments
         let a = assignments.first { $0.id == assignmentId }
         LiveActivityManager.sync(
             phase: phase.rawValue, phaseLabel: phase.label, endsAt: endsAt,
@@ -85,6 +110,7 @@ final class StudyTimerModel {
         LocalNotifier.cancelTimer()
         LiveActivityManager.end()
         secondsLeft = total
+        publishShared()
     }
 
     func switchPhase(_ p: TimerPhase) {
@@ -93,10 +119,12 @@ final class StudyTimerModel {
         LiveActivityManager.end()
         phase = p
         secondsLeft = Double(minutes(for: p) * 60)
+        publishShared()
     }
 
     func setFocus(_ m: Int) {
         focusMinutes = max(1, min(180, m))
+        StudyTimerShared.usualFocusMinutes = focusMinutes
         if phase == .focus && !running { secondsLeft = Double(focusMinutes * 60) }
     }
 
@@ -138,12 +166,46 @@ final class StudyTimerModel {
     }
 }
 
+// MARK: - App Intents (Control Center, Action Button, Shortcuts)
+
+extension StudyTimerModel: StudyTimerIntentHandling {
+    var intentIsRunning: Bool { running }
+
+    func intentStart(minutes: Int?) {
+        if let minutes {
+            // An explicit length always starts a fresh focus session.
+            switchPhase(.focus)
+            setFocus(minutes)
+            secondsLeft = Double(focusMinutes * 60)
+        } else if running {
+            return
+        } else if phase != .focus && secondsLeft >= total {
+            // Idle at the start of a break: "start studying" means focus.
+            switchPhase(.focus)
+        }
+        toggle(assignments: knownAssignments)
+    }
+
+    func intentPause() {
+        if running { toggle(assignments: knownAssignments) }
+    }
+
+    func intentResume() {
+        if !running { toggle(assignments: knownAssignments) }
+    }
+
+    func intentStop() {
+        reset()
+    }
+}
+
 struct StudyTimerView: View {
     @Environment(StudyTimerModel.self) private var model
     var assignments: [Assignment]
 
     @State private var customOpen = false
     @State private var customText = ""
+    @AppStorage("timer_controls_hint_dismissed") private var hintDismissed = false
 
     var body: some View {
         @Bindable var model = model
@@ -231,10 +293,35 @@ struct StudyTimerView: View {
                     .glassButtonStyle()
                     .disabled(model.running || model.logging)
             }
+
+            if !hintDismissed { controlsHint }
         }
         .padding(.vertical, 6)
         .onChange(of: model.assignmentId) { _, _ in
             if model.running { model.updateLiveActivity(assignments: assignments) }
+        }
+    }
+
+    /// Points at the Control Center control / Action Button (iOS 18) or the
+    /// Shortcuts app (iOS 17), which start the timer without opening the app.
+    private var controlsHint: some View {
+        HStack(alignment: .top, spacing: 8) {
+            Image(systemName: "switch.2").foregroundStyle(Color.accentColor)
+            Group {
+                if #available(iOS 18.0, *) {
+                    Text("Add the timer to Control Center or the Action Button: edit Control Center and search for Study Spot.")
+                } else {
+                    Text("Start the timer from Siri, Shortcuts or the Action Button: say “Start a study timer in Study Spot”.")
+                }
+            }
+            .font(.caption)
+            .foregroundStyle(.secondary)
+            .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 0)
+            Button { hintDismissed = true } label: { Image(systemName: "xmark").font(.caption2.weight(.semibold)) }
+                .buttonStyle(.plain)
+                .foregroundStyle(.secondary)
+                .accessibilityLabel("Dismiss tip")
         }
     }
 }

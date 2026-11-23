@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Static launcher shortcuts (long-press the app icon). The link is handled
+     by navigation/DeepLinkHandler.kt. targetPackage must match applicationId. -->
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:shortcutId="start_study_timer"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_timer"
+        android:shortcutShortLabel="@string/shortcut_start_timer_short"
+        android:shortcutLongLabel="@string/shortcut_start_timer_long"
+        android:shortcutDisabledMessage="@string/shortcut_start_timer_disabled">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:data="studyspot://timer/start"
+            android:targetClass="education.studyspot.app.MainActivity"
+            android:targetPackage="education.studyspot.app" />
+    </shortcut>
+</shortcuts>

@@ -8,6 +8,9 @@ struct StudySpotWidgetsBundle: WidgetBundle {
         StreakWidget()
         StudyTimerLiveActivity()
         ClassStartLiveActivity()
+        if #available(iOS 18.0, *) {
+            StudyTimerControl()
+        }
     }
 }
 

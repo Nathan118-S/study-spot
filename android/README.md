@@ -182,6 +182,14 @@ a countdown, a progress bar and Pause/Resume, Skip and Stop. An alarm at the
 phase end finishes the phase (and alerts) even if the app was killed; a phase
 that ended while the app was closed is finished and logged on the next launch.
 
+**Quick Settings tile and launcher shortcut:** the *Study timer* tile
+(`timer/StudyTimerTileService.kt`) starts focusing (or resumes) on tap and
+pauses on the next, showing the phase and time left; signed out, it opens the
+app. The timer screen offers to add it (`StatusBarManager.requestAddTileService`
+on Android 13+). Long-pressing the app icon offers *Start study timer*
+(`res/xml/shortcuts.xml`, `studyspot://timer/start`). Both start a focus
+session rather than an untouched break.
+
 ## Live updates (Android's Live Activities)
 
 The class countdown and the study timer are ongoing notifications with a

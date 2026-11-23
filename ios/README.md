@@ -73,7 +73,14 @@ Everything in the web app is available natively:
   and syncing completion back to Classroom
 - **Study timer:** Pomodoro with focus/short/long phases and custom lengths.
   Focus sessions are logged to the server, and a local notification fires when
-  a phase ends while the app is in the background
+  a phase ends while the app is in the background. App Intents
+  (`Shared/StudyTimerIntents.swift`) start, pause/resume and stop it from
+  Siri, Shortcuts, Spotlight and the Action Button (App Shortcuts in
+  `StudySpot/Intents/StudySpotShortcuts.swift`, e.g. "Start a study timer in
+  Study Spot"), and on iOS 18 a Control Center / Lock Screen / Action Button
+  control (`StudySpotWidgets/StudyTimerControl.swift`) toggles it. The intents
+  run in the app's process (`LiveActivityIntent`), so they also start the Live
+  Activity. The focus length you pick is remembered and used as the default.
 - **Classes:** list, add, edit (color tags, teacher), delete
 - **Calendar:** month grid. Long-press an assignment and drag it to another
   day to reschedule it

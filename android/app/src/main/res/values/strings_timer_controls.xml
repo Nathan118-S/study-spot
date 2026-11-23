@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Quick Settings tile and launcher shortcut (timer/StudyTimerTileService.kt, xml/shortcuts.xml) -->
+    <string name="tile_timer_label">Study timer</string>
+    <string name="shortcut_start_timer_short">Start timer</string>
+    <string name="shortcut_start_timer_long">Start study timer</string>
+    <string name="shortcut_start_timer_disabled">Open Study Spot to use the study timer</string>
+</resources>

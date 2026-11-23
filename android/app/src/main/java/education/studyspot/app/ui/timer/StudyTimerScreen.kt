@@ -1,6 +1,7 @@
 package education.studyspot.app.ui.timer
 
 import android.Manifest
+import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.provider.Settings
@@ -25,11 +26,13 @@ import androidx.compose.material.icons.automirrored.outlined.MenuBook
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.outlined.Alarm
+import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Coffee
 import androidx.compose.material.icons.outlined.NotificationsOff
 import androidx.compose.material.icons.outlined.Psychology
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.SkipNext
+import androidx.compose.material.icons.outlined.Timer
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -41,6 +44,7 @@ import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -70,6 +74,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.core.content.edit
 import androidx.core.net.toUri
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -78,6 +83,7 @@ import education.studyspot.app.liveupdates.ClassAlarmScheduler
 import education.studyspot.app.navigation.AppNavigator
 import education.studyspot.app.push.NotificationPermission
 import education.studyspot.app.push.Notifier
+import education.studyspot.app.timer.StudyTimerTileService
 import education.studyspot.app.timer.TimerController
 import education.studyspot.app.timer.TimerPhase
 import education.studyspot.app.timer.TimerState
@@ -227,6 +233,8 @@ fun StudyTimerScreen(navigator: AppNavigator) {
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+
+            QuickSettingsTileHint()
 
             if (!canNotify) {
                 Hint(
@@ -384,6 +392,45 @@ private fun Hint(icon: ImageVector, text: String, action: String, onAction: () -
         }
     }
 }
+
+/**
+ * "Add the Quick Settings tile": on Android 13+ asks the system to add it;
+ * earlier, explains where to find it. Hidden once added or dismissed.
+ */
+@Composable
+private fun QuickSettingsTileHint() {
+    val context = LocalContext.current
+    val prefs = remember { context.getSharedPreferences(HINT_PREFS, Context.MODE_PRIVATE) }
+    var hidden by remember { mutableStateOf(prefs.getBoolean(KEY_TILE_HINT_HIDDEN, false)) }
+    if (hidden) return
+    fun hide() {
+        hidden = true
+        prefs.edit { putBoolean(KEY_TILE_HINT_HIDDEN, true) }
+    }
+    val canRequest = Build.VERSION.SDK_INT >= 33
+    Card(colors = CardDefaults.cardColors(containerColor = StudySpotTheme.colors.secondaryTint)) {
+        Row(Modifier.padding(start = 12.dp, top = 4.dp, bottom = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.Outlined.Timer, contentDescription = null, tint = StudySpotTheme.colors.secondary)
+            Spacer(Modifier.width(10.dp))
+            Text(
+                if (canRequest) {
+                    "Add the Quick Settings tile to start or pause the timer from anywhere."
+                } else {
+                    "Add the Study timer tile to Quick Settings: swipe down, tap the pencil and drag it in."
+                },
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.weight(1f),
+            )
+            if (canRequest) {
+                TextButton(onClick = { StudyTimerTileService.requestAdd(context) { added -> if (added) hide() } }) { Text("Add") }
+            }
+            IconButton(onClick = ::hide) { Icon(Icons.Outlined.Close, contentDescription = "Dismiss tip") }
+        }
+    }
+}
+
+private const val HINT_PREFS = "study_timer_hints"
+private const val KEY_TILE_HINT_HIDDEN = "tile_hint_hidden"
 
 @Composable
 private fun CustomLengthDialog(phase: TimerPhase, initial: Int, onDismiss: () -> Unit, onSet: (Int) -> Unit) {

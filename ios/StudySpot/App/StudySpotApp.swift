@@ -10,10 +10,13 @@ struct StudySpotApp: App {
     @State private var data = DataStore()
     @State private var toasts = ToastCenter()
     @State private var router = Router()
-    @State private var timer = StudyTimerModel()
+    @State private var timer = StudyTimerModel.shared
 
     init() {
         Palette.applyAppearance()
+        // Lets Control Center, the Action Button and Shortcuts drive the timer
+        // (their intents run in this process; see Shared/StudyTimerIntents.swift).
+        StudyTimerIntentBridge.handler = StudyTimerModel.shared
     }
 
     var body: some Scene {
