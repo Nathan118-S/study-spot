@@ -43,10 +43,6 @@
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="studyspot" />
             </intent-filter>
-            <!-- Long-press launcher shortcut "Start study timer". -->
-            <meta-data
-                android:name="android.app.shortcuts"
-                android:resource="@xml/shortcuts" />
         </activity>
 
         <!-- Launcher icons (Settings > Appearance > App icon; ui/settings/AppIconPicker.kt).
@@ -62,6 +58,11 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <!-- Long-press launcher shortcut "Start study timer"; it must sit on
+                 the launcher entry, so every icon alias carries it. -->
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
         </activity-alias>
         <activity-alias
             android:name=".LauncherNavy"
@@ -74,6 +75,11 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <!-- Long-press launcher shortcut "Start study timer"; it must sit on
+                 the launcher entry, so every icon alias carries it. -->
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
         </activity-alias>
         <activity-alias
             android:name=".LauncherMidnight"
@@ -86,6 +92,11 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <!-- Long-press launcher shortcut "Start study timer"; it must sit on
+                 the launcher entry, so every icon alias carries it. -->
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
         </activity-alias>
         <activity-alias
             android:name=".LauncherMono"
@@ -98,6 +109,11 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <!-- Long-press launcher shortcut "Start study timer"; it must sit on
+                 the launcher entry, so every icon alias carries it. -->
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
         </activity-alias>
         <activity-alias
             android:name=".LauncherOcean"
@@ -110,6 +126,11 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <!-- Long-press launcher shortcut "Start study timer"; it must sit on
+                 the launcher entry, so every icon alias carries it. -->
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
         </activity-alias>
         <activity-alias
             android:name=".LauncherGrape"
@@ -122,6 +143,11 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <!-- Long-press launcher shortcut "Start study timer"; it must sit on
+                 the launcher entry, so every icon alias carries it. -->
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
         </activity-alias>
 
         <!-- Shares the Excel export (Settings > Data; data/ExcelExport.kt). -->
